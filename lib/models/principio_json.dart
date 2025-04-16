@@ -33,6 +33,4 @@ class PrincipioJson {
       },
     );
   }
-
-  get id => null;
 }

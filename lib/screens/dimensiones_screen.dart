@@ -9,19 +9,19 @@ class DimensionesScreen extends StatelessWidget {
 
   final List<Map<String, dynamic>> dimensiones = const [
     {
-      'id': 't1',
+      'id': '1',
       'nombre': 'IMPULSORES CULTURALES',
       'icono': Icons.group,
       'color': Colors.blue,
     },
     {
-      'id': 't2',
+      'id': '2',
       'nombre': 'MEJORA CONTINUA',
       'icono': Icons.update,
       'color': Colors.green,
     },
     {
-      'id': 't3',
+      'id': '3',
       'nombre': 'ALINEAMIENTO EMPRESARIAL',
       'icono': Icons.business,
       'color': Colors.red,

@@ -49,7 +49,7 @@ class _TablaDimensionDos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _buildTablaFija('D2', 5, [2, 3, 3, 3, 3]);
+    return _buildTablaFija('1', 5, [2, 3, 3, 3, 3]);
   }
 }
 
@@ -58,7 +58,7 @@ class _TablaDimensionTres extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _buildTablaFija('D3', 3, [2, 3, 3]);
+    return _buildTablaFija('2', 3, [2, 3, 3]);
   }
 }
 

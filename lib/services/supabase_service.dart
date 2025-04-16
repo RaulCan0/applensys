@@ -10,6 +10,7 @@ class SupabaseService {
   // =============== EMPRESAS ===============
   Future<List<Empresa>> getEmpresas() async {
     final response = await _client.from('empresas').select();
+    // Se asume que la respuesta es una lista
     return (response as List).map((e) => Empresa.fromMap(e)).toList();
   }
 
@@ -103,6 +104,4 @@ class SupabaseService {
     final response = await _client.from('calificaciones').select();
     return (response as List).map((e) => Calificacion.fromMap(e)).toList();
   }
-
-  from(String s) {}
 }

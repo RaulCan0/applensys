@@ -1,20 +1,19 @@
+import 'package:applensys/services/supabase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Importar Supabase
-
 import '../models/asociado.dart';
 import '../../models/empresa.dart';
 import 'principios_screen.dart';
 
+// ignore: must_be_immutable
 class AsociadoScreen extends StatefulWidget {
   final Empresa empresa;
   final String dimensionId;
 
-  const AsociadoScreen({
-    super.key,
-    required this.empresa,
-    required this.dimensionId,
-  });
+  late List<Asociado> empresaasociado;
+
+  AsociadoScreen({super.key, required this.empresa, required this.dimensionId});
 
   @override
   State<AsociadoScreen> createState() => _AsociadoScreenState();
@@ -25,31 +24,67 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
   final TextEditingController _antiguedadController = TextEditingController();
   String _cargo = 'ejecutivo';
   final supabase = Supabase.instance.client;
+  final SupabaseService _supabaseService = SupabaseService();
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarAsociados();
+  }
+
+  Future<void> _cargarAsociados() async {
+    try {
+      final asociados = await _supabaseService.getAsociadosPorEmpresa(
+        widget.empresa.id,
+      );
+      setState(() {
+        widget.empresaasociado = asociados;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al cargar asociados: $e')));
+    }
+  }
 
   Future<void> _agregarAsociado() async {
     final nombre = _nombreController.text.trim();
-    final antiguedad = int.tryParse(_antiguedadController.text.trim());
+    final textoAntiguedad = _antiguedadController.text.trim();
 
-    if (nombre.isEmpty || antiguedad == null) return;
+    if (nombre.isEmpty || textoAntiguedad.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor completa todos los campos.')),
+      );
+      return;
+    }
+
+    final antiguedad = int.tryParse(textoAntiguedad);
+    if (antiguedad == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Antigüedad inválida. Solo números.')),
+      );
+      return;
+    }
 
     final nuevoId = const Uuid().v4();
+    final nuevo = Asociado(
+      id: nuevoId,
+      nombre: nombre,
+      cargo: _cargo,
+      empresaId: widget.empresa.id,
+    );
 
-    final response = await supabase.from('asociados').insert({
-      'id': nuevoId,
-      'nombre': nombre,
-      'cargo': _cargo,
-      'empresa_id': widget.empresa.id,
-      'dimension_id': widget.dimensionId,
-      'antiguedad': antiguedad,
-    });
-
-    if (response.error == null) {
-      final nuevo = Asociado(
-        id: nuevoId,
-        nombre: nombre,
-        cargo: _cargo,
-        empresaId: widget.empresa.id,
-      );
+    try {
+      // Usar directamente supabase (ya lo tienes definido)
+      await supabase.from('asociados').insert({
+        'id': nuevoId,
+        'nombre': nombre,
+        'cargo': _cargo,
+        'empresa_id': widget.empresa.id,
+        'dimension_id': widget.dimensionId,
+        'antiguedad': antiguedad,
+      });
 
       setState(() {
         widget.empresa.empleadosAsociados.add(nuevo);
@@ -57,12 +92,14 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
 
       _nombreController.clear();
       _antiguedadController.clear();
-    } else {
-      // Manejo de error
-      // ignore: use_build_context_synchronously
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar: ${response.error!.message}')),
+        const SnackBar(content: Text('Asociado guardado correctamente')),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
     }
   }
 
