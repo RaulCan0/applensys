@@ -1,0 +1,38 @@
+name: applensys
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.0.0
+  cupertino_icons: ^1.0.8
+  uuid: ^4.3.1
+  animated_fl_chart: ^0.0.6
+  fl_chart: ^0.63.0
+  google_fonts: ^6.2.1 
+  syncfusion_flutter_charts: ^29.1.38
+  image_picker: ^1.1.2
+  file_selector: ^1.0.3
+
+  path: ^1.8.3
+  meta: ^1.16.0
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/t1.json
+    - assets/t2.json
+    - assets/t3.json
+    - assets/logo.png
