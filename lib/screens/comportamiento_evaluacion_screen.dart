@@ -1,9 +1,23 @@
 import 'package:applensys/models/calificacion.dart';
+import 'package:applensys/screens/tablas_screen.dart';
 import 'package:applensys/widgets/sistema_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/principio_json.dart';
 import '../services/supabase_service.dart';
+
+String obtenerNombreDimension(String dimensionId) {
+  switch (dimensionId) {
+    case '1':
+      return 'Dimensión 1';
+    case '2':
+      return 'Dimensión 2';
+    case '3':
+      return 'Dimensión 3';
+    default:
+      return 'Dimensión 1';
+  }
+}
 
 class ComportamientoEvaluacionScreen extends StatefulWidget {
   final PrincipioJson principio;
@@ -69,6 +83,16 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       );
 
       await supabase.addCalificacion(calificacionObj, id: '', idAsociado: '');
+
+      // Aquí actualizamos directamente en TablasDimensionScreen
+      TablasDimensionScreen.actualizarDato(
+        widget.evaluacionId,
+        dimension: obtenerNombreDimension(widget.dimensionId),
+        principio: widget.principio.nombre,
+        comportamiento: comportamientoNombre,
+        cargo: widget.cargo,
+        valor: calificacion,
+      );
 
       if (mounted) {
         Navigator.pop(context, comportamientoNombre);
@@ -151,7 +175,11 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
               max: 5,
               divisions: 4,
               label: calificacion.toString(),
-              onChanged: isSaving ? null : (value) => setState(() => calificacion = value.round()),
+              onChanged: isSaving ? null : (value) {
+                setState(() {
+                  calificacion = value.round();
+                });
+              },
             ),
             Text('Descripción ($calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
             Text(descripcionActual),
@@ -196,10 +224,10 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.save),
-                label: Text(
+              label: Text(
                 isSaving ? 'Guardando...' : 'Guardar Evaluación',
                 style: const TextStyle(color: Colors.white),
-                ),
+              ),
               onPressed: isSaving ? null : _guardarEvaluacion,
               style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: Colors.indigo),
             ),

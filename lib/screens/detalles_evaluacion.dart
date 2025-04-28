@@ -19,7 +19,7 @@ class DetallesEvaluacionScreen extends StatefulWidget {
 class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen> {
   @override
   Widget build(BuildContext context) {
-    final datos = TablasDimensionScreen.tablaDatos[widget.dimension] ?? [];
+    final datos = TablasDimensionScreen.tablaDatos[widget.dimension] as List<Map<String, dynamic>>? ?? [];
 
     return Scaffold(
       appBar: AppBar(
