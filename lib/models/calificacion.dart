@@ -16,7 +16,7 @@ class Calificacion {
     required this.comportamiento,
     required this.puntaje,
     required this.fechaEvaluacion,
-    this.observaciones,
+    this.observaciones, required List<String> sistemas,
   });
 
   factory Calificacion.fromMap(Map<String, dynamic> map) {
@@ -31,7 +31,7 @@ class Calificacion {
       comportamiento: map['comportamiento'],
       puntaje: map['puntaje'],
       fechaEvaluacion: DateTime.parse(map['fecha_evaluacion']),
-      observaciones: map['observaciones'],
+      observaciones: map['observaciones'], sistemas: [],
     );
   }
 

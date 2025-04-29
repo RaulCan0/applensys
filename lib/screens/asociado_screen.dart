@@ -192,7 +192,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
                               builder: (_) => PrincipiosScreen(
                                 empresa: widget.empresa,
                                 asociado: asociado,
-                                dimensionId: widget.dimensionId,
+                                dimensionId: widget.dimensionId, dimensionNombre: '',
                               ),
                             ),
                           );

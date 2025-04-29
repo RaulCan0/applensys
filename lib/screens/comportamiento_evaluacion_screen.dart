@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:applensys/models/calificacion.dart';
 import 'package:applensys/screens/tablas_screen.dart';
 import 'package:applensys/widgets/sistema_selector.dart';
@@ -79,7 +80,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
         comportamiento: comportamientoNombre,
         puntaje: calificacion,
         fechaEvaluacion: DateTime.now(),
-        observaciones: observacionController.text,
+        observaciones: observacionController.text, sistemas: [],
       );
 
       await supabase.addCalificacion(calificacionObj, id: '', idAsociado: '');
