@@ -3,7 +3,6 @@ import 'package:applensys/models/principio_json.dart';
 import 'package:applensys/screens/tablas_screen.dart' as tablas_screen;
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-
 import '../models/empresa.dart';
 import '../services/json_service.dart';
 import 'comportamiento_evaluacion_screen.dart';
@@ -17,7 +16,8 @@ class PrincipiosScreen extends StatefulWidget {
     super.key,
     required this.empresa,
     required this.asociado,
-    required this.dimensionId, required String dimensionNombre,
+    required this.dimensionId,
+    required String dimensionNombre,
   });
 
   @override
@@ -26,27 +26,27 @@ class PrincipiosScreen extends StatefulWidget {
 
 class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Map<String, List<PrincipioJson>> principiosUnicos = {};
-  List<String> comportamientosEvaluados = [];
   bool cargando = true;
 
   @override
   void initState() {
     super.initState();
     cargarPrincipios();
-    cargarComportamientosEvaluados();
   }
 
   Future<void> cargarPrincipios() async {
     try {
-      final List<dynamic> datos = await JsonService.cargarJson('t${widget.dimensionId}.json');
+      final List<dynamic> datos =
+          await JsonService.cargarJson('t${widget.dimensionId}.json');
       if (datos.isEmpty) {
         throw Exception('El archivo JSON está vacío.');
       }
 
       final todos = datos.map((e) => PrincipioJson.fromJson(e)).toList();
-      final filtrados = todos.where(
-        (p) => p.nivel.toLowerCase().contains(widget.asociado.cargo.toLowerCase()),
-      ).toList();
+      final filtrados = todos
+          .where((p) =>
+              p.nivel.toLowerCase().contains(widget.asociado.cargo.toLowerCase()))
+          .toList();
 
       final agrupados = <String, List<PrincipioJson>>{};
       for (var p in filtrados) {
@@ -62,23 +62,12 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
     }
   }
 
-  void cargarComportamientosEvaluados() {
-    comportamientosEvaluados = [];
-  }
-
-  void agregarComportamientoEvaluado(String comportamiento) {
-    if (!comportamientosEvaluados.contains(comportamiento)) {
-      setState(() {
-        comportamientosEvaluados.add(comportamiento);
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre}'),
+        title: Text(
+            'Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre}'),
         backgroundColor: Colors.indigo,
         actions: [
           IconButton(
@@ -87,7 +76,9 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => tablas_screen.TablasDimensionScreen(empresaId: widget.empresa.id),
+                  builder: (_) => tablas_screen.TablasDimensionScreen(
+                    empresaId: widget.empresa.id,
+                  ),
                 ),
               );
             },
@@ -110,7 +101,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                           padding: const EdgeInsets.all(16.0),
                           child: Text(
                             'Nivel: ${widget.asociado.cargo.toUpperCase()}',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -123,17 +115,25 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                               builder: (context, setStateTile) {
                                 final totalComportamientos = entry.value.length;
                                 final evaluados = entry.value.where((p) {
-                                  final comportamientoNombre = p.benchmarkComportamiento.split(":").first.trim();
-                                  return comportamientosEvaluados.contains(comportamientoNombre);
+                                  final nombre = p.benchmarkComportamiento
+                                      .split(":")
+                                      .first
+                                      .trim();
+                                  return ProgresoAsociado.estaEvaluado(
+                                      widget.asociado.id, nombre);
                                 }).length;
-                                final progreso = totalComportamientos == 0 ? 0.0 : evaluados / totalComportamientos;
+                                final progreso = totalComportamientos == 0
+                                    ? 0.0
+                                    : evaluados / totalComportamientos;
 
                                 return Card(
                                   elevation: 3,
-                                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
                                   child: ExpansionTile(
                                     title: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           entry.key,
@@ -146,48 +146,75 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         LinearProgressIndicator(
                                           value: progreso,
                                           backgroundColor: Colors.grey[300],
-                                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<Color>(
+                                                  Colors.green),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text('$evaluados de $totalComportamientos comportamientos evaluados'),
+                                        Text(
+                                            '$evaluados de $totalComportamientos comportamientos evaluados'),
                                       ],
                                     ),
                                     children: entry.value.map((principio) {
-                                      final comportamientoNombre = principio.benchmarkComportamiento.split(":").first.trim();
-                                      final evaluado = comportamientosEvaluados.contains(comportamientoNombre);
+                                      final nombreComportamiento = principio
+                                          .benchmarkComportamiento
+                                          .split(":")
+                                          .first
+                                          .trim();
+                                      final evaluado =
+                                          ProgresoAsociado.estaEvaluado(
+                                              widget.asociado.id,
+                                              nombreComportamiento);
 
                                       return ListTile(
                                         title: Text(
-                                          comportamientoNombre,
+                                          nombreComportamiento,
                                           style: TextStyle(
-                                            color: evaluado ? Colors.green : Colors.black,
-                                            fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
+                                            color: evaluado
+                                                ? Colors.green
+                                                : Colors.black,
+                                            fontWeight: evaluado
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                           ),
                                         ),
                                         subtitle: const Text('Ir a evaluación'),
-                                        trailing: const Icon(Icons.arrow_forward_ios),
-                                        onTap: () async {
-                                          final resultado = await Navigator.push<String>(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => ComportamientoEvaluacionScreen(
-                                                principio: principio,
-                                                cargo: widget.asociado.cargo,
-                                                evaluacionId: const Uuid().v4(),
-                                                dimensionId: widget.dimensionId,
-                                                empresaId: widget.empresa.id,
-                                                asociadoId: widget.asociado.id,
-                                                dimension: '',
-                                              ),
-                                            ),
-                                          );
-                                          if (resultado != null && !comportamientosEvaluados.contains(resultado)) {
-                                            setState(() {
-                                              comportamientosEvaluados.add(resultado);
-                                            });
-                                            setStateTile(() {});
-                                          }
-                                        },
+                                        trailing: const Icon(
+                                            Icons.arrow_forward_ios),
+                                        onTap: evaluado
+                                            ? null
+                                            : () async {
+                                                final resultado =
+                                                    await Navigator.push<String>(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        ComportamientoEvaluacionScreen(
+                                                      principio: principio,
+                                                      cargo:
+                                                          widget.asociado.cargo,
+                                                      evaluacionId:
+                                                          const Uuid().v4(),
+                                                      dimensionId:
+                                                          widget.dimensionId,
+                                                      empresaId:
+                                                          widget.empresa.id,
+                                                      asociadoId:
+                                                          widget.asociado.id,
+                                                      dimension:
+                                                          'Dimensión ${widget.dimensionId}',
+                                                    ),
+                                                  ),
+                                                );
+                                                if (resultado != null) {
+                                                  ProgresoAsociado
+                                                      .marcarComoEvaluado(
+                                                          widget.asociado.id,
+                                                          resultado);
+                                                  setState(() {});
+                                                  setStateTile(() {});
+                                                }
+                                              },
                                       );
                                     }).toList(),
                                   ),
@@ -201,5 +228,26 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                   ),
                 ),
     );
+  }
+}
+
+class ProgresoAsociado {
+  static final Map<String, Set<String>> comportamientosEvaluadosPorAsociado = {};
+
+  static void marcarComoEvaluado(String asociadoId, String comportamiento) {
+    if (!comportamientosEvaluadosPorAsociado.containsKey(asociadoId)) {
+      comportamientosEvaluadosPorAsociado[asociadoId] = {};
+    }
+    comportamientosEvaluadosPorAsociado[asociadoId]!.add(comportamiento);
+  }
+
+  static bool estaEvaluado(String asociadoId, String comportamiento) {
+    return comportamientosEvaluadosPorAsociado[asociadoId]
+            ?.contains(comportamiento) ??
+        false;
+  }
+
+  static void limpiarEvaluaciones(String asociadoId) {
+    comportamientosEvaluadosPorAsociado.remove(asociadoId);
   }
 }
