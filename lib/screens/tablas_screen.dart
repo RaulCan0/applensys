@@ -1,66 +1,7 @@
-
-
 import 'package:flutter/material.dart';
-import 'detalles_evaluacion.dart';
 import '../widgets/drawer_lensys.dart';
 
-String obtenerNombreDimension(String id) {
-  switch (id) {
-    case '1':
-      return 'Dimensión 1';
-    case '2':
-      return 'Dimensión 2';
-    case '3':
-      return 'Dimensión 3';
-    default:
-      return 'Dimensión Desconocida';
-  }
-}
-
-class TablasDimensionScreen extends StatefulWidget {
-  static final Map<String, Map<String, List<Map<String, dynamic>>>> tablaDatos = {
-    'Dimensión 1': {},
-    'Dimensión 2': {},
-    'Dimensión 3': {},
-  };
-
-  static final ValueNotifier<bool> dataChanged = ValueNotifier<bool>(false);
-
-  const TablasDimensionScreen({super.key, required this.empresaId});
-  final String empresaId;
-
-  static void actualizarDato(
-    String evaluacionId, {
-    required String dimension,
-    required String principio,
-    required String comportamiento,
-    required String cargo,
-    required int valor,
-  }) {
-    if (!tablaDatos.containsKey(dimension)) {
-      tablaDatos[dimension] = {};
-    }
-
-    if (!tablaDatos[dimension]!.containsKey(evaluacionId)) {
-      tablaDatos[dimension]![evaluacionId] = [];
-    }
-
-    final datos = tablaDatos[dimension]![evaluacionId]!;
-
-    datos.add({
-      'principio': principio,
-      'comportamiento': comportamiento,
-      'cargo': cargo.trim().toLowerCase().capitalize(),
-      'valor': valor,
-    });
-
-    dataChanged.value = !dataChanged.value;
-  }
-
-  @override
-  State<TablasDimensionScreen> createState() => _TablasDimensionScreenState();
-}
-
+// Extensión para capitalizar cadenas
 extension CapitalizeExtension on String {
   String capitalize() {
     if (isEmpty) return this;
@@ -68,148 +9,182 @@ extension CapitalizeExtension on String {
   }
 }
 
+class TablasDimensionScreen extends StatefulWidget {
+  /// Datos: dimensión → evaluaciónId → lista de filas
+  static final Map<String, Map<String, List<Map<String, dynamic>>>> tablaDatos = {
+    'Dimensión 1': {},
+    'Dimensión 2': {},
+    'Dimensión 3': {},
+  };
+  static final ValueNotifier<bool> dataChanged = ValueNotifier<bool>(false);
+
+  const TablasDimensionScreen({super.key, required String dimension});
+
+  @override
+  State<TablasDimensionScreen> createState() => _TablasDimensionScreenState();
+
+  /// Agrega una nueva evaluación a la tabla
+  static void actualizarDato(
+    String evaluacionId, {
+    required String dimension,
+    required String principio,
+    required String comportamiento,
+    required String cargo,
+    required int valor,
+    required List<String> sistemas,
+  }) {
+    final tablaDim = tablaDatos.putIfAbsent(dimension, () => {});
+    final lista = tablaDim.putIfAbsent(evaluacionId, () => []);
+    lista.add({
+      'principio': principio,
+      'comportamiento': comportamiento,
+      'cargo': cargo.trim().capitalize(),
+      'valor': valor,
+      'sistemas': sistemas,
+    });
+    dataChanged.value = !dataChanged.value;
+  }
+}
+
 class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   bool mostrarPromedio = false;
+  final List<String> dimensiones = ['Dimensión 1', 'Dimensión 2', 'Dimensión 3'];
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: dimensiones.length,
       child: Scaffold(
-        backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          leading: BackButton(color: Colors.white),
           backgroundColor: Colors.indigo,
+          leading: const BackButton(color: Colors.white),
           title: const Text('Resultados', style: TextStyle(color: Colors.white)),
-          centerTitle: true,
+          bottom: TabBar(
+            indicatorColor: Colors.white,
+            tabs: dimensiones.map((d) => Tab(text: d)).toList(),
+          ),
           actions: [
-            TextButton.icon(
-              icon: const Icon(Icons.calculate, color: Colors.white),
-              label: Text(
-                mostrarPromedio ? "Ver Sumas" : "Promediar",
-                style: const TextStyle(color: Colors.white),
+            IconButton(
+              icon: Icon(
+                mostrarPromedio ? Icons.functions : Icons.calculate,
+                color: Colors.white,
               ),
-              onPressed: () {
-                setState(() {
-                  mostrarPromedio = !mostrarPromedio;
-                });
-              },
+              tooltip: mostrarPromedio ? 'Ver sumas' : 'Promediar',
+              onPressed: () => setState(() => mostrarPromedio = !mostrarPromedio),
             ),
           ],
-          bottom: const TabBar(
-            indicatorColor: Colors.white,
-            tabs: [
-              Tab(text: 'Dimensión 1'),
-              Tab(text: 'Dimensión 2'),
-              Tab(text: 'Dimensión 3'),
-            ],
-          ),
         ),
         endDrawer: const DrawerLensys(empresa: null, dimensionId: null),
         body: TabBarView(
-          children: [
-            _TablaDimension(dimension: 'Dimensión 1', mostrarPromedio: mostrarPromedio),
-            _TablaDimension(dimension: 'Dimensión 2', mostrarPromedio: mostrarPromedio),
-            _TablaDimension(dimension: 'Dimensión 3', mostrarPromedio: mostrarPromedio),
-          ],
+          children: dimensiones.map((dimension) {
+            final filas = TablasDimensionScreen.tablaDatos[dimension]
+                    ?.values
+                    .expand((lista) => lista)
+                    .toList() ?? [];
+
+            if (filas.isEmpty) {
+              return const Center(child: Text('No hay datos para mostrar'));
+            }
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(8),
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columnSpacing: 20,
+                headingRowColor: WidgetStateProperty.all(Colors.indigo.shade300),
+                dataRowColor: WidgetStateProperty.all(Colors.white),
+                border: TableBorder.all(color: Colors.indigo.shade200),
+                columns: const [
+                  DataColumn(label: Text('Principio')),
+                  DataColumn(label: Text('Comportamiento')),
+                  DataColumn(label: Text('Ejecutivo')),
+                  DataColumn(label: Text('Gerente')),
+                  DataColumn(label: Text('Miembro')),
+                  DataColumn(label: Text('Ejecutivo Sistemas')),
+                  DataColumn(label: Text('Gerente Sistemas')),
+                  DataColumn(label: Text('Miembro Sistemas')),
+                ],
+                rows: _buildRows(filas),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
   }
-}
 
-class _TablaDimension extends StatelessWidget {
-  final String dimension;
-  final bool mostrarPromedio;
+  List<DataRow> _buildRows(List<Map<String, dynamic>> filas) {
+    final sumas = <String, Map<String, Map<String, int>>>{};
+    final conteos = <String, Map<String, Map<String, int>>>{};
+    final sistemasPorNivel = <String, Map<String, Map<String, Set<String>>>>{};
 
-  const _TablaDimension({required this.dimension, required this.mostrarPromedio});
+    for (var f in filas) {
+      final principio = f['principio'] as String;
+      final comportamiento = f['comportamiento'] as String;
+      final nivelRaw = f['cargo'] as String;
+      final nivel = nivelRaw.capitalize();
+      final valor = f['valor'] as int;
+      final sistemas = (f['sistemas'] as List<dynamic>?)?.whereType<String>().toList() ?? [];
 
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: TablasDimensionScreen.dataChanged,
-      builder: (context, _, __) {
-        final datosPorEvaluacion = TablasDimensionScreen.tablaDatos[dimension]!;
-        final datos = datosPorEvaluacion.values.expand((e) => e).toList();
+      sumas.putIfAbsent(principio, () => {});
+      sumas[principio]!.putIfAbsent(
+        comportamiento,
+        () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0},
+      );
+      conteos.putIfAbsent(principio, () => {});
+      conteos[principio]!.putIfAbsent(
+        comportamiento,
+        () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0},
+      );
+      sistemasPorNivel.putIfAbsent(principio, () => {});
+      sistemasPorNivel[principio]!.putIfAbsent(
+        comportamiento,
+        () => {
+          'Ejecutivo': <String>{},
+          'Gerente': <String>{},
+          'Miembro': <String>{},
+        },
+      );
 
-        if (datos.isEmpty) {
-          return const Center(child: Text('No hay datos para mostrar'));
+      sumas[principio]![comportamiento]![nivel] =
+          sumas[principio]![comportamiento]![nivel]! + valor;
+      conteos[principio]![comportamiento]![nivel] =
+          conteos[principio]![comportamiento]![nivel]! + 1;
+      for (var s in sistemas) {
+        sistemasPorNivel[principio]![comportamiento]![nivel]!.add(s);
+      }
+    }
+
+    final rows = <DataRow>[];
+    sumas.forEach((p, compMap) {
+      compMap.forEach((c, sumaMap) {
+        final cntMap = conteos[p]![c]!;
+        final sysMap = sistemasPorNivel[p]![c]!;
+
+        String valorCell(String key) {
+          if (!mostrarPromedio) return sumaMap[key]!.toString();
+          final cnt = cntMap[key]!;
+          return cnt == 0 ? '0' : (sumaMap[key]! / cnt).toStringAsFixed(2);
         }
 
-        final Map<String, Map<String, Map<String, int>>> sumas = {};
-        final Map<String, Map<String, Map<String, int>>> conteos = {};
-
-        for (var fila in datos) {
-          final principio = fila['principio'] ?? 'Sin principio';
-          final comportamiento = fila['comportamiento'] ?? 'Sin comportamiento';
-          final cargo = (fila['cargo'] ?? 'Miembro').toString().trim().capitalize();
-          final valor = (fila['valor'] ?? 0) as int;
-
-          sumas.putIfAbsent(principio, () => {});
-          sumas[principio]!.putIfAbsent(comportamiento, () => {
-            'Ejecutivo': 0,
-            'Gerente': 0,
-            'Miembro': 0,
-          });
-
-          conteos.putIfAbsent(principio, () => {});
-          conteos[principio]!.putIfAbsent(comportamiento, () => {
-            'Ejecutivo': 0,
-            'Gerente': 0,
-            'Miembro': 0,
-          });
-
-          sumas[principio]![comportamiento]![cargo] =
-              (sumas[principio]![comportamiento]![cargo] ?? 0) + valor;
-          conteos[principio]![comportamiento]![cargo] =
-              (conteos[principio]![comportamiento]![cargo] ?? 0) + 1;
+        String sysCell(String key) {
+          final set = sysMap[key]!;
+          return set.isEmpty ? '-' : set.join(', ');
         }
 
-        return SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columnSpacing: 20,
-              headingRowColor: WidgetStateColor.resolveWith((states) => Colors.indigo.shade300),
-              dataRowColor: WidgetStateColor.resolveWith((states) => Colors.white),
-              border: TableBorder.all(color: Colors.indigo.shade200),
-              columns: const [
-                DataColumn(label: Text('Principio')),
-                DataColumn(label: Text('Comportamiento')),
-                DataColumn(label: Text('Ejecutivo')),
-                DataColumn(label: Text('Gerente')),
-                DataColumn(label: Text('Miembro')),
-              ],
-              rows: sumas.entries.expand((principioEntry) {
-                final principio = principioEntry.key;
-                final comps = principioEntry.value;
-                return comps.entries.map((compEntry) {
-                  final comportamiento = compEntry.key;
-                  final suma = compEntry.value;
-                  final conteo = conteos[principio]![comportamiento]!;
+        rows.add(DataRow(cells: [
+          DataCell(Text(p)),
+          DataCell(Text(c)),
+          DataCell(Text(valorCell('Ejecutivo'))),
+          DataCell(Text(valorCell('Gerente'))),
+          DataCell(Text(valorCell('Miembro'))),
+          DataCell(Text(sysCell('Ejecutivo'))),
+          DataCell(Text(sysCell('Gerente'))),
+          DataCell(Text(sysCell('Miembro'))),
+        ]));
+      });
+    });
 
-                  String calcular(String nivel) {
-                    if (!mostrarPromedio) return '${suma[nivel] ?? 0}';
-                    final sum = suma[nivel] ?? 0;
-                    final count = conteo[nivel] ?? 0;
-                    if (count == 0) return '0';
-                    return (sum / count).toStringAsFixed(2);
-                  }
-
-                  return DataRow(cells: [
-                    DataCell(Text(principio)),
-                    DataCell(Text(comportamiento)),
-                    DataCell(Text(calcular('Ejecutivo'))),
-                    DataCell(Text(calcular('Gerente'))),
-                    DataCell(Text(calcular('Miembro'))),
-                  ]);
-                });
-              }).toList(),
-            ),
-          ),
-        );
-      },
-    );
+    return rows;
   }
 }

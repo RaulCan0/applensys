@@ -41,10 +41,12 @@ class ComportamientoEvaluacionScreen extends StatefulWidget {
   });
 
   @override
-  State<ComportamientoEvaluacionScreen> createState() => _ComportamientoEvaluacionScreenState();
+  State<ComportamientoEvaluacionScreen> createState() =>
+      _ComportamientoEvaluacionScreenState();
 }
 
-class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacionScreen> {
+class _ComportamientoEvaluacionScreenState
+    extends State<ComportamientoEvaluacionScreen> {
   int calificacion = 3;
   final TextEditingController observacionController = TextEditingController();
   List<String> sistemasSeleccionados = [];
@@ -67,10 +69,17 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
   }
 
   Future<void> _guardarEvaluacion() async {
-    setState(() => isSaving = true);
+    setState(() {
+      isSaving = true;
+    });
+
     try {
       final supabase = SupabaseService();
-      final comportamientoNombre = widget.principio.benchmarkComportamiento.split(":").first.trim();
+      final comportamientoNombre = widget
+          .principio.benchmarkComportamiento
+          .split(':')
+          .first
+          .trim();
 
       final calificacionObj = Calificacion(
         id: const Uuid().v4(),
@@ -80,12 +89,16 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
         comportamiento: comportamientoNombre,
         puntaje: calificacion,
         fechaEvaluacion: DateTime.now(),
-        observaciones: observacionController.text, sistemas: [],
+        observaciones: observacionController.text,
+        sistemas: sistemasSeleccionados,
       );
 
-      await supabase.addCalificacion(calificacionObj, id: '', idAsociado: '');
+      await supabase.addCalificacion(
+        calificacionObj,
+        id: widget.evaluacionId,
+        idAsociado: widget.asociadoId,
+      );
 
-      // Aquí actualizamos directamente en TablasDimensionScreen
       TablasDimensionScreen.actualizarDato(
         widget.evaluacionId,
         dimension: obtenerNombreDimension(widget.dimensionId),
@@ -93,6 +106,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
         comportamiento: comportamientoNombre,
         cargo: widget.cargo,
         valor: calificacion,
+        sistemas: sistemasSeleccionados,
       );
 
       if (mounted) {
@@ -101,17 +115,25 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error al guardar: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
-      if (mounted) setState(() => isSaving = false);
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final descripcionActual = widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible';
+    final desc = widget.principio.calificaciones['C$calificacion'] ??
+        'Sin descripción disponible';
 
     return Scaffold(
       appBar: AppBar(
@@ -125,66 +147,79 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           children: [
             Row(
               children: [
-                Flexible(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.info_outline, size: 18),
-                    label: const Text('Benchmark Nivel', style: TextStyle(fontSize: 12)),
-                    onPressed: () => _mostrarDialogo('Benchmark por Nivel', widget.principio.benchmarkPorNivel),
-                  ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  label: const Text('Benchmark Nivel',
+                      style: TextStyle(fontSize: 12)),
+                  onPressed: () =>
+                      _mostrarDialogo('Benchmark', widget.principio.benchmarkPorNivel),
                 ),
                 const SizedBox(width: 8),
-                Flexible(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.help_outline, size: 18),
-                    label: const Text('Guía', style: TextStyle(fontSize: 12)),
-                    onPressed: () => _mostrarDialogo('Preguntas Guía', widget.principio.preguntas),
-                  ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.help_outline, size: 18),
+                  label: const Text('Guía', style: TextStyle(fontSize: 12)),
+                  onPressed: () =>
+                      _mostrarDialogo('Guía', widget.principio.preguntas),
                 ),
                 const SizedBox(width: 8),
-                Flexible(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.settings, size: 18),
-                    label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
-                    onPressed: isSaving ? null : () async {
-                      final seleccionados = await showModalBottomSheet<List<String>>(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (context) => SistemasScreen(
-                          onSeleccionar: (List<Map<String, dynamic>> sistemas) {
-                            Navigator.pop(context, sistemas.map((s) => s['nombre'].toString()).toList());
-                          },
-                        ),
-                      );
-                      if (seleccionados != null) {
-                        setState(() {
-                          sistemasSeleccionados = seleccionados;
-                        });
-                      }
-                    },
-                  ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.settings, size: 18),
+                  label: const Text('Sistemas',
+                      style: TextStyle(fontSize: 12)),
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final seleccionados =
+                              await showModalBottomSheet<List<String>>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (c) => SistemasScreen(
+                              onSeleccionar: (sistemas) {
+                                Navigator.pop(
+                                    c,
+                                    sistemas
+                                        .map((e) => e['nombre'].toString())
+                                        .toList());
+                              },
+                            ),
+                          );
+                          if (seleccionados != null) {
+                            setState(() {
+                              sistemasSeleccionados = seleccionados;
+                            });
+                          }
+                        },
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
-            Text('Benchmark:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            Text(widget.principio.benchmarkComportamiento, style: const TextStyle(fontSize: 14)),
+            const Text('Benchmark:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(widget.principio.benchmarkComportamiento),
             const SizedBox(height: 16),
-            const Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
+
+            const Text('Calificación:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             Slider(
               value: calificacion.toDouble(),
               min: 1,
               max: 5,
               divisions: 4,
               label: calificacion.toString(),
-              onChanged: isSaving ? null : (value) {
-                setState(() {
-                  calificacion = value.round();
-                });
-              },
+              onChanged: isSaving
+                  ? null
+                  : (v) {
+                      setState(() {
+                        calificacion = v.round();
+                      });
+                    },
             ),
-            Text('Descripción ($calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(descripcionActual),
+            Text('Descripción ($calificacion):',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(desc),
             const SizedBox(height: 16),
+
             Row(
               children: [
                 Expanded(
@@ -206,23 +241,30 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
               ],
             ),
             const SizedBox(height: 16),
+
             if (sistemasSeleccionados.isNotEmpty)
               Wrap(
                 spacing: 6,
                 children: sistemasSeleccionados
-                    .map((sistema) => Chip(
-                          label: Text(sistema),
-                          onDeleted: () => setState(() => sistemasSeleccionados.remove(sistema)),
+                    .map((s) => Chip(
+                          label: Text(s),
+                          onDeleted: () {
+                            setState(() {
+                              sistemasSeleccionados.remove(s);
+                            });
+                          },
                         ))
                     .toList(),
               ),
             const SizedBox(height: 24),
+
             ElevatedButton.icon(
               icon: isSaving
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.save),
               label: Text(
@@ -230,7 +272,10 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
                 style: const TextStyle(color: Colors.white),
               ),
               onPressed: isSaving ? null : _guardarEvaluacion,
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: Colors.indigo),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+                backgroundColor: Colors.indigo,
+              ),
             ),
           ],
         ),
