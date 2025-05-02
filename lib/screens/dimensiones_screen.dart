@@ -70,7 +70,7 @@ class DimensionesScreen extends StatelessWidget {
           ),
         ],
       ),
-      drawer: DrawerLensys(empresa: empresa, dimensionId: null),
+      drawer: DrawerLensys(),
       body: ListView.builder(
         itemCount: dimensiones.length,
         itemBuilder: (context, index) {
