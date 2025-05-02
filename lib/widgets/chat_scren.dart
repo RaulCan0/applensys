@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/message.dart';
@@ -44,7 +46,6 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
             .getPublicUrl(fileName);
         await _chatService.sendMessage(_myUserId, url);
       } else {
-        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se pudo subir la foto')),
         );
@@ -62,15 +63,24 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
             Container(
               padding: const EdgeInsets.all(16),
               color: chatColor,
-              child: const Center(
-                child: Text(
-                  'Chat General',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      Navigator.pop(context); // Cierra el Drawer
+                    },
                   ),
-                ),
+                  const Text(
+                    'Chat General',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -90,79 +100,43 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final currentMessage = messages[messages.length - 1 - index];
-                      final previousMessage = index < messages.length - 1
-                          ? messages[messages.length - 2 - index]
-                          : null;
-
-                      final currentDate = DateTime.parse(currentMessage.createdAt as String);
-                      final previousDate = previousMessage != null
-                          ? DateTime.parse(previousMessage.createdAt as String)
-                          : null;
-
-                      bool showDateHeader = false;
-                      if (previousDate == null ||
-                          !isSameDay(currentDate, previousDate)) {
-                        showDateHeader = true;
-                      }
-
                       final isMe = currentMessage.userId == _myUserId;
                       final isImage = currentMessage.content.startsWith('http');
 
-                      return Column(
-                        children: [
-                          if (showDateHeader)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                formatDateHeader(currentDate),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
+                      return Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.all(12),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isMe ? chatColor : receivedColor,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              isImage
+                                  ? Image.network(currentMessage.content)
+                                  : Text(
+                                      currentMessage.content,
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white : Colors.black87,
+                                      ),
+                                    ),
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat('HH:mm').format(DateTime.parse(currentMessage.createdAt as String)),
+                                style: TextStyle(
+                                  color: isMe ? Colors.white70 : Colors.black54,
+                                  fontSize: 10,
                                 ),
                               ),
-                            ),
-                          Align(
-                            alignment:
-                                isMe ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.all(12),
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isMe ? chatColor : receivedColor,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  isImage
-                                      ? Image.network(currentMessage.content)
-                                      : Text(
-                                          currentMessage.content,
-                                          style: TextStyle(
-                                            color: isMe
-                                                ? Colors.white
-                                                : Colors.black87,
-                                          ),
-                                        ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    DateFormat('HH:mm').format(currentDate),
-                                    style: TextStyle(
-                                      color: isMe
-                                          ? Colors.white70
-                                          : Colors.black54,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       );
                     },
                   );
@@ -217,20 +191,5 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
         ),
       ),
     );
-  }
-
-  bool isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  String formatDateHeader(DateTime date) {
-    final now = DateTime.now();
-    if (isSameDay(date, now)) {
-      return 'HOY';
-    } else if (isSameDay(date, now.subtract(const Duration(days: 1)))) {
-      return 'AYER';
-    } else {
-      return DateFormat('dd/MM/yyyy').format(date);
-    }
   }
 }

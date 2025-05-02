@@ -19,10 +19,14 @@ dependencies:
   syncfusion_flutter_charts: ^29.1.38
   image_picker: ^1.1.2
   file_selector: ^1.0.3
+  path_provider: ^2.0.15
+  font_awesome_flutter: ^10.1.0   # para el icono de Excel
 
   path: ^1.8.3
   meta: ^1.16.0
   intl: ^0.20.2
+  excel: ^4.0.6
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
@@ -36,3 +40,4 @@ flutter:
     - assets/t2.json
     - assets/t3.json
     - assets/logo.png
+    - assets/correlacion shingo.xlsx

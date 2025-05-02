@@ -72,8 +72,18 @@ class _HistorialScreenState extends State<HistorialScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial de Empresas'),
+        title: const Text(
+          'Historial de Empresas',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.indigo,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+        icon: const Icon(Icons.refresh, color: Colors.white),
+        onPressed: _cargarEmpresas,
+          ),
+        ],
       ),
       body:
           isLoading

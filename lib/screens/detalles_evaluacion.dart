@@ -1,6 +1,7 @@
+import 'package:applensys/models/empresa.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'tablas_screen.dart';
+import '../widgets/drawer_lensys.dart';
 
 class DetallesEvaluacionScreen extends StatefulWidget {
   /// Mapa de dimensiones a sus promedios por nivel (Ejecutivo, Gerente, Miembro, General)
@@ -8,7 +9,7 @@ class DetallesEvaluacionScreen extends StatefulWidget {
 
   const DetallesEvaluacionScreen({
     super.key,
-    required this.dimensionesPromedios, required Map<String, num> promedios, required String dimension,
+    required this.dimensionesPromedios, required Map promedios, required String dimension,
   });
 
   @override
@@ -18,6 +19,7 @@ class DetallesEvaluacionScreen extends StatefulWidget {
 class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -39,28 +41,30 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     final dimensiones = widget.dimensionesPromedios.keys.toList();
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text('Detalles de Evaluación'),
         backgroundColor: Colors.indigo,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              _scaffoldKey.currentState?.openEndDrawer();
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
           tabs: dimensiones.map((d) => Tab(text: d)).toList(),
         ),
       ),
+      endDrawer: const DrawerLensys(),
       body: TabBarView(
         controller: _tabController,
         children: dimensiones.map((dimension) {
           final promedios = widget.dimensionesPromedios[dimension]!;
-          // Obtener todas las filas para esta dimensión
-          final mapaEvaluaciones = TablasDimensionScreen.tablaDatos[dimension]!;
-          final datos = mapaEvaluaciones.values.expand((l) => l).toList();
-          return _buildDimensionDetails(
-            context,
-            dimension,
-            promedios,
-            datos,
-          );
+          return _buildDimensionDetails(context, dimension, promedios);
         }).toList(),
       ),
     );
@@ -70,34 +74,19 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     BuildContext context,
     String dimension,
     Map<String, double> promedios,
-    List<Map<String, dynamic>> datos,
   ) {
-    if (datos.isEmpty) {
-      return const Center(child: Text('No hay datos para esta dimensión'));
-    }
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildPromedioGeneralCard(context, promedios),
-          const SizedBox(height: 16),
-          const Text(
-            'Detalle por Comportamiento',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          ...datos.map(_buildDetalleComportamientoCard),
         ],
       ),
     );
   }
 
-  Widget _buildPromedioGeneralCard(
-    BuildContext context,
-    Map<String, double> promedios,
-  ) {
+  Widget _buildPromedioGeneralCard(BuildContext context, Map<String, double> promedios) {
     final width = MediaQuery.of(context).size.width;
     final avgE = promedios['Ejecutivo'] ?? 0;
     final avgG = promedios['Gerente'] ?? 0;
@@ -144,10 +133,8 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
                         reservedSize: 26,
                       ),
                     ),
-                    topTitles:
-                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles:
-                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   gridData: FlGridData(show: true, horizontalInterval: 1),
                   borderData: FlBorderData(show: false),
@@ -210,53 +197,6 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
         return const Text('Mie.', style: TextStyle(fontSize: 10));
     }
     return const SizedBox.shrink();
-  }
-
-  Widget _buildDetalleComportamientoCard(Map<String, dynamic> fila) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              fila['comportamiento'] as String,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildChip('Ejecutivo', fila['Ejecutivo']),
-                _buildChip('Gerente', fila['Gerente']),
-                _buildChip('Miembro', fila['Miembro']),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChip(String label, dynamic valor) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(fontSize: 10)),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: _getColor(double.tryParse(valor.toString()) ?? 0),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            valor.toString(),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-          ),
-        ),
-      ],
-    );
   }
 
   Color _getColor(double value) {

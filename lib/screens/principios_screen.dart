@@ -1,11 +1,12 @@
+import 'package:applensys/models/asociado.dart';
+import 'package:applensys/models/principio_json.dart';
+import 'package:applensys/screens/tablas_screen.dart' as tablas_screen;
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+
 import '../models/empresa.dart';
-import '../models/asociado.dart';
-import '../models/principio_json.dart';
 import '../services/json_service.dart';
 import 'comportamiento_evaluacion_screen.dart';
-import 'tablas_screen.dart';
 
 class PrincipiosScreen extends StatefulWidget {
   final Empresa empresa;
@@ -25,33 +26,51 @@ class PrincipiosScreen extends StatefulWidget {
 
 class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Map<String, List<PrincipioJson>> principiosUnicos = {};
+  List<String> comportamientosEvaluados = [];
   bool cargando = true;
 
   @override
   void initState() {
     super.initState();
-    _cargarPrincipios();
+    cargarPrincipios();
+    cargarComportamientosEvaluados();
   }
 
-  Future<void> _cargarPrincipios() async {
+  Future<void> cargarPrincipios() async {
     try {
-      // Use proper string interpolation
-      final datos = await JsonService.cargarJson('t${widget.dimensionId}.json');
+      final List<dynamic> datos = await JsonService.cargarJson('t${widget.dimensionId}.json');
+      if (datos.isEmpty) {
+        throw Exception('El archivo JSON está vacío.');
+      }
+
       final todos = datos.map((e) => PrincipioJson.fromJson(e)).toList();
-      final filtrados = todos.where((p) =>
-        p.nivel.toLowerCase() == widget.asociado.cargo.toLowerCase()
+      final filtrados = todos.where(
+        (p) => p.nivel.toLowerCase().contains(widget.asociado.cargo.toLowerCase()),
       ).toList();
+
       final agrupados = <String, List<PrincipioJson>>{};
       for (var p in filtrados) {
         agrupados.putIfAbsent(p.nombre, () => []).add(p);
       }
+
       setState(() {
         principiosUnicos = agrupados;
         cargando = false;
       });
     } catch (e) {
-      debugPrint('Error al cargar principios: $e');
-      setState(() => cargando = false);
+      debugPrint('Error al cargar JSON: $e');
+    }
+  }
+
+  void cargarComportamientosEvaluados() {
+    comportamientosEvaluados = [];
+  }
+
+  void agregarComportamientoEvaluado(String comportamiento) {
+    if (!comportamientosEvaluados.contains(comportamiento)) {
+      setState(() {
+        comportamientosEvaluados.add(comportamiento);
+      });
     }
   }
 
@@ -59,100 +78,128 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dimensión ${widget.dimensionId} - ${widget.asociado.nombre}'),
+        title: Text('Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre}'),
         backgroundColor: Colors.indigo,
         actions: [
           IconButton(
             icon: const Icon(Icons.table_chart_outlined),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TablasDimensionScreen(
-                  dimension: 'Dimensión ${widget.dimensionId}',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => tablas_screen.TablasDimensionScreen(empresaId: widget.empresa.id, dimension: '',),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
       body: cargando
-        ? const Center(child: CircularProgressIndicator())
-        : principiosUnicos.isEmpty
-          ? const Center(child: Text('No hay principios para este nivel'))
-          : Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ListView(
-                children: principiosUnicos.entries.map((entry) {
-                  final nombrePrincipio = entry.key;
-                  final listaPrincipios = entry.value;
-                  final total = listaPrincipios.length;
-                  final completados = listaPrincipios.where((p) {
-                    final comp = p.benchmarkComportamiento.split(':').first.trim();
-                    return ProgresoAsociado.estaEvaluado(widget.asociado.id, comp);
-                  }).length;
-                  final progreso = total > 0 ? completados / total : 0.0;
-
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 2,
-                    child: ExpansionTile(
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            nombrePrincipio,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+          ? const Center(child: CircularProgressIndicator())
+          : principiosUnicos.isEmpty
+              ? const Center(child: Text('No hay principios para este nivel'))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Card(
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            'Nivel: ${widget.asociado.cargo.toUpperCase()}',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          const SizedBox(height: 6),
-                          LinearProgressIndicator(value: progreso),
-                          const SizedBox(height: 4),
-                          Text('$completados de $total evaluados'),
-                        ],
+                        ),
                       ),
-                      children: listaPrincipios.map((principio) {
-                        final nombreComp = principio.benchmarkComportamiento.split(':').first.trim();
-                        final evaluado = ProgresoAsociado.estaEvaluado(widget.asociado.id, nombreComp);
-                        return ListTile(
-                          title: Text(
-                            nombreComp,
-                            style: TextStyle(
-                              color: evaluado ? Colors.green : Colors.black,
-                              fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                          subtitle: const Text('Ir a evaluación'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: evaluado ? null : () async {
-                            final resultado = await Navigator.push<String>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ComportamientoEvaluacionScreen(
-                                  principio: principio,
-                                  cargo: widget.asociado.cargo,
-                                  evaluacionId: const Uuid().v4(),
-                                  dimensionId: widget.dimensionId,
-                                  empresaId: widget.empresa.id,
-                                  asociadoId: widget.asociado.id,
-                                  dimension: 'Dimensión ${widget.dimensionId}',
-                                ),
-                              ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: principiosUnicos.length,
+                          itemBuilder: (context, index) {
+                            final entry = principiosUnicos.entries.elementAt(index);
+                            return StatefulBuilder(
+                              builder: (context, setStateTile) {
+                                final totalComportamientos = entry.value.length;
+                                final evaluados = entry.value.where((p) {
+                                  final comportamientoNombre = p.benchmarkComportamiento.split(":").first.trim();
+                                  return comportamientosEvaluados.contains(comportamientoNombre);
+                                }).length;
+                                final progreso = totalComportamientos == 0 ? 0.0 : evaluados / totalComportamientos;
+
+                                return Card(
+                                  elevation: 3,
+                                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: ExpansionTile(
+                                    title: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          entry.key,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        LinearProgressIndicator(
+                                          value: progreso,
+                                          backgroundColor: Colors.grey[300],
+                                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text('$evaluados de $totalComportamientos comportamientos evaluados'),
+                                      ],
+                                    ),
+                                    children: entry.value.map((principio) {
+                                      final comportamientoNombre = principio.benchmarkComportamiento.split(":").first.trim();
+                                      final evaluado = comportamientosEvaluados.contains(comportamientoNombre);
+
+                                      return ListTile(
+                                        title: Text(
+                                          comportamientoNombre,
+                                          style: TextStyle(
+                                            color: evaluado ? Colors.green : Colors.black,
+                                            fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
+                                        subtitle: const Text('Ir a evaluación'),
+                                        trailing: const Icon(Icons.arrow_forward_ios),
+                                        onTap: () async {
+                                          final resultado = await Navigator.push<String>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ComportamientoEvaluacionScreen(
+                                                principio: principio,
+                                                cargo: widget.asociado.cargo,
+                                                evaluacionId: const Uuid().v4(),
+                                                dimensionId: widget.dimensionId,
+                                                empresaId: widget.empresa.id,
+                                                asociadoId: widget.asociado.id,
+                                                dimension: '',
+                                              ),
+                                            ),
+                                          );
+                                          if (resultado != null && !comportamientosEvaluados.contains(resultado)) {
+                                            setState(() {
+                                              comportamientosEvaluados.add(resultado);
+                                            });
+                                            setStateTile(() {});
+                                          }
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
+                                );
+                              },
                             );
-                            if (resultado != null) {
-                              ProgresoAsociado.marcarComoEvaluado(widget.asociado.id, resultado);
-                              setState(() {});
-                            }
                           },
-                        );
-                      }).toList(),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
     );
   }
 }
@@ -162,5 +209,6 @@ class ProgresoAsociado {
   static void marcarComoEvaluado(String id, String comp) {
     _map.putIfAbsent(id, () => {}).add(comp);
   }
+
   static bool estaEvaluado(String id, String comp) => _map[id]?.contains(comp) ?? false;
 }

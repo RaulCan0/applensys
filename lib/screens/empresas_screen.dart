@@ -68,7 +68,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
         child: const ChatWidgetDrawer(),
       ),
       // Drawer derecho: menú de Lensys
-      endDrawer: DrawerLensys(empresa: empresaCreada, dimensionId: null),
+      endDrawer: DrawerLensys(),
       appBar: AppBar(
         backgroundColor: Colors.indigo,
         centerTitle: true,
@@ -123,7 +123,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => DimensionesScreen(
-                                  empresa: empresaCreada,
+                                  empresa: empresaCreada, evaluacionId: '',
                                 ),
                               ),
                             ),

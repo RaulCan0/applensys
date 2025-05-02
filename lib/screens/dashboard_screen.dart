@@ -1,8 +1,23 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:applensys/charts/behavior_scroll_chart.dart';
+import 'package:applensys/charts/donut_chart.dart';
+import 'package:applensys/charts/grouped_bar_chart.dart';
+import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
+import 'package:applensys/charts/line_chart_sample.dart';
+import 'package:applensys/charts/scatter_bubble_chart.dart' show ScatterBubbleChart;
+import 'package:applensys/charts/radar_chart.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:applensys/models/level_averages.dart' as models;
 import '../models/empresa.dart';
 import '../services/supabase_service.dart';
+import '../services/excel_exporter.dart';
+
+// Removed duplicate ScatterBubbleData class definition.
+// Ensure to import the ScatterBubbleData class from the correct file.
+import 'package:applensys/charts/scatter_bubble_chart.dart' show ScatterBubbleData;
+
 
 class DashboardScreen extends StatefulWidget {
   final Empresa? empresa;
@@ -14,508 +29,345 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with SingleTickerProviderStateMixin {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late TabController _tabController;
-  bool isLoading = true;
-  List<Map<String, dynamic>> resultados = [];
-
-  final List<Color> colores = [
-    Colors.blue,
-    Colors.red,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.teal,
-    Colors.pink,
-    Colors.amber,
-  ];
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _isLoading = true;
+  List<models.LevelAverages> _dimAverages = [];
+  List<models.LevelAverages> _lineAverages = [];
+  List<models.LevelAverages> _princAverages = [];
+  List<models.LevelAverages> _behavAverages = [];
+  List<models.LevelAverages> _sysAverages = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(_handleTabChange);
-    _cargarResultados();
+    _loadAllData();
   }
 
-  void _handleTabChange() {
-    if (!_tabController.indexIsChanging) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _cargarResultados() async {
-    setState(() => isLoading = true);
+  Future<void> _loadAllData() async {
+    setState(() => _isLoading = true);
+    final svc = SupabaseService();
     try {
-      final data = await SupabaseService().getResultadosDashboard(
-        empresaId: widget.empresa?.id,
-        dimensionId:widget.dimensionId,
+      _dimAverages   = await svc.getDimensionAverages(widget.empresa!.id as int);
+      _lineAverages  = await svc.getLevelLineData(widget.empresa!.id as int);
+      _princAverages = await svc.getPrinciplesAverages(widget.empresa!.id as int);
+      _behavAverages = await svc.getBehaviorAverages(widget.empresa!.id as int);
+      _sysAverages   = await svc.getSystemAverages(widget.empresa!.id as int);
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Offline: cargando datos locales')),
       );
-      if (mounted) {
-        setState(() => resultados = data);
-      }
-    } catch (e) {
-      if (mounted) {
-        _mostrarError('Error al cargar resultados: $e');
-      }
+      _dimAverages   = await svc.getLocalDimensionAverages();
+      _lineAverages  = await svc.getLocalLevelLineData();
+      _princAverages = await svc.getLocalPrinciplesAverages();
+      _behavAverages = await svc.getLocalBehaviorAverages();
+      _sysAverages   = await svc.getLocalSystemAverages();
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _mostrarError(String mensaje) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(mensaje)));
+  Future<void> _exportExcel() async {
+    try {
+      final file = await ExcelExporter.export(
+        behaviorAverages: _behavAverages,
+        systemAverages: _sysAverages,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Excel generado: ${file.path}')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al generar Excel: $e')),
+      );
+    }
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Widget _buildChartContainer({
+    required List<dynamic> data,
+    required Widget Function() builder,
+  }) {
+    if (data.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: Text('Sin datos', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: builder(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final titulo =
-        widget.dimensionId != null
-            ? 'Dashboard Dimensión ${widget.dimensionId}'
-            : 'Dashboard General';
+    final title = widget.dimensionId != null
+        ? 'Dashboard Dimensión ${widget.dimensionId}'
+        : 'Dashboard General';
 
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(titulo, style: const TextStyle(color: Colors.white)),
+        title: Text(title),
         backgroundColor: Colors.indigo,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _cargarResultados,
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(text: 'Resumen', icon: Icon(Icons.dashboard)),
-            Tab(text: 'Tendencia', icon: Icon(Icons.trending_up)),
-            Tab(text: 'Comparativo', icon: Icon(Icons.compare_arrows)),
-            Tab(text: 'Distribución', icon: Icon(Icons.pie_chart)),
-            Tab(text: 'Detalles', icon: Icon(Icons.list)),
-          ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadAllData)],
       ),
-      drawer: DrawerLensys(
-        empresa: widget.empresa,
-        dimensionId: widget.dimensionId,
+      drawer: const DrawerLensys(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
+              builder: (context, bc) =>
+                  bc.maxWidth >= 800 ? _buildTablet() : _buildMobile(),
+            ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Exportar a Excel',
+        onPressed: _exportExcel,
+        child: const Icon(Icons.download),
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : resultados.isEmpty
-              ? const Center(child: Text('No hay resultados para mostrar.'))
-              : TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildResumenTab(),
-                  _buildTendenciaTab(),
-                  _buildComparativoTab(),
-                  _buildDistribucionTab(),
-                  _buildDetallesTab(),
-                ],
-              ),
     );
   }
 
-  Widget _buildResumenTab() {
-    double promedioGeneral = 0;
-    if (resultados.isNotEmpty) {
-      double suma = resultados.fold(
-        0,
-        (acc, item) => acc + (item['promedio'] ?? 0).toDouble(),
-      );
-      promedioGeneral = suma / resultados.length;
-    }
-
+  Widget _buildTablet() {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(12),
+      child: Row(
         children: [
-          Text(
-            'Promedio General: ${promedioGeneral.toStringAsFixed(2)}',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
           Expanded(
-            child: ListView.builder(
-              itemCount: resultados.length,
-              itemBuilder: (_, index) {
-                final item = resultados[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    title: Text(item['titulo'] ?? 'Sin título'),
-                    trailing: Text(
-                      (item['promedio'] ?? 0).toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    subtitle: LinearProgressIndicator(
-                      value: (item['promedio'] ?? 0) / 5.0,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _getColorForValue((item['promedio'] ?? 0)),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTendenciaTab() {
-    final data =
-        resultados.asMap().entries.map((entry) {
-          final index = entry.key.toDouble();
-          final value = (entry.value['promedio'] ?? 0).toDouble();
-          return FlSpot(index, value);
-        }).toList();
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Tendencia por Dimensión',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        return SideTitleWidget(
-                          axisSide: meta.axisSide,
-                          child: Text(value.toInt().toString()),
-                        );
-                      },
-                      reservedSize: 30,
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= 0 &&
-                            value.toInt() < resultados.length) {
-                          final titulo =
-                              resultados[value.toInt()]['titulo'] ?? '';
-                          return SideTitleWidget(
-                            axisSide: meta.axisSide,
-                            child: Text(
-                              titulo.toString().replaceAll('Dimensión ', 'D'),
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                      reservedSize: 30,
-                    ),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                minY: 0,
-                maxY: 5,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: data,
-                    isCurved: true,
-                    barWidth: 3,
-                    color: Colors.blue,
-                    belowBarData: BarAreaData(
-                      show: true,
-                      // ignore: deprecated_member_use
-                      color: Colors.blue.withOpacity(0.2),
-                    ),
-                    dotData: const FlDotData(show: true),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComparativoTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Comparativo por Rol',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: 5,
-                barGroups:
-                    resultados.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final result = entry.value;
-                      return BarChartGroupData(
-                        x: index,
-                        barRods: [
-                          BarChartRodData(
-                            toY: (result['promedio_ejecutivo'] ?? 0).toDouble(),
-                            color: Colors.blue,
-                            width: 15,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(3),
-                            ),
-                          ),
-                          BarChartRodData(
-                            toY: (result['promedio_gerente'] ?? 0).toDouble(),
-                            color: Colors.orange,
-                            width: 15,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(3),
-                            ),
-                          ),
-                          BarChartRodData(
-                            toY: (result['promedio_miembro'] ?? 0).toDouble(),
-                            color: Colors.green,
-                            width: 15,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(3),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: true),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= 0 &&
-                            value.toInt() < resultados.length) {
-                          final titulo =
-                              resultados[value.toInt()]['titulo'] ?? '';
-                          return SideTitleWidget(
-                            axisSide: meta.axisSide,
-                            child: Text(
-                              titulo.toString().replaceAll('Dimensión ', 'D'),
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                      reservedSize: 30,
-                    ),
-                  ),
-                ),
-                gridData: const FlGridData(show: true),
-                borderData: FlBorderData(show: true),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLeyenda('Ejecutivo', Colors.blue),
-              const SizedBox(width: 16),
-              _buildLeyenda('Gerente', Colors.orange),
-              const SizedBox(width: 16),
-              _buildLeyenda('Miembro', Colors.green),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLeyenda(String texto, Color color) {
-    return Row(
-      children: [
-        Container(width: 16, height: 16, color: color),
-        const SizedBox(width: 4),
-        Text(texto),
-      ],
-    );
-  }
-
-  Widget _buildDistribucionTab() {
-    final sections =
-        resultados.asMap().entries.map((entry) {
-          final index = entry.key;
-          final item = entry.value;
-          final value = (item['promedio'] ?? 0).toDouble();
-          return PieChartSectionData(
-            value: value,
-            title: value.toStringAsFixed(1),
-            radius: 80,
-            titleStyle: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-            color: colores[index % colores.length],
-          );
-        }).toList();
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Distribución de Calificaciones',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: PieChart(
-              PieChartData(
-                sections: sections,
-                centerSpaceRadius: 40,
-                sectionsSpace: 2,
-                pieTouchData: PieTouchData(touchCallback: (event, response) {}),
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: resultados.length,
-              itemBuilder: (_, index) {
-                final item = resultados[index];
-                return Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        color: colores[index % colores.length],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(item['titulo'] ?? 'Sin título'),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetallesTab() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: resultados.length,
-      itemBuilder: (_, index) {
-        final item = resultados[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item['titulo'] ?? 'Sin título',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: _buildChartContainer(
+                    data: _dimAverages,
+                    builder: () => DonutChart(
+                      data: DashboardChartAdapter.toDonutChartData(_dimAverages),
+                      title: '3 Dimensiones',
+                      min: 0,
+                      max: 5,
+                    ),
                   ),
                 ),
-                const Divider(),
-                _buildDetalleRow(
-                  'Promedio General:',
-                  (item['promedio'] ?? 0).toStringAsFixed(2),
-                ),
-                _buildDetalleRow(
-                  'Ejecutivo:',
-                  (item['promedio_ejecutivo'] ?? 0).toStringAsFixed(2),
-                ),
-                _buildDetalleRow(
-                  'Gerente:',
-                  (item['promedio_gerente'] ?? 0).toStringAsFixed(2),
-                ),
-                _buildDetalleRow(
-                  'Miembro:',
-                  (item['promedio_miembro'] ?? 0).toStringAsFixed(2),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _buildChartContainer(
+                    data: _lineAverages,
+                    builder: () => LineChartSample(
+                      data: _lineAverages,
+                      title: 'Ejecutivo / Gerente / Miembro',
+                      minY: 0,
+                      maxY: 5,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetalleRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-          Text(value, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                Expanded(
+                  child: _buildChartContainer(
+                    data: _princAverages,
+                    builder: () => ScatterBubbleChart(
+                      data: DashboardChartAdapter.toScatterBubbleData(_princAverages),
+                      title: '10 Principios',
+                      minValue: 0,
+                      maxValue: 5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _buildChartContainer(
+                    data: _behavAverages,
+                    builder: () => GroupedBarChart(
+                      data: _behavAverages,
+                      title: '28 Comportamientos',
+                      minY: 0,
+                      maxY: 5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _buildChartContainer(
+                    data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
+                    builder: () => BehaviorsScrollChart(
+                      data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
+                      title: 'Scroll por Principios',
+                      minY: 0,
+                      maxY: 5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: _buildChartContainer(
+                    data: _sysAverages,
+                    builder: () => HorizontalBarSystemsChart(
+                      data: _sysAverages,
+                      title: 'Sistemas Asociados',
+                      min: 0,
+                      max: 5, minY: 0, maxY: 5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _buildChartContainer(
+                    data: _princAverages,
+                    builder: () => RadarChartWidget(
+                      data: _princAverages,
+                      title: 'Radar Principios',
+                      min: 0,
+                      max: 5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Color _getColorForValue(double value) {
-    if (value >= 4.5) return Colors.green.shade800;
-    if (value >= 4.0) return Colors.green;
-    if (value >= 3.5) return Colors.lightGreen;
-    if (value >= 3.0) return Colors.amber;
-    if (value >= 2.5) return Colors.orange;
-    if (value >= 2.0) return Colors.deepOrange;
-    return Colors.red;
+  Widget _buildMobile() {
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        SizedBox(
+          height: 250,
+          child: _buildChartContainer(
+            data: _dimAverages,
+            builder: () => DonutChart(
+              data: DashboardChartAdapter.toDonutChartData(_dimAverages),
+              title: '3 Dimensiones',
+              min: 0,
+              max: 5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 250,
+          child: _buildChartContainer(
+            data: _lineAverages,
+            builder: () => LineChartSample(
+              data: _lineAverages,
+              title: 'Ejecutivo / Gerente / Miembro',
+              minY: 0,
+              maxY: 5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 250,
+          child: _buildChartContainer(
+            data: _princAverages,
+            builder: () => ScatterBubbleChart(
+              data: DashboardChartAdapter.toScatterBubbleData(_princAverages),
+              title: '10 Principios',
+              minValue: 0,
+              maxValue: 5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 250,
+          child: _buildChartContainer(
+            data: _behavAverages,
+            builder: () => GroupedBarChart(
+              data: _behavAverages,
+              title: '28 Comportamientos',
+              minY: 0,
+              maxY: 5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 250,
+          child: _buildChartContainer(
+            data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
+            builder: () => BehaviorsScrollChart(
+              data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
+              title: 'Scroll por Principios',
+              minY: 0,
+              maxY: 5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 250,
+          child: _buildChartContainer(
+            data: _sysAverages,
+            builder: () => HorizontalBarSystemsChart(
+              data: _sysAverages,
+              title: 'Sistemas Asociados',
+              minY: 0,
+              maxY: 5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 250,
+          child: _buildChartContainer(
+            data: _princAverages,
+            builder: () => RadarChartWidget(
+              data: _princAverages,
+              title: 'Radar Principios',
+              min: 0,
+              max: 5,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
+
+class DashboardChartAdapter {
+  static List<DonutChartData> toDonutChartData(List<models.LevelAverages> list) {
+    return list.map((e) => DonutChartData(label: e.nombre, value: e.general)).toList();
+  }
+
+  static List<ScatterBubbleData> toScatterBubbleData(List<models.LevelAverages> list) {
+    return list.map((e) => ScatterBubbleData(x: e.id.toDouble(), y: e.general)).toList();
+  }
+
+  static List<double> toRadarValues(List<models.LevelAverages> list) {
+    return list.map((e) => e.general).toList();
+  }
+
+  static List<String> toRadarLabels(List<models.LevelAverages> list) {
+    return list.map((e) => e.nombre).toList();
+  }
+}
+
+class DonutChartData {
+  final String label;
+  final double value;
+  DonutChartData({required this.label, required this.value});
+}
+
+// Removed duplicate ScatterBubbleData class definition to avoid conflicts.
