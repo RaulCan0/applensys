@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// dashboard_screen.dart (corregido para evitar ScaffoldMessenger en initState)
 
 import 'package:applensys/charts/behavior_scroll_chart.dart';
 import 'package:applensys/charts/donut_chart.dart';
@@ -13,11 +13,7 @@ import 'package:applensys/models/level_averages.dart' as models;
 import '../models/empresa.dart';
 import '../services/supabase_service.dart';
 import '../services/excel_exporter.dart';
-
-// Removed duplicate ScatterBubbleData class definition.
-// Ensure to import the ScatterBubbleData class from the correct file.
 import 'package:applensys/charts/scatter_bubble_chart.dart' show ScatterBubbleData;
-
 
 class DashboardScreen extends StatefulWidget {
   final Empresa? empresa;
@@ -40,10 +36,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAllData();
+    _loadAllData(silent: true);
   }
 
-  Future<void> _loadAllData() async {
+  Future<void> _loadAllData({bool silent = false}) async {
     setState(() => _isLoading = true);
     final svc = SupabaseService();
     try {
@@ -53,14 +49,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _behavAverages = await svc.getBehaviorAverages(widget.empresa!.id as int);
       _sysAverages   = await svc.getSystemAverages(widget.empresa!.id as int);
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Offline: cargando datos locales')),
-      );
       _dimAverages   = await svc.getLocalDimensionAverages();
       _lineAverages  = await svc.getLocalLevelLineData();
       _princAverages = await svc.getLocalPrinciplesAverages();
       _behavAverages = await svc.getLocalBehaviorAverages();
       _sysAverages   = await svc.getLocalSystemAverages();
+
+      if (!silent && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Offline: cargando datos locales')),
+          );
+        });
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -72,14 +73,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         behaviorAverages: _behavAverages,
         systemAverages: _sysAverages,
       );
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Excel generado: ${file.path}')),
       );
-    } catch (e) {
+        } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al generar Excel: $e')),
       );
-    }
+        }
   }
 
   Widget _buildChartContainer({
