@@ -359,210 +359,153 @@ Future<void> insertar(String tabla, Map<String, dynamic> valores) async {
         });
       }
     }
-  }
-  Future<List<LevelAverages>> getDimensionAverages(int empresaId) async {
+  }Future<List<LevelAverages>> getDimensionAverages(dynamic empresaId) async {
   final res = await _client
       .from('detalle_evaluacion')
       .select('dimension_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId.toString());
 
   return (res as List).map((m) => LevelAverages(
-        id: m['dimension_id'] as int,
-        nombre: 'Dimensión ${m['dimension_id']}',
-        ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
-        gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
-        miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
-        dimensionId: m['dimension_id'] as int,
-        general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3, nivel: '',
-      )).toList();
+    id: m['dimension_id'] as int,
+    nombre: 'Dimensión ${m['dimension_id']}',
+    ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+    gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+    miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+    dimensionId: m['dimension_id'] as int,
+    general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+              ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+              ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+    nivel: '',
+  )).toList();
 }
-
-Future<List<LevelAverages>> getLevelLineData(int empresaId) async {
+Future<List<LevelAverages>> getLevelLineData(dynamic empresaId) async {
   final res = await _client
       .from('detalle_evaluacion')
       .select('nivel, avg(calificacion) as promedio')
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId.toString());
 
   return (res as List).map((m) {
+    final nivel = (m['nivel'] as String).trim();
     final promedio = (m['promedio'] as num?)?.toDouble() ?? 0.0;
+
+    double ejecutivo = 0.0;
+    double gerente = 0.0;
+    double miembro = 0.0;
+
+    switch (nivel.toLowerCase()) {
+      case 'ejecutivo':
+        ejecutivo = promedio;
+        break;
+      case 'gerente':
+        gerente = promedio;
+        break;
+      case 'miembro':
+        miembro = promedio;
+        break;
+    }
+
     return LevelAverages(
-      id: nivelToId(m['nivel'] as String),
-      nombre: m['nivel'] as String,
-      ejecutivo: promedio,
-      gerente: promedio,
-      miembro: promedio,
+      id: 0,
+      nombre: nivel,
+      ejecutivo: ejecutivo,
+      gerente: gerente,
+      miembro: miembro,
       dimensionId: 0,
-      general: promedio, nivel: '',
+      general: promedio,
+      nivel: nivel,
     );
   }).toList();
 }
-
-Future<List<LevelAverages>> getPrinciplesAverages(int empresaId) async {
+Future<List<LevelAverages>> getPrinciplesAverages(dynamic empresaId) async {
   final res = await _client
       .from('detalle_evaluacion')
       .select('principio_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId.toString());
 
   return (res as List).map((m) => LevelAverages(
-        id: m['principio_id'] as int,
-        nombre: 'Principio ${m['principio_id']}',
-        ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
-        gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
-        miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
-        dimensionId: 0,
-        general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3, nivel: '',
-      )).toList();
+    id: m['principio_id'] as int,
+    nombre: 'Principio ${m['principio_id']}',
+    ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+    gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+    miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+    dimensionId: 0,
+    general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+              ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+              ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+    nivel: '',
+  )).toList();
 }
 
-Future<List<LevelAverages>> getBehaviorAverages(int empresaId) async {
+Future<List<LevelAverages>> getBehaviorAverages(dynamic empresaId) async {
   final res = await _client
       .from('detalle_evaluacion')
       .select('comportamiento_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId.toString());
 
   return (res as List).map((m) => LevelAverages(
-        id: m['comportamiento_id'] as int,
-        nombre: 'Comportamiento ${m['comportamiento_id']}',
-        ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
-        gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
-        miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
-        dimensionId: 0,
-        general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3, nivel: '',
-      )).toList();
+    id: m['comportamiento_id'] as int,
+    nombre: 'Comportamiento ${m['comportamiento_id']}',
+    ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+    gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+    miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+    dimensionId: 0,
+    general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+              ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+              ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+    nivel: '',
+  )).toList();
 }
 
-Future<List<LevelAverages>> getSystemAverages(int empresaId) async {
+Future<List<LevelAverages>> getSystemAverages(dynamic empresaId) async {
   final res = await _client
       .from('detalle_sistema')
       .select('sistema_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId.toString());
 
   return (res as List).map((m) => LevelAverages(
-        id: m['sistema_id'] as int,
-        nombre: 'Sistema ${m['sistema_id']}',
-        ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
-        gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
-        miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
-        dimensionId: 0,
-        general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
-                  ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3, nivel: '',
-      )).toList();
+    id: m['sistema_id'] as int,
+    nombre: 'Sistema ${m['sistema_id']}',
+    ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+    gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+    miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+    dimensionId: 0,
+    general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+              ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+              ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+    nivel: '',
+  )).toList();
+}
+Future<double> obtenerProgresoAsociado({
+  required String evaluacionId,
+  required String asociadoId,
+  required String dimensionId,
+}) async {
+  final response = await _client
+      .from('calificaciones')
+      .select('comportamiento')
+      .eq('id_asociado', asociadoId)
+      .eq('id_empresa', evaluacionId)
+      .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
+
+  final total = response.length;
+  final mapaTotales = {'1': 6, '2': 14, '3': 8};
+  final totalDimension = mapaTotales[dimensionId] ?? 1;
+  return total / totalDimension;
 }
 
-int nivelToId(String nivel) {
-  switch (nivel.toLowerCase()) {
-    case 'ejecutivo':
-      return 1;
-    case 'gerente':
-      return 2;
-    case 'miembro':
-      return 3;
-    default:
-      return 0;
-  }
+Future<double> obtenerProgresoDimension(String empresaId, String dimensionId) async {
+  final response = await _client
+      .from('calificaciones')
+      .select('comportamiento')
+      .eq('id_empresa', empresaId)
+      .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
+
+  final total = response.length;
+  final mapaTotales = {'1': 6, '2': 14, '3': 8};
+  final totalDimension = mapaTotales[dimensionId] ?? 1;
+  return total / totalDimension;
 }
 
-Future<void> subirArchivo(String bucket, String path, File archivo) async {
-  await _client.storage
-      .from(bucket)
-      .upload(path, archivo, fileOptions: const FileOptions(upsert: true));
-}
-
-  // ...otros métodos y propiedades...
-
-  Future<List<LevelAverages>> getLocalDimensionAverages() async {
-    return [
-      LevelAverages(id: 1, nombre: 'Liderazgo', ejecutivo: 4.1, gerente: 3.8, miembro: 4.0, dimensionId: 1, general: 4.0, nivel: ''),
-      LevelAverages(id: 2, nombre: 'Gestión', ejecutivo: 3.9, gerente: 4.0, miembro: 4.1, dimensionId: 2, general: 4.0, nivel: ''),
-      LevelAverages(id: 3, nombre: 'Tecnología', ejecutivo: 3.7, gerente: 3.9, miembro: 3.8, dimensionId: 3, general: 3.8, nivel: ''),
-    ];
-  }
-
-  Future<List<LevelAverages>> getLocalLevelLineData() async {
-    return [
-      LevelAverages(id: 1, nombre: 'Ejecutivo', ejecutivo: 4.2, gerente: 0, miembro: 0, dimensionId: 0, general: 4.2, nivel: 'Ejecutivo'),
-      LevelAverages(id: 2, nombre: 'Gerente', ejecutivo: 0, gerente: 3.9, miembro: 0, dimensionId: 0, general: 3.9, nivel: 'Gerente'),
-      LevelAverages(id: 3, nombre: 'Miembro', ejecutivo: 0, gerente: 0, miembro: 4.0, dimensionId: 0, general: 4.0, nivel: 'Miembro'),
-    ];
-  }
-
-  Future<List<LevelAverages>> getLocalPrinciplesAverages() async {
-    return [
-      LevelAverages(id: 1, nombre: 'Principio 1', ejecutivo: 4.0, gerente: 3.8, miembro: 4.1, dimensionId: 0, general: 4.0, nivel: ''),
-      LevelAverages(id: 2, nombre: 'Principio 2', ejecutivo: 3.7, gerente: 3.9, miembro: 3.8, dimensionId: 0, general: 3.8, nivel: ''),
-      LevelAverages(id: 3, nombre: 'Principio 3', ejecutivo: 4.2, gerente: 4.0, miembro: 4.1, dimensionId: 0, general: 4.1, nivel: ''),
-    ];
-  }
-
-  Future<List<LevelAverages>> getLocalBehaviorAverages() async {
-    return [
-      LevelAverages(id: 1, nombre: 'Comportamiento 1', ejecutivo: 4.1, gerente: 3.8, miembro: 4.0, dimensionId: 0, general: 4.0, nivel: ''),
-      LevelAverages(id: 2, nombre: 'Comportamiento 2', ejecutivo: 3.9, gerente: 4.0, miembro: 4.1, dimensionId: 0, general: 4.0, nivel: ''),
-      LevelAverages(id: 3, nombre: 'Comportamiento 3', ejecutivo: 3.7, gerente: 3.9, miembro: 3.8, dimensionId: 0, general: 3.8, nivel: ''),
-    ];
-  }
-
-  Future<List<LevelAverages>> getLocalSystemAverages() async {
-    return [
-      LevelAverages(id: 1, nombre: 'Sistema 1', ejecutivo: 4.0, gerente: 3.8, miembro: 4.1, dimensionId: 0, general: 4.0, nivel: ''),
-      LevelAverages(id: 2, nombre: 'Sistema 2', ejecutivo: 3.7, gerente: 3.9, miembro: 3.8, dimensionId: 0, general: 3.8, nivel: ''),
-      LevelAverages(id: 3, nombre: 'Sistema 3', ejecutivo: 4.2, gerente: 4.0, miembro: 4.1, dimensionId: 0, general: 4.1, nivel: ''),
-    ];
-  }
-  Future<double> obtenerProgresoDimension(String evaluacionId, String dimensionId) async {
-    try {
-      final respuesta = await _client
-          .from('detalle_evaluacion')
-          .select('comportamiento_id')
-          .eq('evaluacion_id', evaluacionId);
-
-      final List<dynamic> registros = respuesta;
-      final List<String> comportamientosEvaluados = registros
-          .map((r) => r['comportamiento_id'].toString())
-          .toSet()
-          .toList();
-
-      // Define qué comportamientos corresponden a cada dimensión
-      final Map<String, List<String>> comportamientosPorDimension = {
-        '1': [
-          'Soporte', 'Reconocimiento', 'Comunidad',
-          'Liderazgo de servidor', 'Valorar', 'Empoderamiento',
-          'Mentalidad', 'Estructura', 'Reflexionar',
-        ],
-        '2': [
-          'Análisis', 'Colaborar', 'Comprender',
-          'Diseño', 'Atribución', 'A prueba de error',
-          'Propiedad', 'Conectar', 'Ininterrumpido',
-        ],
-        '3': [
-          'Demanda', 'Eliminar', 'Optimizar',
-          'Impacto', 'Alinear', 'Aclarar',
-          'Comunicar', 'Relación', 'Valor', 'Medida',
-        ],
-      };
-
-      final List<String> comportamientosDimension = comportamientosPorDimension[dimensionId] ?? [];
-
-      if (comportamientosDimension.isEmpty) return 0.0;
-
-      final int total = comportamientosDimension.length;
-      final int evaluados = comportamientosDimension
-          .where((c) => comportamientosEvaluados.contains(c))
-          .length;
-
-      return evaluados / total;
-    } catch (e) {
-    ('Error al obtener progreso de dimensión: $e');
-      return 0.0;
-    }
-  }
 Future<void> guardarEvaluacionDraft(String evaluacionId) async {
   await _client
       .from('evaluaciones')
@@ -576,4 +519,21 @@ Future<void> finalizarEvaluacion(String evaluacionId) async {
       .update({'finalizada': true})
       .eq('id', evaluacionId);
 }
-}
+Future<double> calcularProgresoDimensionGlobal(String empresaId, String dimensionId) async {
+    try {
+      final response = await _client
+          .from('calificaciones')
+          .select('comportamiento')
+          .eq('id_empresa', empresaId)
+          .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
+
+      final evaluados = (response as List).map((e) => e['comportamiento'].toString()).toSet().length;
+
+      const mapaTotales = {'1': 6, '2': 14, '3': 8};
+      final totalDimension = mapaTotales[dimensionId] ?? 1;
+
+      return evaluados / totalDimension;
+    } catch (e) {
+      return 0.0;
+    }}
+} 

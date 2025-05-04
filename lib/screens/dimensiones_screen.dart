@@ -1,14 +1,16 @@
-// dimensiones_screen.dart COMPLETO y CORREGIDO
+// ignore_for_file: use_build_context_synchronously
 
-import 'package:applensys/screens/asociado_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/empresa.dart';
 import '../services/supabase_service.dart';
 import '../widgets/drawer_lensys.dart';
 import 'empresas_screen.dart';
+import 'asociado_screen.dart';
 
-class DimensionesScreen extends StatelessWidget {
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
+class DimensionesScreen extends StatefulWidget {
   final Empresa empresa;
   final String evaluacionId;
 
@@ -18,6 +20,11 @@ class DimensionesScreen extends StatelessWidget {
     required this.evaluacionId,
   });
 
+  @override
+  State<DimensionesScreen> createState() => _DimensionesScreenState();
+}
+
+class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
   final List<Map<String, dynamic>> dimensiones = const [
     {
       'id': '1',
@@ -40,6 +47,24 @@ class DimensionesScreen extends StatelessWidget {
   ];
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Se llama cuando regresas a esta pantalla
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -58,7 +83,7 @@ class DimensionesScreen extends StatelessWidget {
           },
         ),
         title: Text(
-          'Dimensiones - ${empresa.nombre}',
+          'Dimensiones - ${widget.empresa.nombre}',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -108,22 +133,24 @@ class DimensionesScreen extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => AsociadoScreen(
-                                    empresa: empresa,
+                                    empresa: widget.empresa,
                                     dimensionId: dimension['id'],
+                                    evaluacionId: widget.evaluacionId,
                                   ),
                                 ),
                               );
+                              setState(() {}); // Por si no usas RouteObserver
                             },
                           ),
                           const SizedBox(height: 10),
                           FutureBuilder<double>(
                             future: SupabaseService().obtenerProgresoDimension(
-                              evaluacionId,
+                              widget.empresa.id,
                               dimension['id'],
                             ),
                             initialData: 0.0,
@@ -182,9 +209,8 @@ class DimensionesScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: () async {
-                    await SupabaseService().guardarEvaluacionDraft(evaluacionId);
-                    await EvaluacionCacheService().guardarPendiente(evaluacionId);
-                    // ignore: use_build_context_synchronously
+                    await SupabaseService().guardarEvaluacionDraft(widget.evaluacionId);
+                    await EvaluacionCacheService().guardarPendiente(widget.evaluacionId);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Progreso guardado localmente')),
                     );
@@ -199,9 +225,8 @@ class DimensionesScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: () async {
-                    await SupabaseService().finalizarEvaluacion(evaluacionId);
+                    await SupabaseService().finalizarEvaluacion(widget.evaluacionId);
                     await EvaluacionCacheService().eliminarPendiente();
-                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Evaluación finalizada')),
                     );

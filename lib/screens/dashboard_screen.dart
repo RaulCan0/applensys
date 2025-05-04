@@ -49,11 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _behavAverages = await svc.getBehaviorAverages(widget.empresa!.id as int);
       _sysAverages   = await svc.getSystemAverages(widget.empresa!.id as int);
     } catch (_) {
-      _dimAverages   = await svc.getLocalDimensionAverages();
-      _lineAverages  = await svc.getLocalLevelLineData();
-      _princAverages = await svc.getLocalPrinciplesAverages();
-      _behavAverages = await svc.getLocalBehaviorAverages();
-      _sysAverages   = await svc.getLocalSystemAverages();
+   
 
       if (!silent && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
