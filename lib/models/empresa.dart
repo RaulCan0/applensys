@@ -10,6 +10,7 @@ class Empresa {
   final int areas;
   final String sector;
 
+
   Empresa({
     required this.id,
     required this.nombre,
