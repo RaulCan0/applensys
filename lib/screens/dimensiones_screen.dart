@@ -1,5 +1,4 @@
-// ARCHIVO: dimensiones_screen.dart
-// ignore_for_file: use_build_context_synchronously
+// dimensiones_screen.dart COMPLETO y CORREGIDO
 
 import 'package:applensys/screens/asociado_screen.dart';
 import 'package:flutter/material.dart';
@@ -125,20 +124,17 @@ class DimensionesScreen extends StatelessWidget {
                           FutureBuilder<double>(
                             future: SupabaseService().obtenerProgresoDimension(
                               evaluacionId,
-                              dimension['id'], // ✅ CORREGIDO: ya es String
+                              dimension['id'],
                             ),
                             initialData: 0.0,
                             builder: (context, snapshot) {
                               if (snapshot.connectionState == ConnectionState.waiting) {
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const LinearProgressIndicator(),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      'Cargando progreso...',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
+                                  children: const [
+                                    LinearProgressIndicator(),
+                                    SizedBox(height: 4),
+                                    Text('Cargando progreso...', style: TextStyle(fontSize: 12)),
                                   ],
                                 );
                               }
@@ -159,10 +155,7 @@ class DimensionesScreen extends StatelessWidget {
                                     color: dimension['color'],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    '${(progreso * 100).toStringAsFixed(1)}% completado',
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
+                                  Text('${(progreso * 100).toStringAsFixed(1)}% completado', style: const TextStyle(fontSize: 12)),
                                 ],
                               );
                             },
@@ -191,6 +184,7 @@ class DimensionesScreen extends StatelessWidget {
                   onPressed: () async {
                     await SupabaseService().guardarEvaluacionDraft(evaluacionId);
                     await EvaluacionCacheService().guardarPendiente(evaluacionId);
+                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Progreso guardado localmente')),
                     );
@@ -207,6 +201,7 @@ class DimensionesScreen extends StatelessWidget {
                   onPressed: () async {
                     await SupabaseService().finalizarEvaluacion(evaluacionId);
                     await EvaluacionCacheService().eliminarPendiente();
+                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Evaluación finalizada')),
                     );

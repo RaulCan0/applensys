@@ -1,6 +1,7 @@
 import 'package:applensys/models/empresa.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:applensys/screens/dashboard_screen.dart';
 import '../widgets/drawer_lensys.dart';
 
 class DetallesEvaluacionScreen extends StatefulWidget {
@@ -48,15 +49,20 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () {
-              _scaffoldKey.currentState?.openEndDrawer();
-            },
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: dimensiones.map((d) => Tab(text: d)).toList(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kTextTabBarHeight),
+          child: Center(
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabs: dimensiones.map((d) => Tab(text: d)).toList(),
+              indicatorSize: TabBarIndicatorSize.label,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+          ),
         ),
       ),
       endDrawer: const DrawerLensys(),
@@ -81,6 +87,19 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildPromedioGeneralCard(context, promedios),
+          const SizedBox(height: 16),
+          Center(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.dashboard),
+              label: const Text('Ver Dashboard'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => DashboardScreen()),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -106,7 +125,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: width * 0.4,
+              height: width * 0.25,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.center,
@@ -122,15 +141,15 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 28,
+                        reservedSize: 20,
                         getTitlesWidget: _leftTitleWidget,
                       ),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        reservedSize: 20,
                         getTitlesWidget: _bottomTitleWidget,
-                        reservedSize: 26,
                       ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -151,14 +170,11 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
                   ),
                   const SizedBox(height: 8),
                   CircleAvatar(
-                    radius: 26,
+                    radius: 20,
                     backgroundColor: _getColor(general),
                     child: Text(
                       general.toStringAsFixed(1),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -173,14 +189,16 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
   BarChartGroupData _buildBarGroup(int x, double y, Color color) {
     return BarChartGroupData(
       x: x,
-      barRods: [BarChartRodData(toY: y, color: color, width: 14, borderRadius: BorderRadius.circular(6))],
+      barRods: [
+        BarChartRodData(toY: y, color: color, width: 10, borderRadius: BorderRadius.circular(6)),
+      ],
     );
   }
 
   Widget _leftTitleWidget(double value, TitleMeta meta) {
     if (value % 1 == 0) {
       return Padding(
-        padding: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.only(right: 4),
         child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
       );
     }

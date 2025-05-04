@@ -80,7 +80,7 @@ class DrawerLensys extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const TablasDimensionScreen(dimension: 'Dimensión 1', empresaId: 'someEmpresaId')),
+                  MaterialPageRoute(builder: (_) => const TablasDimensionScreen(empresaId: 'defaultId', dimension: 'defaultDimension')),
                 );
               },
             ),

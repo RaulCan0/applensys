@@ -469,6 +469,12 @@ int nivelToId(String nivel) {
   }
 }
 
+Future<void> subirArchivo(String bucket, String path, File archivo) async {
+  await _client.storage
+      .from(bucket)
+      .upload(path, archivo, fileOptions: const FileOptions(upsert: true));
+}
+
   // ...otros métodos y propiedades...
 
   Future<List<LevelAverages>> getLocalDimensionAverages() async {
