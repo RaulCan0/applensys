@@ -144,7 +144,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                                   ),
                                 ),
                               );
-                              setState(() {}); // Por si no usas RouteObserver
+                              setState(() {}); // Refresca el progreso al volver
                             },
                           ),
                           const SizedBox(height: 10),
@@ -229,6 +229,12 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                     await EvaluacionCacheService().eliminarPendiente();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Evaluación finalizada')),
+                    );
+                    await Future.delayed(const Duration(milliseconds: 500));
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const EmpresasScreen()),
+                      (route) => false,
                     );
                   },
                 ),

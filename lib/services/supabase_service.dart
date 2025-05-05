@@ -494,16 +494,21 @@ Future<double> obtenerProgresoAsociado({
 }
 
 Future<double> obtenerProgresoDimension(String empresaId, String dimensionId) async {
-  final response = await _client
-      .from('calificaciones')
-      .select('comportamiento')
-      .eq('id_empresa', empresaId)
-      .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
+  try {
+    final response = await _client
+        .from('calificaciones')
+        .select('comportamiento')
+        .eq('id_empresa', empresaId)
+        .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
 
-  final total = response.length;
-  final mapaTotales = {'1': 6, '2': 14, '3': 8};
-  final totalDimension = mapaTotales[dimensionId] ?? 1;
-  return total / totalDimension;
+    final total = (response as List).length;
+    const mapaTotales = {'1': 6, '2': 14, '3': 8};
+    final totalDimension = mapaTotales[dimensionId] ?? 1;
+
+    return total / totalDimension;
+  } catch (e) {
+    return 0.0; // Return 0.0 in case of an error
+  }
 }
 
 Future<void> guardarEvaluacionDraft(String evaluacionId) async {
@@ -536,4 +541,6 @@ Future<double> calcularProgresoDimensionGlobal(String empresaId, String dimensio
     } catch (e) {
       return 0.0;
     }}
+   
+
 } 

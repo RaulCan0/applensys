@@ -7,10 +7,14 @@ import '../widgets/drawer_lensys.dart';
 class DetallesEvaluacionScreen extends StatefulWidget {
   /// Mapa de dimensiones a sus promedios por nivel (Ejecutivo, Gerente, Miembro, General)
   final Map<String, Map<String, double>> dimensionesPromedios;
+  final Empresa empresa;
+  final String evaluacionId;
 
   const DetallesEvaluacionScreen({
     super.key,
-    required this.dimensionesPromedios, required Map promedios, required String dimension,
+    required this.dimensionesPromedios,
+    required this.empresa,
+    required this.evaluacionId,
   });
 
   @override
@@ -95,7 +99,12 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => DashboardScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => DashboardScreen(
+                      empresa: widget.empresa,
+                      evaluacionId: widget.evaluacionId,
+                    ),
+                  ),
                 );
               },
             ),

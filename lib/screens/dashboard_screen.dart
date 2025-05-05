@@ -19,7 +19,7 @@ class DashboardScreen extends StatefulWidget {
   final Empresa? empresa;
   final int? dimensionId;
 
-  const DashboardScreen({super.key, this.empresa, this.dimensionId});
+  const DashboardScreen({super.key, this.empresa, this.dimensionId, required String evaluacionId});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -369,4 +369,5 @@ class DonutChartData {
   DonutChartData({required this.label, required this.value});
 }
 
-// Removed duplicate ScatterBubbleData class definition to avoid conflicts.
+
+

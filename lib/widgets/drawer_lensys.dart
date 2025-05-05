@@ -1,3 +1,4 @@
+import 'package:applensys/models/empresa.dart';
 import 'package:applensys/screens/auth/loader_screen.dart';
 import 'package:applensys/widgets/chat_scren.dart';
 import 'package:flutter/material.dart';
@@ -80,7 +81,7 @@ class DrawerLensys extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const TablasDimensionScreen(empresaId: 'defaultId', dimension: 'defaultDimension')),
+                  MaterialPageRoute(builder: (_) => TablasDimensionScreen(empresa: Empresa(id: 'defaultId', nombre: 'Default Empresa', tamano: 'Default Tamano', empleadosTotal: 0, empleadosAsociados: [], unidades: 'Default Unidades', areas: 0, sector: 'Default Sector'), dimension: 'defaultDimension', empresaId: '',)),
                 );
               },
             ),
@@ -91,10 +92,10 @@ class DrawerLensys extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const DetallesEvaluacionScreen(
-                      dimensionesPromedios: {},
-                      promedios: {},
-                      dimension: '',
+                    builder: (_) => DetallesEvaluacionScreen(
+                      dimensionesPromedios: const {},
+                      empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: ''),
+                      evaluacionId: '',
                     ),
                   ),
                 );
@@ -126,7 +127,7 @@ class DrawerLensys extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                  MaterialPageRoute(builder: (_) => DashboardScreen(empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: ''), evaluacionId: '')),
                 );
               },
             ),
@@ -170,6 +171,39 @@ const Divider(),
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*import 'package:applensys/screens/auth/loader_screen.dart';
 import 'package:flutter/material.dart';

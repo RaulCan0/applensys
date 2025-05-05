@@ -97,7 +97,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => tablas_screen.TablasDimensionScreen(empresaId: widget.empresa.id, dimension: '',),
+                  builder: (_) => tablas_screen.TablasDimensionScreen(empresaId: widget.empresa.id, dimension: '', empresa: widget.empresa),
                 ),
               );
             },
