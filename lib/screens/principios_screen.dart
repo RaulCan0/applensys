@@ -88,19 +88,29 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre}'),
+        title: Center(
+          child: Text(
+        'Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre}',
+        style: const TextStyle(color: Colors.white),
+          ),
+        ),
         backgroundColor: Colors.indigo,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.table_chart_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => tablas_screen.TablasDimensionScreen(empresaId: widget.empresa.id, dimension: '', empresa: widget.empresa),
-                ),
-              );
-            },
+        icon: const Icon(Icons.table_chart_outlined, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+          builder: (_) => tablas_screen.TablasDimensionScreen(
+            empresaId: widget.empresa.id,
+            dimension: '',
+            empresa: widget.empresa,
+          ),
+            ),
+          );
+        },
           ),
         ],
       ),

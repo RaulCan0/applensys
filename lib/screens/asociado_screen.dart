@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/asociado.dart';
 import '../models/empresa.dart';
 import 'principios_screen.dart';
+import '../widgets/drawer_lensys.dart';
 
 class AsociadoScreen extends StatefulWidget {
   final Empresa empresa;
@@ -179,9 +180,28 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
       key: _scaffoldMessengerKey,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Asociados - ${widget.empresa.nombre}'),
           backgroundColor: Colors.indigo,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Center(
+            child: Text(
+              'Asociados - ${widget.empresa.nombre}',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
+          ],
         ),
+        endDrawer: const DrawerLensys(),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: asociados.isEmpty
