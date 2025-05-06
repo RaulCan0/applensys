@@ -40,7 +40,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 34),
                 Text(
                   'LEAN TRAINING CENTER',
                   style: TextStyle(

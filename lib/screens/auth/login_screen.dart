@@ -14,10 +14,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
-    // Create an instance of SupabaseService
     final supabaseService = SupabaseService();
     final success = await supabaseService.login(
       _emailController.text,
@@ -25,64 +25,130 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     setState(() => _isLoading = false);
 
-    if (success) {
-      await Future.delayed(const Duration(milliseconds: 500)); // Espera segura
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const AuthGuard()),
-          (route) => false,
-        );
-      }
+    if (success && mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthGuard()),
+        (route) => false,
+      );
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al iniciar sesión')),
-        );
-      }
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al iniciar sesión')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Iniciar Sesión'),
-        backgroundColor: Colors.indigo,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('Correo Electrónico'),
-            TextField(controller: _emailController),
-            const SizedBox(height: 16),
-            const Text('Contraseña'),
-            TextField(controller: _passwordController, obscureText: true),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RecoveryScreen()),
+      // Usamos Stack para incluir el fondo y un botón de "Atrás" en la parte superior
+      body: Stack(
+        children: [
+          // Fondo con gradiente y curva
+          Container(
+            height: 320,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.indigo, Colors.blue],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(40),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: const Padding(
+              padding: EdgeInsets.only(top: 40), // espacio para el botón de atrás
+              child: Text(
+                'Bienvenido de nuevo',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Botón "Atrás" en la parte superior izquierda
+          Positioned(
+            top: 16,
+            left: 16,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          // Formulario
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 280, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Correo electrónico',
+                    border: OutlineInputBorder(),
                   ),
-              child: const Text('¿Olvidaste tu contraseña?'),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RecoveryScreen()),
+                  ),
+                  child: const Text(
+                  '¿Olvidaste tu contraseña?',
+                  style: TextStyle(color: Colors.black),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              
+              
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text(
+                      'Iniciar Sesión',
+                      style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      ),
+                    ),
+                ),
+                const SizedBox(height: 30),
+                        
+                
+              ],
             ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _login,
-              child:
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Iniciar Sesión'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

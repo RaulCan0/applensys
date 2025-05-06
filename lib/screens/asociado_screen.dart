@@ -1,5 +1,7 @@
 // asociado_screen.dart
 
+import 'dart:math';
+
 import 'package:applensys/services/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,7 +18,8 @@ class AsociadoScreen extends StatefulWidget {
   const AsociadoScreen({
     super.key,
     required this.empresa,
-    required this.dimensionId, required String evaluacionId,
+    required this.dimensionId,
+    required String evaluacionId,
   });
 
   @override
@@ -29,6 +32,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
   List<Asociado> asociados = [];
   final Map<String, double> progresoAsociado = {};
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -179,6 +183,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
     return ScaffoldMessenger(
       key: _scaffoldMessengerKey,
       child: Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           backgroundColor: Colors.indigo,
           centerTitle: true,
@@ -195,9 +200,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () {
-                Scaffold.of(context).openEndDrawer();
-              },
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
           ],
         ),

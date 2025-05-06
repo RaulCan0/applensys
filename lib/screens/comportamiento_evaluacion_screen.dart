@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:io';
 import 'package:applensys/models/calificacion.dart';
 import 'package:applensys/screens/tablas_screen.dart';
@@ -280,7 +278,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       appBar: AppBar(
         backgroundColor: Colors.indigo,
         centerTitle: true,
-        title: Text('Evaluar: ${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
+        title: Text('Estás evaluando el principio ${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(

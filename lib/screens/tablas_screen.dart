@@ -49,18 +49,26 @@ class TablasDimensionScreen extends StatefulWidget {
 }
 
 class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool mostrarPromedio = false;
   final List<String> dimensiones = ['Dimensión 1', 'Dimensión 2', 'Dimensión 3'];
-
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: dimensiones.length,
       child: Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           backgroundColor: Colors.indigo,
           leading: const BackButton(color: Colors.white),
           title: const Text('Resultados', style: TextStyle(color: Colors.white)),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            ),
+          ],
           bottom: TabBar(
             indicatorColor: Colors.white,
             tabs: dimensiones.map((d) => Tab(text: d)).toList(),
@@ -174,6 +182,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
       ),
     );
   }
+
 
   List<DataRow> _buildRows(List<Map<String, dynamic>> filas) {
     final sumas = <String, Map<String, Map<String, int>>>{};

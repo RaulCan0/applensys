@@ -12,9 +12,9 @@ class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
 
   // AUTH
-  Future<Map<String, dynamic>> register(String email, String password) async {
+  Future<Map<String, dynamic>> register(String email, String password, String telefono) async {
     try {
-      await _client.auth.signUp(email: email, password: password);
+      await _client.auth.signUp(email: email, password: password, data: {'telefono': telefono});
       return {'success': true};
     } on AuthException catch (e) {
       return {'success': false, 'message': e.message};
