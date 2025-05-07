@@ -60,7 +60,6 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
 
   @override
   void didPopNext() {
-    // Se llama cuando regresas a esta pantalla
     setState(() {});
   }
 
@@ -144,7 +143,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                                   ),
                                 ),
                               );
-                              setState(() {}); // Refresca el progreso al volver
+                              setState(() {});
                             },
                           ),
                           const SizedBox(height: 10),
@@ -225,17 +224,23 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: () async {
-                    await SupabaseService().finalizarEvaluacion(widget.evaluacionId);
-                    await EvaluacionCacheService().eliminarPendiente();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Evaluación finalizada')),
-                    );
-                    await Future.delayed(const Duration(milliseconds: 500));
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EmpresasScreen()),
-                      (route) => false,
-                    );
+                    try {
+                      await SupabaseService().finalizarEvaluacion(widget.evaluacionId);
+                      await EvaluacionCacheService().eliminarPendiente();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('✅ Evaluación finalizada exitosamente')),
+                      );
+                      await Future.delayed(const Duration(milliseconds: 500));
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const EmpresasScreen()),
+                        (route) => false,
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('❌ Error al finalizar: $e')),
+                      );
+                    }
                   },
                 ),
               ],
@@ -265,3 +270,4 @@ class EvaluacionCacheService {
     await prefs.remove(_keyEvaluacionPendiente);
   }
 }
+

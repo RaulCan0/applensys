@@ -1,5 +1,6 @@
-// dashboard_screen.dart (corregido para evitar ScaffoldMessenger en initState)
+// dashboard_screen.dart (versión final completa, con soporte a modo debug y estructura_base.json)
 
+import 'dart:developer';
 import 'package:applensys/charts/behavior_scroll_chart.dart';
 import 'package:applensys/charts/donut_chart.dart';
 import 'package:applensys/charts/grouped_bar_chart.dart';
@@ -7,7 +8,9 @@ import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
 import 'package:applensys/charts/line_chart_sample.dart';
 import 'package:applensys/charts/scatter_bubble_chart.dart' show ScatterBubbleChart;
 import 'package:applensys/charts/radar_chart.dart';
+import 'package:applensys/utils/dashboard_mock_data.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/models/level_averages.dart' as models;
 import '../models/empresa.dart';
@@ -18,8 +21,9 @@ import 'package:applensys/charts/scatter_bubble_chart.dart' show ScatterBubbleDa
 class DashboardScreen extends StatefulWidget {
   final Empresa? empresa;
   final int? dimensionId;
+  final String evaluacionId;
 
-  const DashboardScreen({super.key, this.empresa, this.dimensionId, required String evaluacionId});
+  const DashboardScreen({super.key, this.empresa, this.dimensionId, required this.evaluacionId});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -41,26 +45,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadAllData({bool silent = false}) async {
     setState(() => _isLoading = true);
-    final svc = SupabaseService();
-    try {
-      _dimAverages   = await svc.getDimensionAverages(widget.empresa!.id as int);
-      _lineAverages  = await svc.getLevelLineData(widget.empresa!.id as int);
-      _princAverages = await svc.getPrinciplesAverages(widget.empresa!.id as int);
-      _behavAverages = await svc.getBehaviorAverages(widget.empresa!.id as int);
-      _sysAverages   = await svc.getSystemAverages(widget.empresa!.id as int);
-    } catch (_) {
-   
 
-      if (!silent && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Offline: cargando datos locales')),
-          );
-        });
+    if (kDebugMode) {
+      log('Modo Debug activo: cargando datos mock desde estructura_base.json');
+      await Future.delayed(const Duration(milliseconds: 300));
+      _dimAverages = estructuraBaseMockDimension;
+      _lineAverages = estructuraBaseMockNiveles;
+      _princAverages = estructuraBaseMockPrincipios;
+      _behavAverages = estructuraBaseMockComportamientos;
+      _sysAverages = estructuraBaseMockSistemas;
+    } else {
+      final svc = SupabaseService();
+      try {
+        _dimAverages = await svc.getDimensionAverages(widget.empresa!.id);
+        _lineAverages = await svc.getLevelLineData(widget.empresa!.id);
+        _princAverages = await svc.getPrinciplesAverages(widget.empresa!.id);
+        _behavAverages = await svc.getBehaviorAverages(widget.empresa!.id);
+        _sysAverages = await svc.getSystemAverages(widget.empresa!.id);
+      } catch (_) {
+        if (!silent && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Offline: cargando datos locales')),
+            );
+          });
+        }
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
+
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _exportExcel() async {
@@ -73,12 +86,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Excel generado: ${file.path}')),
       );
-        } catch (e) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al generar Excel: $e')),
       );
-        }
+    }
   }
 
   Widget _buildChartContainer({
@@ -222,7 +235,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       data: _sysAverages,
                       title: 'Sistemas Asociados',
                       min: 0,
-                      max: 5, minY: 0, maxY: 5,
+                      max: 5,
+                      minY: 0,
+                      maxY: 5,
                     ),
                   ),
                 ),
@@ -368,6 +383,5 @@ class DonutChartData {
   final double value;
   DonutChartData({required this.label, required this.value});
 }
-
 
 

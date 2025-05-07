@@ -48,38 +48,26 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(
-        Icons.arrow_back,
-        color: Colors.white,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Detalles de Evaluación',
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
+        title: const Text('Detalles de Evaluación'),
         backgroundColor: Colors.indigo,
         actions: [
           IconButton(
-        icon: const Icon(
-          Icons.menu,
-          color: Colors.white,
-        ),
-        onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-          ),
-        ],
+            icon: const Icon(
+              Icons.menu,
+              color: Colors.white,
+            ),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),      ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kTextTabBarHeight),
           child: Center(
-        child: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: dimensiones.map((d) => Tab(text: d)).toList(),
-          indicatorSize: TabBarIndicatorSize.label,
-          labelPadding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabs: dimensiones.map((d) => Tab(text: d)).toList(),
+              indicatorSize: TabBarIndicatorSize.label,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
           ),
         ),
       ),

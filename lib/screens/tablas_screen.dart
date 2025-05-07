@@ -270,4 +270,5 @@ class SistemasPromedio {
   Map<String, int> conteoPorNivel() {
     return _sistemasPorNivel.map((nivel, set) => MapEntry(nivel, set.length));
   }
+  
 }
