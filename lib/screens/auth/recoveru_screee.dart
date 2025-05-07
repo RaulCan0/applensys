@@ -47,15 +47,26 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Ingresa tu correo'),
-            TextField(controller: _emailController),
+         
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+          labelText: 'Ingresa tu Correo electrónico',
+          border: OutlineInputBorder(),
+              ),
+            ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            OutlinedButton(
               onPressed: _isLoading ? null : _recover,
-              child:
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Enviar'),
+              style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.indigo, // Text color
+          side: const BorderSide(color: Colors.indigo), // Border color
+          backgroundColor: Colors.white, // Button background color
+              ),
+              child: _isLoading
+                ? const CircularProgressIndicator()
+                : const Text('Enviar'),
             ),
           ],
         ),

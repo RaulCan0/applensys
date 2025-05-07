@@ -19,7 +19,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
   }
 
   Future<void> _cargarDatos() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
     setState(() {
       _isReady = true;
     });

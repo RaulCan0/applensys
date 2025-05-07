@@ -47,20 +47,20 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           // Fondo con gradiente y curva
           Container(
-            height: 320,
-            decoration: const BoxDecoration(
+            height: 200,
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.indigo, Colors.blue],
+                colors: [const Color.fromARGB(255, 6, 30, 247), Colors.indigo],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(40),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(60),
               ),
             ),
             alignment: Alignment.center,
             child: const Padding(
-              padding: EdgeInsets.only(top: 40), // espacio para el botón de atrás
+              padding: EdgeInsets.only(top: 90), // espacio para el botón de atrás
               child: Text(
                 'Bienvenido de nuevo',
                 style: TextStyle(
@@ -86,6 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const SizedBox(height: 30), // Espacio entre el letrero y el TextField
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -115,36 +116,32 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 TextButton(
                   onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RecoveryScreen()),
+                    context,
+                    MaterialPageRoute(builder: (_) => const RecoveryScreen()),
                   ),
                   child: const Text(
-                  '¿Olvidaste tu contraseña?',
-                  style: TextStyle(color: Colors.black),
+                    '¿Olvidaste tu contraseña?',
+                    style: TextStyle(color: Colors.black),
                   ),
                 ),
                 const SizedBox(height: 20),
-              
-              
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: Colors.indigo,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text(
-                      'Iniciar Sesión',
-                      style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      ),
-                    ),
+                      ? const CircularProgressIndicator()
+                      : const Text(
+                          'Iniciar Sesión',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 30),
-                        
-                
               ],
             ),
           ),
