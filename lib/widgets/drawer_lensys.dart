@@ -81,7 +81,7 @@ class DrawerLensys extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => TablasDimensionScreen(empresa: Empresa(id: 'defaultId', nombre: 'Default Empresa', tamano: 'Default Tamano', empleadosTotal: 0, empleadosAsociados: [], unidades: 'Default Unidades', areas: 0, sector: 'Default Sector'), dimension: 'defaultDimension', empresaId: '',)),
+                  MaterialPageRoute(builder: (_) => TablasDimensionScreen(empresa: Empresa(id: 'defaultId', nombre: 'Default Empresa', tamano: 'Default Tamano', empleadosTotal: 0, empleadosAsociados: [], unidades: 'Default Unidades', areas: 0, sector: 'Default Sector', createdAt: DateTime.now()), dimension: 'defaultDimension', empresaId: '',)),
                 );
               },
             ),
@@ -94,7 +94,7 @@ class DrawerLensys extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => DetallesEvaluacionScreen(
                       dimensionesPromedios: const {},
-                      empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: ''),
+                      empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: '', createdAt: DateTime.now()),
                       evaluacionId: '',
                     ),
                   ),
@@ -107,7 +107,7 @@ class DrawerLensys extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => HistorialScreen(empresas: [])),
+                  MaterialPageRoute(builder: (_) => HistorialScreen(empresas: [], empresasHistorial: [],)),
                 );
               },
             ),
@@ -127,7 +127,7 @@ class DrawerLensys extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => DashboardScreen(empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: ''), evaluacionId: '')),
+                  MaterialPageRoute(builder: (_) => DashboardScreen(empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: '', createdAt: DateTime.now()), evaluacionId: '')),
                 );
               },
             ),

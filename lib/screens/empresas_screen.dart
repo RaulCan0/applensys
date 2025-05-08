@@ -23,16 +23,67 @@ class EmpresasScreen extends StatefulWidget {
 class _EmpresasScreenState extends State<EmpresasScreen> {
   final List<Empresa> empresas = [];
   bool isLoading = true;
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   String correoUsuario = '';
 
   @override
   void initState() {
     super.initState();
+    _verificarNuevoUsuario();
     _cargarEmpresas();
     _obtenerCorreoUsuario();
+  }
+
+  Future<void> _verificarNuevoUsuario() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final existe = await Supabase.instance.client
+        .from('usuarios')
+        .select()
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (existe == null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          title: const Text('¡Bienvenido a LensysApp!'),
+          content: const Text('¿Aceptas los términos y condiciones para continuar?'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Supabase.instance.client.auth.signOut();
+              },
+              child: const Text('No aceptar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final nombre = user.userMetadata?['nombre'] ?? 'Usuario';
+                final telefono = user.userMetadata?['telefono'] ?? '';
+
+                await Supabase.instance.client.from('usuarios').insert({
+                  'id': user.id,
+                  'email': user.email,
+                  'nombre': nombre,
+                  'telefono': telefono,
+                }).then((_) {
+                  Navigator.pop(context);
+                }).catchError((e) {
+                  debugPrint('❌ Error al insertar usuario: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al guardar usuario: $e')),
+                  );
+                });
+              },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _obtenerCorreoUsuario() async {
@@ -62,21 +113,14 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      // Drawer izquierdo: chat pequeño
-      drawer: SizedBox(
-        width: 300,
-        child: const ChatWidgetDrawer(),
-      ),
-      // Drawer derecho: menú de Lensys
+      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
       endDrawer: DrawerLensys(),
       appBar: AppBar(
         backgroundColor: Colors.indigo,
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.message, color: Colors.white),
-          onPressed: () {
-            _scaffoldKey.currentState?.openDrawer();
-          },
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         title: const Text(
           'LensysApp',
@@ -89,9 +133,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              _scaffoldKey.currentState?.openEndDrawer();
-            },
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
       ),
@@ -123,7 +165,8 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => DimensionesScreen(
-                                  empresa: empresaCreada, evaluacionId: '',
+                                  empresa: empresaCreada,
+                                  evaluacionId: '',
                                 ),
                               ),
                             ),
@@ -135,7 +178,10 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => HistorialScreen(empresas: empresas),
+                              builder: (_) => HistorialScreen(
+                                empresas: empresas,
+                                empresasHistorial: [],
+                              ),
                             ),
                           ),
                         ),
@@ -157,11 +203,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
     );
   }
 
-  Widget _buildButton(
-    BuildContext context, {
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildButton(BuildContext context, {required String label, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -175,13 +217,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const SizedBox(width: 20),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.indigo,
-              ),
-            ),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
             const Padding(
               padding: EdgeInsets.only(right: 20),
               child: Icon(Icons.chevron_right, color: Colors.indigo),
@@ -203,27 +239,20 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text(
-          'Registrar nueva empresa',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
+        title: const Text('Registrar nueva empresa',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         content: SingleChildScrollView(
           child: Column(
             children: [
               TextField(
                 controller: nombreController,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: empleadosController,
                 decoration: const InputDecoration(
-                  labelText: 'Total de empleados en la empresa',
-                  border: OutlineInputBorder(),
-                ),
+                    labelText: 'Total de empleados en la empresa', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
@@ -284,6 +313,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                   unidades: unidadesController.text.trim(),
                   areas: int.tryParse(areasController.text.trim()) ?? 0,
                   sector: sectorController.text.trim(),
+                  createdAt: DateTime.now(),
                 );
 
                 try {
@@ -294,17 +324,13 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                 } catch (e) {
                   debugPrint('❌ Error al guardar empresa: $e');
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al guardar empresa: $e')),
-                  );
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text('Error al guardar empresa: $e')));
                 }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
-            child: const Text(
-              'Guardar',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Guardar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

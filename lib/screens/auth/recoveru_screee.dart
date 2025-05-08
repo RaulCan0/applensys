@@ -12,23 +12,44 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   final _emailController = TextEditingController();
   bool _isLoading = false;
 
+  void _showAlert(String title, String message, {bool closeOnOk = false}) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (closeOnOk) Navigator.pop(context); // Vuelve atrás si se solicita
+            },
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _recover() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _showAlert('Error', 'Ingresa un correo electrónico válido');
+      return;
+    }
+
     setState(() => _isLoading = true);
     final supabaseService = SupabaseService();
-    final success = await supabaseService.resetPassword(_emailController.text);
+    final success = await supabaseService.resetPassword(email);
     setState(() => _isLoading = false);
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Correo enviado para restablecer contraseña'
-              : 'Error al enviar correo',
-        ),
-      ),
-    );
-    if (success) Navigator.pop(context);
+
+    if (success) {
+      _showAlert('Éxito', 'Se ha enviado un correo para restablecer la contraseña.', closeOnOk: true);
+    } else {
+      _showAlert('Error', 'No se pudo enviar el correo de recuperación');
+    }
   }
 
   @override
@@ -47,26 +68,25 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-         
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
-          labelText: 'Ingresa tu Correo electrónico',
-          border: OutlineInputBorder(),
+                labelText: 'Ingresa tu Correo electrónico',
+                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: _isLoading ? null : _recover,
               style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.indigo, // Text color
-          side: const BorderSide(color: Colors.indigo), // Border color
-          backgroundColor: Colors.white, // Button background color
+                foregroundColor: Colors.indigo,
+                side: const BorderSide(color: Colors.indigo),
+                backgroundColor: Colors.white,
               ),
               child: _isLoading
-                ? const CircularProgressIndicator()
-                : const Text('Enviar'),
+                  ? const CircularProgressIndicator()
+                  : const Text('Enviar'),
             ),
           ],
         ),

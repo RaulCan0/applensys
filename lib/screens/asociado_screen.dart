@@ -31,7 +31,6 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
   final SupabaseService _supabaseService = SupabaseService();
   List<Asociado> asociados = [];
   final Map<String, double> progresoAsociado = {};
-  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -55,9 +54,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
         asociados = asociadosCargados;
       });
     } catch (e) {
-      _scaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(content: Text('Error al cargar asociados: $e')),
-      );
+      _mostrarAlerta('Error', 'Error al cargar asociados: $e');
     }
   }
 
@@ -122,9 +119,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
               final antiguedad = int.tryParse(antiguedadTexto);
 
               if (nombre.isEmpty || antiguedad == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Completa todos los campos correctamente.')),
-                );
+                _mostrarAlerta('Error', 'Completa todos los campos correctamente.');
                 return;
               }
 
@@ -157,14 +152,10 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
 
                 if (mounted) Navigator.pop(context);
 
-                _scaffoldMessengerKey.currentState?.showSnackBar(
-                  const SnackBar(content: Text('Asociado agregado exitosamente')),
-                );
+                _mostrarAlerta('Éxito', 'Asociado agregado exitosamente.');
               } catch (e) {
                 if (mounted) Navigator.pop(context);
-                _scaffoldMessengerKey.currentState?.showSnackBar(
-                  SnackBar(content: Text('Error al guardar asociado: $e')),
-                );
+                _mostrarAlerta('Error', 'Error al guardar asociado: $e');
               }
             },
             style: ElevatedButton.styleFrom(
@@ -178,85 +169,98 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
     );
   }
 
+  void _mostrarAlerta(String titulo, String mensaje) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(titulo),
+        content: Text(mensaje),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ScaffoldMessenger(
-      key: _scaffoldMessengerKey,
-      child: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          backgroundColor: Colors.indigo,
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Center(
-            child: Text(
-              'Asociados - ${widget.empresa.nombre}',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-            ),
-          ],
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        backgroundColor: Colors.indigo,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        endDrawer: const DrawerLensys(),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: asociados.isEmpty
-              ? const Center(child: Text('No hay asociados registrados'))
-              : ListView.builder(
-                  itemCount: asociados.length,
-                  itemBuilder: (context, index) {
-                    final asociado = asociados[index];
-                    final progreso = progresoAsociado[asociado.id] ?? 0.0;
-                    return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.person_outline, color: Colors.indigo),
-                        title: Text(asociado.nombre),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${asociado.cargo.toUpperCase()} - ${asociado.antiguedad} años'),
-                            const SizedBox(height: 4),
-                            LinearProgressIndicator(
-                              value: progreso,
-                              backgroundColor: Colors.grey[300],
-                              color: Colors.green,
-                            ),
-                            Text('${(progreso * 100).toStringAsFixed(1)}% completado'),
-                          ],
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PrincipiosScreen(
-                                empresa: widget.empresa,
-                                asociado: asociado,
-                                dimensionId: widget.dimensionId,
-                              ),
-                            ),
-                          ).then((_) => _cargarAsociados());
-                        },
+        title: Center(
+          child: Text(
+            'Asociados - ${widget.empresa.nombre}',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
+      ),
+      endDrawer: const DrawerLensys(),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: asociados.isEmpty
+            ? const Center(child: Text('No hay asociados registrados'))
+            : ListView.builder(
+                itemCount: asociados.length,
+                itemBuilder: (context, index) {
+                  final asociado = asociados[index];
+                  final progreso = progresoAsociado[asociado.id] ?? 0.0;
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.person_outline, color: Colors.indigo),
+                      title: Text(asociado.nombre),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${asociado.cargo.toUpperCase()} - ${asociado.antiguedad} años'),
+                          const SizedBox(height: 4),
+                          LinearProgressIndicator(
+                            value: progreso,
+                            backgroundColor: Colors.grey[300],
+                            color: Colors.green,
+                          ),
+                          Text('${(progreso * 100).toStringAsFixed(1)}% completado'),
+                        ],
                       ),
-                    );
-                  },
-                ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PrincipiosScreen(
+                              empresa: widget.empresa,
+                              asociado: asociado,
+                              dimensionId: widget.dimensionId,
+                            ),
+                          ),
+                        ).then((_) => _cargarAsociados());
+                      },
+                    ),
+                  );
+                },
+              ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _mostrarDialogoAgregarAsociado,
+        backgroundColor: Colors.indigo,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(100),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _mostrarDialogoAgregarAsociado,
-          backgroundColor: Colors.indigo,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
-          ),
-          elevation: 8,
-          child: const Icon(Icons.person_add_alt_1, size: 32, color: Colors.white),
-        ),
+        elevation: 8,
+        child: const Icon(Icons.person_add_alt_1, size: 32, color: Colors.white),
       ),
     );
   }

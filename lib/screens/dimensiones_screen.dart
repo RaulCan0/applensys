@@ -224,23 +224,16 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: () async {
-                    try {
-                      await SupabaseService().finalizarEvaluacion(widget.evaluacionId);
-                      await EvaluacionCacheService().eliminarPendiente();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('✅ Evaluación finalizada exitosamente')),
-                      );
-                      await Future.delayed(const Duration(milliseconds: 500));
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => const EmpresasScreen()),
-                        (route) => false,
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('❌ Error al finalizar: $e')),
-                      );
-                    }
+                    await EvaluacionCacheService().eliminarPendiente();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Evaluación finalizada')),
+                    );
+                    await Future.delayed(const Duration(milliseconds: 500));
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const EmpresasScreen()),
+                      (route) => false,
+                    );
                   },
                 ),
               ],

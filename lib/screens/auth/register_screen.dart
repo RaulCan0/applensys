@@ -16,22 +16,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  void _showAlert(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _register() async {
     if (_emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _phoneController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Completa todos los campos')),
-      );
+      _showAlert('Error', 'Completa todos los campos');
       return;
     }
 
     if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La contraseña debe tener al menos 6 caracteres'),
-        ),
-      );
+      _showAlert('Error', 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -55,7 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Cierra el diálogo
+                Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -68,9 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Error al registrarse')),
-        );
+        _showAlert('Error', result['message'] ?? 'Error al registrarse');
       }
     }
   }
@@ -78,7 +86,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Usamos Stack para el fondo y el botón de atrás
       body: Stack(
         children: [
           Container(
@@ -106,7 +113,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-          // Botón "Atrás"
           Positioned(
             top: 16,
             left: 16,
@@ -115,7 +121,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               onPressed: () => Navigator.pop(context),
             ),
           ),
-          // Formulario
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 280, 24, 24),
             child: Column(

@@ -1,6 +1,7 @@
 // ignore_for_file: unused_element
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:applensys/models/asociado.dart';
 import 'package:applensys/models/calificacion.dart';
@@ -647,8 +648,38 @@ class SupabaseService {
 
     await _client.from('promedios_sistemas').insert(data);
   }
+  Future<void> uploadFile({
+    required String bucket,
+    required String path,
+    required Uint8List bytes,
+    String contentType = 'application/octet-stream',
+  }) async {
+    final response = await _client.storage.from(bucket).uploadBinary(
+      path,
+      bytes,
+      fileOptions: FileOptions(contentType: contentType),
+    );
+  }
 
+  /// Devuelve la URL pública de un archivo subido en el bucket.
+  String getPublicUrl({
+    required String bucket,
+    required String path,
+  }) {
+    final res = _client.storage.from(bucket).getPublicUrl(path);
+    if (res.isEmpty) {
+      throw Exception('Failed to generate public URL for the file.');
+    }
+    return res;
+  }
 }
+
+
+
+
+
+
+
 
 /*import 'dart:io';
 

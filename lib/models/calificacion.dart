@@ -19,7 +19,7 @@ class Calificacion {
     required this.puntaje,
     required this.fechaEvaluacion,
     this.observaciones,
-    required this.sistemas,
+    required this.sistemas, String? evidenciaUrl,
   });
 
   factory Calificacion.fromMap(Map<String, dynamic> map) {

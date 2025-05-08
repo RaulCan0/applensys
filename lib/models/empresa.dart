@@ -9,7 +9,7 @@ class Empresa {
   final String unidades;
   final int areas;
   final String sector;
-
+  final DateTime createdAt;
 
   Empresa({
     required this.id,
@@ -20,34 +20,43 @@ class Empresa {
     required this.unidades,
     required this.areas,
     required this.sector,
+    required this.createdAt,
   });
 
   factory Empresa.fromMap(Map<String, dynamic> map) {
+    List<String> asociados = [];
+    if (map['empleados_asociados'] is List) {
+      asociados = List<String>.from(map['empleados_asociados']);
+    } else if (map['empleados_asociados'] is String && map['empleados_asociados'].isNotEmpty) {
+      try {
+        asociados = List<String>.from(jsonDecode(map['empleados_asociados']));
+      } catch (_) {
+        asociados = [];
+      }
+    }
+
     return Empresa(
-      id: map['id'],
-      nombre: map['nombre'],
-      tamano: map['tamano'],
-      empleadosTotal: map['empleados_total'] ?? 0,
-      empleadosAsociados:
-          map['empleados_asociados'] is String
-              ? List<String>.from(jsonDecode(map['empleados_asociados']))
-              : List<String>.from(map['empleados_asociados'] ?? []),
-      unidades: map['unidades'],
-      areas: map['areas'] ?? 0,
-      sector: map['sector'],
+      id: map['id'] as String,
+      nombre: map['nombre'] as String,
+      tamano: map['tamano'] as String,
+      empleadosTotal: map['empleados_total'] as int,
+      empleadosAsociados: asociados,
+      unidades: map['unidades'] as String,
+      areas: map['areas'] as int,
+      sector: map['sector'] as String,
+      createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'nombre': nombre,
-      'tamano': tamano,
-      'empleados_total': empleadosTotal,
-      'empleados_asociados': jsonEncode(empleadosAsociados),
-      'unidades': unidades,
-      'areas': areas,
-      'sector': sector,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'nombre': nombre,
+        'tamano': tamano,
+        'empleados_total': empleadosTotal,
+        'empleados_asociados': jsonEncode(empleadosAsociados),
+        'unidades': unidades,
+        'areas': areas,
+        'sector': sector,
+        'created_at': createdAt.toIso8601String(),
+      };
 }

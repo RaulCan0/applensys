@@ -1,12 +1,11 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/message.dart';
 import '../services/chat_service.dart';
+import '../services/notification_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:intl/intl.dart'; // Para formatear fechas y horas
+import 'package:intl/intl.dart';
 
 class ChatWidgetDrawer extends StatefulWidget {
   const ChatWidgetDrawer({super.key});
@@ -19,6 +18,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   final _chatService = ChatService();
   final _textController = TextEditingController();
   late final String _myUserId;
+  List<Message> _previousMessages = [];
 
   final Color chatColor = Colors.teal;
   final Color receivedColor = Colors.grey.shade300;
@@ -46,6 +46,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
             .getPublicUrl(fileName);
         await _chatService.sendMessage(_myUserId, url);
       } else {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se pudo subir la foto')),
         );
@@ -57,7 +58,9 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   Widget build(BuildContext context) {
     return Drawer(
       child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.65,
+        width: MediaQuery.of(context).size.width < 600
+            ? MediaQuery.of(context).size.width * 0.98
+            : 400,
         child: Column(
           children: [
             Container(
@@ -68,9 +71,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context); // Cierra el Drawer
-                    },
+                    onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
                     'Chat General',
@@ -94,49 +95,111 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final messages = snapshot.data!;
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    reverse: true,
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final currentMessage = messages[messages.length - 1 - index];
-                      final isMe = currentMessage.userId == _myUserId;
-                      final isImage = currentMessage.content.startsWith('http');
 
-                      return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.all(12),
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isMe ? chatColor : receivedColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              isImage
-                                  ? Image.network(currentMessage.content)
-                                  : Text(
-                                      currentMessage.content,
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white : Colors.black87,
-                                      ),
+                  if (_previousMessages.isNotEmpty &&
+                      messages.length > _previousMessages.length) {
+                    final newMessage = messages.last;
+                    if (newMessage.userId != _myUserId) {
+                      NotificationService.showNotification(
+                        'Nuevo mensaje',
+                        newMessage.content.length > 50
+                            ? '${newMessage.content.substring(0, 50)}...'
+                            : newMessage.content,
+                      );
+                    }
+                  }
+                  _previousMessages = List.from(messages);
+
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        reverse: true,
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final currentMessage = messages[messages.length - 1 - index];
+                          final isMe = currentMessage.userId == _myUserId;
+                          final isImage = currentMessage.content.startsWith('http');
+
+                          return GestureDetector(
+                            onLongPress: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (_) => Wrap(
+                                  children: [
+                                    ListTile(
+                                      leading: const Icon(Icons.push_pin),
+                                      title: const Text('Anclar mensaje'),
+                                      onTap: () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Mensaje anclado (UI temporal).')),
+                                        );
+                                        Navigator.pop(context);
+                                      },
                                     ),
-                              const SizedBox(height: 4),
-                              Text(
-                                DateFormat('HH:mm').format(DateTime.parse(currentMessage.createdAt as String)),
-                                style: TextStyle(
-                                  color: isMe ? Colors.white70 : Colors.black54,
-                                  fontSize: 10,
+                                    ListTile(
+                                      leading: const Icon(Icons.warning),
+                                      title: const Text('Marcar como advertencia'),
+                                      onTap: () {
+                                        NotificationService.showNotification(
+                                          'Mensaje de advertencia',
+                                          currentMessage.content,
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: Align(
+                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: constraints.maxWidth * 0.8,
+                                  minWidth: 60,
+                                ),
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isMe ? chatColor : receivedColor,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      isImage
+                                          ? Image.network(
+                                              currentMessage.content,
+                                              width: constraints.maxWidth * 0.7,
+                                              fit: BoxFit.contain,
+                                            )
+                                          : Text(
+                                              currentMessage.content,
+                                              style: TextStyle(
+                                                color: isMe ? Colors.white : Colors.black87,
+                                              ),
+                                            ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        DateFormat('HH:mm').format(
+                                          currentMessage.createdAt is String
+                                              ? DateTime.parse(currentMessage.createdAt as String)
+                                              : currentMessage.createdAt,
+                                        ),
+                                        style: TextStyle(
+                                          color: isMe ? Colors.white70 : Colors.black54,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );
@@ -166,11 +229,8 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                         fillColor: Colors.grey.shade100,
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        suffixIcon: IconButton(
-                          // ignore: deprecated_member_use
-                          icon: Icon(Icons.emoji_emotions_outlined, color: chatColor.withOpacity(0.7)),
-                          onPressed: () {},
-                        ),
+                        // ignore: deprecated_member_use
+                        suffixIcon: Icon(Icons.emoji_emotions_outlined, color: chatColor.withOpacity(0.7)),
                       ),
                       style: const TextStyle(fontSize: 14),
                     ),

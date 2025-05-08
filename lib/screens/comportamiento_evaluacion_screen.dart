@@ -1,24 +1,22 @@
 import 'dart:io';
-import 'package:applensys/models/calificacion.dart';
-import 'package:applensys/screens/tablas_screen.dart';
-import 'package:applensys/widgets/sistema_selector.dart';
-import 'package:flutter/gestures.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import 'package:applensys/models/calificacion.dart';
+import 'package:applensys/services/supabase_service.dart';
 import '../models/principio_json.dart';
-import '../services/supabase_service.dart';
+import '../screens/tablas_screen.dart';
+import '../widgets/sistema_selector.dart';
 import '../widgets/drawer_lensys.dart';
 
 String obtenerNombreDimension(String dimensionId) {
   switch (dimensionId) {
-    case '1':
-      return 'Dimensión 1';
-    case '2':
-      return 'Dimensión 2';
-    case '3':
-      return 'Dimensión 3';
-    default:
-      return 'Dimensión 1';
+    case '1': return 'Dimensión 1';
+    case '2': return 'Dimensión 2';
+    case '3': return 'Dimensión 3';
+    default: return 'Dimensión 1';
   }
 }
 
@@ -43,71 +41,109 @@ class ComportamientoEvaluacionScreen extends StatefulWidget {
   });
 
   @override
-  State<ComportamientoEvaluacionScreen> createState() => _ComportamientoEvaluacionScreenState();
+  // ignore: library_private_types_in_public_api
+  _ComportamientoEvaluacionScreenState createState() => _ComportamientoEvaluacionScreenState();
 }
 
 class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacionScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _supabase = SupabaseService();
+  final _picker = ImagePicker();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   int calificacion = 3;
-  final TextEditingController observacionController = TextEditingController();
+  final observacionController = TextEditingController();
   List<String> sistemasSeleccionados = [];
   bool isSaving = false;
+  String? evidenciaUrl;
 
-  void _mostrarLentesRolDialog() {
+  void _showAlert(String title, String message) {
     showDialog<void>(
       context: context,
-      barrierDismissible: true,
       builder: (_) => AlertDialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 150, vertical: 130),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.white,
-        content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.90,
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
-          ),
-          child: ScrollConfiguration(
-            behavior: MaterialScrollBehavior().copyWith(
-              dragDevices: const {
-                PointerDeviceKind.touch,
-                PointerDeviceKind.mouse,
-                PointerDeviceKind.trackpad,
-              },
-            ),
-            child: SingleChildScrollView(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: _buildLentesDataTable(),
-              ),
-            ),
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.end,
+        title: Text(title),
+        content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar'))
         ],
       ),
     );
   }
 
-  DataTable _buildLentesDataTable() {
-    DataCell wrapText(String text) {
-      return DataCell(
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 200),
-          child: Text(
-            text,
-            softWrap: true,
-            maxLines: 6,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11),
-          ),
-        ),
+  Future<void> _takePhoto() async {
+    // En Windows la cámara no está soportada; usar galería como fallback
+    final source = Platform.isWindows ? ImageSource.gallery : ImageSource.camera;
+    try {
+      final XFile? photo = await _picker.pickImage(source: source);
+      if (photo == null) return;
+      final Uint8List bytes = await photo.readAsBytes();
+      final String fileName = const Uuid().v4();
+
+      await _supabase.uploadFile(
+        bucket: 'evidencias',
+        path: fileName,
+        bytes: bytes,
+        contentType: 'image/jpeg',
       );
+      evidenciaUrl = _supabase.getPublicUrl(bucket: 'evidencias', path: fileName);
+      setState(() {});
+      _showAlert('Evidencia', 'Imagen subida correctamente.');
+    } catch (e) {
+      _showAlert('Error', 'No se pudo obtener la imagen: \$e');
     }
+  }
+
+  Future<void> _guardarEvaluacion() async {
+    final obs = observacionController.text.trim();
+    if (obs.isEmpty) {
+      _showAlert('Validación', 'Debes escribir una observación.');
+      return;
+    }
+    if (sistemasSeleccionados.isEmpty) {
+      _showAlert('Validación', 'Selecciona al menos un sistema.');
+      return;
+    }
+
+    setState(() => isSaving = true);
+    try {
+      final nombreComp = widget.principio.benchmarkComportamiento.split(':').first.trim();
+      final cal = Calificacion(
+        id: const Uuid().v4(),
+        idAsociado: widget.asociadoId,
+        idEmpresa: widget.empresaId,
+        idDimension: int.tryParse(widget.dimensionId) ?? 1,
+        comportamiento: nombreComp,
+        puntaje: calificacion,
+        fechaEvaluacion: DateTime.now(),
+        observaciones: obs,
+        sistemas: sistemasSeleccionados,
+        evidenciaUrl: evidenciaUrl,
+      );
+      await _supabase.addCalificacion(cal, id: widget.evaluacionId, idAsociado: widget.asociadoId);
+      TablasDimensionScreen.actualizarDato(
+        widget.evaluacionId,
+        dimension: obtenerNombreDimension(widget.dimensionId),
+        principio: widget.principio.nombre,
+        comportamiento: nombreComp,
+        cargo: widget.cargo,
+        valor: calificacion,
+        sistemas: sistemasSeleccionados,
+      );
+      // ignore: use_build_context_synchronously
+      Navigator.pop(context, nombreComp);
+    } catch (e) {
+      _showAlert('Error', 'No se pudo guardar: \$e');
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
+  }
+
+  DataTable _buildLentesDataTable() {
+    DataCell wrapText(String text) => DataCell(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: Text(text, softWrap: true, maxLines: 6, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+          ),
+        );
 
     return DataTable(
       columnSpacing: 9,
@@ -177,7 +213,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           const DataCell(Text('Alcance')),
           wrapText('Aislado • Punto de Solución'),
           wrapText('Silos • Flujo de Valor Interno'),
-          wrapText('Predominante‑mente Operaciones • Flujo de Valor Funcional'),
+          wrapText('Predominantemente Operaciones • Flujo de Valor Funcional'),
           wrapText('Múltiples Procesos de Negocios • Flujo de Valor Integrado'),
           wrapText('En Toda la Empresa • Flujo de Valor Extendido'),
         ]),
@@ -185,93 +221,40 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
     );
   }
 
-  void _mostrarDialogo(String titulo, String contenido) {
-    showDialog(
+  void _mostrarLentesRolDialog() {
+    showDialog<void>(
       context: context,
+      barrierDismissible: true,
       builder: (_) => AlertDialog(
-        title: Text(titulo),
-        content: Text(contenido.isNotEmpty ? contenido : 'No disponible.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 150, vertical: 130),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: Colors.white,
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.90,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
-        ],
+          child: ScrollConfiguration(
+            behavior: MaterialScrollBehavior().copyWith(
+              dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse, PointerDeviceKind.trackpad},
+            ),
+            child: SingleChildScrollView(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: _buildLentesDataTable(),
+              ),
+            ),
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.end,
+        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar'))],
       ),
     );
   }
 
-  Future<void> _guardarEvaluacion() async {
-    final observacion = observacionController.text.trim();
-    if (observacion.isEmpty || observacion.split(RegExp(r'\s+')).isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debes escribir una observación para guardar la evaluación'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    if (sistemasSeleccionados.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debes seleccionar o crear al menos un sistema asociado.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() => isSaving = true);
-
-    try {
-      final supabase = SupabaseService();
-      final comportamientoNombre = widget.principio.benchmarkComportamiento.split(':').first.trim();
-
-      final calificacionObj = Calificacion(
-        id: const Uuid().v4(),
-        idAsociado: widget.asociadoId,
-        idEmpresa: widget.empresaId,
-        idDimension: int.tryParse(widget.dimensionId) ?? 1,
-        comportamiento: comportamientoNombre,
-        puntaje: calificacion,
-        fechaEvaluacion: DateTime.now(),
-        observaciones: observacion,
-        sistemas: sistemasSeleccionados,
-      );
-
-      await supabase.addCalificacion(
-        calificacionObj,
-        id: widget.evaluacionId,
-        idAsociado: widget.asociadoId,
-      );
-
-      TablasDimensionScreen.actualizarDato(
-        widget.evaluacionId,
-        dimension: obtenerNombreDimension(widget.dimensionId),
-        principio: widget.principio.nombre,
-        comportamiento: comportamientoNombre,
-        cargo: widget.cargo,
-        valor: calificacion,
-        sistemas: sistemasSeleccionados,
-      );
-
-      if (mounted) Navigator.pop(context, comportamientoNombre);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => isSaving = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final desc = widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible';
-
+    final desc = widget.principio.calificaciones['C\$calificacion'] ?? 'Sin descripción disponible';
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: const DrawerLensys(),
@@ -280,129 +263,65 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
         centerTitle: true,
         title: Text('Estás evaluando el principio ${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-          )
-        ],
+        actions: [IconButton(icon: const Icon(Icons.menu), onPressed: () => _scaffoldKey.currentState?.openEndDrawer())],
       ),
-      body: _buildBody(desc),
-    );
-  }
-
-  Widget _buildBody(String desc) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.info_outline, size: 18),
-                label: const Text('Benchmark Nivel', style: TextStyle(fontSize: 12)),
-                onPressed: () => _mostrarDialogo('Benchmark', widget.principio.benchmarkPorNivel),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.help_outline, size: 18),
-                label: const Text('Guía', style: TextStyle(fontSize: 12)),
-                onPressed: () => _mostrarDialogo('Guía', widget.principio.preguntas),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.settings, size: 18),
-                label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        final seleccionados = await showModalBottomSheet<List<String>>(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (c) => SistemasScreen(
-                            onSeleccionar: (sistemas) {
-                              Navigator.pop(c, sistemas.map((e) => e['nombre'].toString()).toList());
-                            },
-                          ),
-                        );
-                        if (seleccionados != null) {
-                          setState(() => sistemasSeleccionados = seleccionados);
-                        }
-                      },
-              ),
-            ],
-          ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.info_outline, size: 18),
+              label: const Text('Benchmark Nivel', style: TextStyle(fontSize: 12)),
+              onPressed: () => _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.help_outline, size: 18),
+              label: const Text('Guía', style: TextStyle(fontSize: 12)),
+              onPressed: () => _showAlert('Guía', widget.principio.preguntas),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.settings, size: 18),
+              label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final sel = await showModalBottomSheet<List<String>>(context: context, isScrollControlled: true, builder: (_) => SistemasScreen(onSeleccionar: (s) {
+                        Navigator.pop(context, s.map((e) => e['nombre'].toString()).toList());
+                      }));
+                      if (sel != null) setState(() => sistemasSeleccionados = sel);
+                    },
+            ),
+          ]),
           const SizedBox(height: 16),
           const Text('Benchmark:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           Text(widget.principio.benchmarkComportamiento),
           const SizedBox(height: 16),
           const Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
-          Slider(
-            value: calificacion.toDouble(),
-            min: 1,
-            max: 5,
-            divisions: 4,
-            label: calificacion.toString(),
-            onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round()),
-          ),
-          Text('Descripción ($calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Slider(value: calificacion.toDouble(), min: 1, max: 5, divisions: 4, label: calificacion.toString(), onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round())),
+          Text('Descripción (\$calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(desc),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.remove_red_eye),
-            label: const Text('Ver lentes de madurez'),
-            onPressed: _mostrarLentesRolDialog,
-          ),
+          ElevatedButton.icon(icon: const Icon(Icons.remove_red_eye), label: const Text('Ver lentes de madurez'), onPressed: _mostrarLentesRolDialog),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: observacionController,
-                  maxLines: 2,
-                  enabled: !isSaving,
-                  decoration: const InputDecoration(
-                    hintText: 'Observaciones...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: () {}),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (sistemasSeleccionados.isNotEmpty)
-            Wrap(
-              spacing: 6,
-              children: sistemasSeleccionados
-                  .map((s) => Chip(
-                        label: Text(s),
-                        onDeleted: () => setState(() => sistemasSeleccionados.remove(s)),
-                      ))
-                  .toList(),
-            ),
+          Row(children: [
+            Expanded(child: TextField(controller: observacionController, maxLines: 2, enabled: !isSaving, decoration: const InputDecoration(hintText: 'Observaciones...', border: OutlineInputBorder()))),
+            const SizedBox(width: 8),
+            IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: isSaving ? null : _takePhoto),
+          ]),
+          if (evidenciaUrl != null) ...[
+            const SizedBox(height: 16),
+            Image.network(evidenciaUrl!, height: MediaQuery.of(context).size.height * 0.2),
+          ],
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            icon: isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.save, color: Colors.white),
-            label: Text(
-              isSaving ? 'Guardando...' : 'Guardar Evaluación',
-              style: const TextStyle(color: Colors.white),
-            ),
+            icon: isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save, color: Colors.white),
+            label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación', style: const TextStyle(color: Colors.white)),
             onPressed: isSaving ? null : _guardarEvaluacion,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-              backgroundColor: Colors.indigo,
-            ),
+            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: Colors.indigo),
           ),
-        ],
+        ]),
       ),
     );
   }
