@@ -261,7 +261,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       appBar: AppBar(
         backgroundColor: Colors.indigo,
         centerTitle: true,
-        title: Text('Estás evaluando el principio ${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
+        title: Text('El principio:${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [IconButton(icon: const Icon(Icons.menu), onPressed: () => _scaffoldKey.currentState?.openEndDrawer())],
       ),
@@ -300,7 +300,8 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           const SizedBox(height: 16),
           const Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
           Slider(value: calificacion.toDouble(), min: 1, max: 5, divisions: 4, label: calificacion.toString(), onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round())),
-          Text('Descripción (\$calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Descripción ($calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible'),
           Text(desc),
           const SizedBox(height: 16),
           ElevatedButton.icon(icon: const Icon(Icons.remove_red_eye), label: const Text('Ver lentes de madurez'), onPressed: _mostrarLentesRolDialog),

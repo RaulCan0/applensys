@@ -69,7 +69,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ElevatedButton(
-                      onPressed: () => Navigator.push(
+                      onPressed: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (_) => const LoginScreen(),
@@ -87,7 +87,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
                     ),
                     const SizedBox(height: 20),
                     OutlinedButton(
-                      onPressed: () => Navigator.push(
+                      onPressed: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (_) => const RegisterScreen(),

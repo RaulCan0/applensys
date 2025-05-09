@@ -1,64 +1,161 @@
-import 'package:applensys/models/empresa.dart';
-import 'package:applensys/screens/resultados_historial_screen.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/empresa.dart';
 
-class HistorialScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> empresasHistorial;
+class HistorialScreen extends StatefulWidget {
+  const HistorialScreen({super.key, required List<Empresa> empresas, required List empresasHistorial});
 
-  const HistorialScreen({super.key, required this.empresasHistorial, required List<Empresa> empresas});
+  @override
+  State<HistorialScreen> createState() => _HistorialScreenState();
+}
+
+class _HistorialScreenState extends State<HistorialScreen> {
+  final _supabase = Supabase.instance.client;
+  List<Empresa> empresas = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEmpresas();
+  }
+
+  Future<void> _cargarEmpresas() async {
+    try {
+      final response = await _supabase.from('empresas').select();
+
+      final List<Empresa> empresasCargadas =
+          (response as List).map((item) {
+            List<String> empleadosAsociados = [];
+            if (item['empleados_asociados'] is List) {
+              empleadosAsociados = List<String>.from(
+                item['empleados_asociados'],
+              );
+            } else if (item['empleados_asociados'] is String &&
+                item['empleados_asociados'].isNotEmpty) {
+              try {
+                empleadosAsociados = List<String>.from(
+                  jsonDecode(item['empleados_asociados']),
+                );
+              } catch (_) {
+                empleadosAsociados = [];
+              }
+            }
+            return Empresa(
+              id: item['id'] ?? '',
+              nombre: item['nombre'] ?? '',
+              tamano: item['tamano'] ?? '',
+              empleadosTotal: item['empleados_total'] ?? 0,
+              empleadosAsociados: empleadosAsociados,
+              unidades: item['unidades'] ?? '',
+              areas: item['areas'] ?? 0,
+              sector: item['sector'] ?? '',
+              createdAt: item['created_at'] != null
+                  ? DateTime.parse(item['created_at'])
+                  : DateTime.fromMillisecondsSinceEpoch(0),
+            );
+          }).toList();
+
+      setState(() {
+        empresas = empresasCargadas;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar empresas: $e')));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial'),
+        title: const Text('Historial de Empresas'),
         backgroundColor: Colors.indigo,
-        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _cargarEmpresas,
+          ),
+        ],
       ),
-      body: ListView.builder(
-        itemCount: empresasHistorial.length,
-        itemBuilder: (context, index) {
-          final empresa = empresasHistorial[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ResultadosHistorialScreen(empresa: empresa, empresaId: '', empresaNombre: '',),
-                ),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.indigo.shade50,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    // ignore: deprecated_member_use
-                    color: Colors.indigo.withOpacity(0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.business, color: Colors.indigo, size: 32),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      empresa['nombre'] ?? 'Empresa',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : empresas.isEmpty
+              ? const Center(child: Text('No hay empresas registradas.'))
+              : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: empresas.length,
+                itemBuilder: (context, index) {
+                  final empresa = empresas[index];
+                  return ExpansionTile(
+                    leading: const Icon(Icons.business, color: Colors.indigo),
+                    title: Text(
+                      empresa.nombre,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, color: Colors.indigo),
-                ],
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _infoRow('Tamaño', empresa.tamano),
+                            _infoRow('Sector', empresa.sector),
+                            _infoRow('Unidades', empresa.unidades),
+                            _infoRow('Áreas', empresa.areas.toString()),
+                            _infoRow(
+                              'Empleados',
+                              empresa.empleadosTotal.toString(),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Empleados asociados:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            empresa.empleadosAsociados.isEmpty
+                                ? const Text('No hay empleados asociados')
+                                : Column(
+                                  children:
+                                      empresa.empleadosAsociados
+                                          .map(
+                                            (empleado) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 8.0,
+                                                top: 4.0,
+                                              ),
+                                              child: Text('• $empleado'),
+                                            ),
+                                          )
+                                          .toList(),
+                                ),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ),
-          );
-        },
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value)),
+        ],
       ),
     );
   }

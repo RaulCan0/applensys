@@ -1,4 +1,4 @@
-// dashboard_screen.dart (versión final completa, con soporte a modo debug y estructura_base.json)
+// dashboard_screen.dart
 
 import 'dart:developer';
 import 'package:applensys/charts/behavior_scroll_chart.dart';
@@ -45,35 +45,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadAllData({bool silent = false}) async {
     setState(() => _isLoading = true);
-
-    if (kDebugMode) {
-      log('Modo Debug activo: cargando datos mock desde estructura_base.json');
-      await Future.delayed(const Duration(milliseconds: 300));
-      _dimAverages = estructuraBaseMockDimension;
-      _lineAverages = estructuraBaseMockNiveles;
-      _princAverages = estructuraBaseMockPrincipios;
-      _behavAverages = estructuraBaseMockComportamientos;
-      _sysAverages = estructuraBaseMockSistemas;
-    } else {
-      final svc = SupabaseService();
-      try {
-        _dimAverages = await svc.getDimensionAverages(widget.empresa!.id);
-        _lineAverages = await svc.getLevelLineData(widget.empresa!.id);
-        _princAverages = await svc.getPrinciplesAverages(widget.empresa!.id);
-        _behavAverages = await svc.getBehaviorAverages(widget.empresa!.id);
-        _sysAverages = await svc.getSystemAverages(widget.empresa!.id);
-      } catch (_) {
-        if (!silent && mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Offline: cargando datos locales')),
-            );
-          });
-        }
+    final svc = SupabaseService();
+    try {
+      _dimAverages = await svc.getDimensionAverages(widget.empresa!.id);
+      _lineAverages = await svc.getLevelLineData(widget.empresa!.id);
+      _princAverages = await svc.getPrinciplesAverages(widget.empresa!.id);
+      _behavAverages = await svc.getBehaviorAverages(widget.empresa!.id);
+      _sysAverages = await svc.getSystemAverages(widget.empresa!.id);
+    } catch (_) {
+      if (!silent && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Offline: cargando datos locales')),
+          );
+        });
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _exportExcel() async {
@@ -142,7 +131,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButton: FloatingActionButton(
         tooltip: 'Exportar a Excel',
         onPressed: _exportExcel,
-        child: const Icon(Icons.download),
+        shape: const CircleBorder(),
+        child: const Icon(Icons.download, color: Colors.black),
       ),
     );
   }
@@ -160,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     data: _dimAverages,
                     builder: () => DonutChart(
                       data: DashboardChartAdapter.toDonutChartData(_dimAverages),
-                      title: '3 Dimensiones',
+                      title: 'GRAFICO DE LAS 3 DIMENSIONES',
                       min: 0,
                       max: 5,
                     ),
@@ -383,5 +373,3 @@ class DonutChartData {
   final double value;
   DonutChartData({required this.label, required this.value});
 }
-
-

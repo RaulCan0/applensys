@@ -74,12 +74,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const EmpresasScreen()),
-            );
-          },
+    onPressed: () {
+      Navigator.pop(context, false);
+    },
         ),
         title: Text(
           'Dimensiones - ${widget.empresa.nombre}',
@@ -215,27 +212,39 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                     );
                   },
                 ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.check_circle),
-                  label: const Text('Finalizar evaluación'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  ),
-                  onPressed: () async {
-                    await EvaluacionCacheService().eliminarPendiente();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Evaluación finalizada')),
-                    );
-                    await Future.delayed(const Duration(milliseconds: 500));
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EmpresasScreen()),
-                      (route) => false,
-                    );
-                  },
-                ),
+              ElevatedButton.icon(
+  icon: const Icon(Icons.check_circle, color: Colors.white),
+  label: const Text('Finalizar evaluación', style: TextStyle(color: Colors.white)),
+  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+  onPressed: () async {
+    try {
+      // 1) Marca finalizada en Supabase:
+      await SupabaseService().finalizarEvaluacion(widget.evaluacionId);
+
+      // 2) Elimina cache local:
+      await EvaluacionCacheService().eliminarPendiente();
+
+      // 3) Guarda en historial:
+      final prefs = await SharedPreferences.getInstance();
+      final hist = prefs.getStringList('empresas_historial') ?? [];
+      if (!hist.contains(widget.empresa.id)) {
+        hist.add(widget.empresa.id);
+        await prefs.setStringList('empresas_historial', hist);
+      }
+
+      // 4) Snack y retorno true
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Evaluación finalizada')),
+      );
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al finalizar: $e')),
+      );
+    }
+  },
+),
+
               ],
             ),
           ),

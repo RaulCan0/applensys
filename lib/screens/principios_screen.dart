@@ -106,7 +106,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
           builder: (_) => tablas_screen.TablasDimensionScreen(
             empresaId: widget.empresa.id,
             dimension: '',
-            empresa: widget.empresa,
+            empresa: widget.empresa, evaluacionId: '',
           ),
             ),
           );

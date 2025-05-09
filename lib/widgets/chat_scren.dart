@@ -56,62 +56,67 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Drawer(
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width < 600
-            ? MediaQuery.of(context).size.width * 0.98
-            : 400,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: chatColor,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    'Chat General',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: StreamBuilder<List<Message>>(
-                stream: _chatService.messageStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final messages = snapshot.data!;
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final drawerWidth = constraints.maxWidth < 600
+              ? constraints.maxWidth * 0.98
+              : 400;
 
-                  if (_previousMessages.isNotEmpty &&
-                      messages.length > _previousMessages.length) {
-                    final newMessage = messages.last;
-                    if (newMessage.userId != _myUserId) {
-                      NotificationService.showNotification(
-                        'Nuevo mensaje',
-                        newMessage.content.length > 50
-                            ? '${newMessage.content.substring(0, 50)}...'
-                            : newMessage.content,
-                      );
-                    }
-                  }
-                  _previousMessages = List.from(messages);
+          return SizedBox(
+            width: drawerWidth.toDouble(),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: chatColor,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Text(
+                        'Chat General',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: StreamBuilder<List<Message>>(
+                    stream: _chatService.messageStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final messages = snapshot.data!;
 
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
+                      if (_previousMessages.isNotEmpty &&
+                          messages.length > _previousMessages.length) {
+                        final newMessage = messages.last;
+                        if (newMessage.userId != _myUserId) {
+                          NotificationService.showNotification(
+                            'Nuevo mensaje',
+                            newMessage.content.length > 50
+                                ? '${newMessage.content.substring(0, 50)}...'
+                                : newMessage.content,
+                          );
+                        }
+                      }
+                      _previousMessages = List.from(messages);
+
                       return ListView.builder(
                         padding: const EdgeInsets.all(8),
                         reverse: true,
@@ -156,7 +161,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                               alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
-                                  maxWidth: constraints.maxWidth * 0.8,
+                                  maxWidth: drawerWidth * 0.8,
                                   minWidth: 60,
                                 ),
                                 child: Container(
@@ -172,7 +177,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                                       isImage
                                           ? Image.network(
                                               currentMessage.content,
-                                              width: constraints.maxWidth * 0.7,
+                                              width: drawerWidth * 0.7,
                                               fit: BoxFit.contain,
                                             )
                                           : Text(
@@ -202,53 +207,53 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                         },
                       );
                     },
-                  );
-                },
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.camera_alt, color: chatColor),
-                    onPressed: _tomarYSubirFoto,
                   ),
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      decoration: InputDecoration(
-                        hintText: 'Escribe un mensaje...',
-                        hintStyle: TextStyle(color: Colors.grey.shade500),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        // ignore: deprecated_member_use
-                        suffixIcon: Icon(Icons.emoji_emotions_outlined, color: chatColor.withOpacity(0.7)),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.camera_alt, color: chatColor),
+                        onPressed: _tomarYSubirFoto,
                       ),
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                      Expanded(
+                        child: TextField(
+                          controller: _textController,
+                          decoration: InputDecoration(
+                            hintText: 'Escribe un mensaje...',
+                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade100,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            // ignore: deprecated_member_use
+                            suffixIcon: Icon(Icons.emoji_emotions_outlined, color: chatColor.withOpacity(0.7)),
+                          ),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.send, color: chatColor),
+                        onPressed: () async {
+                          final text = _textController.text.trim();
+                          if (text.isEmpty) return;
+                          await _chatService.sendMessage(_myUserId, text);
+                          _textController.clear();
+                        },
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: Icon(Icons.send, color: chatColor),
-                    onPressed: () async {
-                      final text = _textController.text.trim();
-                      if (text.isEmpty) return;
-                      await _chatService.sendMessage(_myUserId, text);
-                      _textController.clear();
-                    },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

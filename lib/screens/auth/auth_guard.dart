@@ -1,4 +1,4 @@
-import 'package:applensys/screens/auth/loader_screen.dart';
+import 'package:applensys/screens/auth/login_screen.dart';
 import 'package:applensys/screens/empresas_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,26 +23,25 @@ class _AuthGuardState extends State<AuthGuard> {
   Future<void> _initialize() async {
     try {
       final session = Supabase.instance.client.auth.currentSession;
-
-      // Validamos que haya sesión y un usuario logueado
-      if (session != null) {
-        setState(() {
-          _isLoggedIn = true;
-        });
-      }
+      _isLoggedIn = session != null;
     } catch (e) {
       debugPrint("❌ Error al recuperar la sesión: $e");
+      _isLoggedIn = false;
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
-
-    return _isLoggedIn ? const EmpresasScreen() : const LoaderScreen();
+    // Si está logueado, va a Empresas, si no, a Login directamente
+    return _isLoggedIn
+        ? const EmpresasScreen()
+        : const LoginScreen();
   }
 }

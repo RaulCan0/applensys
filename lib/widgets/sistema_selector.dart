@@ -25,6 +25,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
 
   Future<void> cargarSistemas() async {
     final response = await supabase.from('sistemas_asociados').select();
+    if (!mounted) return;
     setState(() {
       sistemas = List<Map<String, dynamic>>.from(response);
       isLoading = false;
@@ -38,6 +39,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
           .insert({'nombre': nombre})
           .select()
           .single();
+      if (!mounted) return;
       setState(() {
         sistemas.add(response);
         nuevoController.clear();
@@ -47,6 +49,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
 
   Future<void> eliminarSistema(int id) async {
     await supabase.from('sistemas_asociados').delete().eq('id', id);
+    if (!mounted) return;
     setState(() {
       sistemas.removeWhere((s) => s['id'] == id);
       seleccionados.remove(id);
@@ -61,9 +64,12 @@ class _SistemasScreenState extends State<SistemasScreen> {
         .eq('id', id)
         .select()
         .single();
+    if (!mounted) return;
     setState(() {
       final idx = sistemas.indexWhere((s) => s['id'] == id);
-      sistemas[idx] = updated;
+      if (idx != -1) {
+        sistemas[idx] = updated;
+      }
     });
   }
 
@@ -74,79 +80,86 @@ class _SistemasScreenState extends State<SistemasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sistemas Asociados'),
-        backgroundColor: Colors.indigo,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _notificarSeleccion,
-            tooltip: 'Confirmar selección',
-          ),
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                children: [
-                  // Lista compacta con selección múltiple y edición
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: sistemas.length,
-                      separatorBuilder: (_, __) => const Divider(height: 8),
-                      itemBuilder: (context, i) {
-                        final s = sistemas[i];
-                        return _SistemaTile(
-                          sistema: s,
-                          isSelected: seleccionados.contains(s['id']),
-                          onSelect: (sel) {
-                            setState(() {
-                              sel == true
-                                  ? seleccionados.add(s['id'])
-                                  : seleccionados.remove(s['id']);
-                            });
-                          },
-                          onDelete: () => eliminarSistema(s['id']),
-                          onEdit: (nuevo) => editarSistema(s['id'], nuevo),
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Input y botón para agregar
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: nuevoController,
-                          decoration: const InputDecoration(
-                            hintText: 'Nuevo sistema',
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () => agregarSistema(nuevoController.text),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        child: const Text(
-                          'Añadir',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    return SizedBox(
+      height: 350.0,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Sistemas Asociados'),
+          backgroundColor: Colors.indigo,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.check),
+              onPressed: _notificarSeleccion,
+              tooltip: 'Confirmar selección',
             ),
+          ],
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: sistemas.isEmpty
+                          ? const Center(child: Text('No hay sistemas. Añade uno nuevo.'))
+                          : ListView.separated(
+                              itemCount: sistemas.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
+                              itemBuilder: (context, i) {
+                                final s = sistemas[i];
+                                return _SistemaTile(
+                                  sistema: s,
+                                  isSelected: seleccionados.contains(s['id']),
+                                  onSelect: (sel) {
+                                    setState(() {
+                                      sel == true
+                                          ? seleccionados.add(s['id'])
+                                          : seleccionados.remove(s['id']);
+                                    });
+                                  },
+                                  onDelete: () => eliminarSistema(s['id']),
+                                  onEdit: (nuevo) => editarSistema(s['id'], nuevo),
+                                );
+                              },
+                            ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: nuevoController,
+                              decoration: const InputDecoration(
+                                hintText: 'Nuevo sistema',
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => agregarSistema(nuevoController.text.trim()),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
+                            child: const Text(
+                              'Añadir',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+      ),
     );
   }
 }
@@ -188,41 +201,61 @@ class __SistemaTileState extends State<_SistemaTile> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Checkbox(
-          value: widget.isSelected,
-          onChanged: widget.onSelect,
-        ),
-        Expanded(
-          child: editing
-              ? TextField(
-                  controller: editController,
-                  autofocus: true,
-                  onSubmitted: (v) {
-                    widget.onEdit(v);
-                    setState(() => editing = false);
-                  },
-                )
-              : GestureDetector(
-                  onDoubleTap: () => setState(() => editing = true),
-                  child: Text(
-                    widget.sistema['nombre'],
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.edit, size: 18),
-          onPressed: () => setState(() => editing = true),
-          tooltip: 'Editar',
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
-          onPressed: widget.onDelete,
-          tooltip: 'Eliminar',
-        ),
-      ],
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Checkbox(
+        value: widget.isSelected,
+        onChanged: widget.onSelect,
+        visualDensity: VisualDensity.compact,
+      ),
+      title: editing
+          ? TextField(
+              controller: editController,
+              autofocus: true,
+              style: const TextStyle(fontSize: 14),
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 4)
+              ),
+              onSubmitted: (v) {
+                widget.onEdit(v.trim());
+                setState(() => editing = false);
+              },
+              onTapOutside: (_){ 
+                 if(editing && editController.text.trim() == widget.sistema['nombre']) {
+                   setState(() => editing = false);
+                 }
+              },
+            )
+          : GestureDetector(
+              onDoubleTap: () => setState(() => editing = true),
+              child: Text(
+                widget.sistema['nombre'],
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(editing ? Icons.done : Icons.edit, size: 20),
+            onPressed: () {
+              if (editing) {
+                widget.onEdit(editController.text.trim());
+              }
+              setState(() => editing = !editing);
+            },
+            tooltip: editing? 'Guardar' : 'Editar',
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, size: 20, color: Colors.redAccent),
+            onPressed: widget.onDelete,
+            tooltip: 'Eliminar',
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
     );
   }
 }

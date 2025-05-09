@@ -161,15 +161,19 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                           _buildButton(
                             context,
                             label: 'Evaluación de ${empresaCreada.nombre}',
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DimensionesScreen(
-                                  empresa: empresaCreada,
-                                  evaluacionId: '',
-                                ),
-                              ),
-                            ),
+                          // al navegar a DimensionesScreen…
+onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => DimensionesScreen(
+        empresa: empresaCreada,
+        evaluacionId: '', // …
+      ),
+    ),
+  );
+},
+
                           ),
                         const SizedBox(height: 20),
                         _buildButton(

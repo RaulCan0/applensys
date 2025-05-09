@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 class Calificacion {
   final String id;
   final String idAsociado;
@@ -9,6 +10,7 @@ class Calificacion {
   final DateTime fechaEvaluacion;
   final String? observaciones;
   final List<String> sistemas;
+  final String? evidenciaUrl; // Agregado campo de URL de evidencia
 
   Calificacion({
     required this.id,
@@ -19,7 +21,8 @@ class Calificacion {
     required this.puntaje,
     required this.fechaEvaluacion,
     this.observaciones,
-    required this.sistemas, String? evidenciaUrl,
+    required this.sistemas,
+    this.evidenciaUrl,
   });
 
   factory Calificacion.fromMap(Map<String, dynamic> map) {
@@ -33,6 +36,7 @@ class Calificacion {
         sistemasDesdeMapa = [];
       }
     }
+
     return Calificacion(
       id: map['id'] as String,
       idAsociado: map['id_asociado'] as String,
@@ -45,6 +49,7 @@ class Calificacion {
       fechaEvaluacion: DateTime.parse(map['fecha_evaluacion'] as String),
       observaciones: map['observaciones'] as String?,
       sistemas: sistemasDesdeMapa,
+      evidenciaUrl: map['evidencia_url'] as String?,
     );
   }
 
@@ -59,5 +64,7 @@ class Calificacion {
       'fecha_evaluacion': fechaEvaluacion.toIso8601String(),
       'observaciones': observaciones,
       'sistemas': sistemas,
+      'evidencia_url': evidenciaUrl,
     };
-  }}
+  }
+}
