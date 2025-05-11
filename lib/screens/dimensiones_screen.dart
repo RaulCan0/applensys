@@ -1,14 +1,16 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:convert';
+
+import 'package:applensys/services/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/empresa.dart';
-import '../services/evaluacion_cache_service.dart';
 import '../services/supabase_service.dart';
 import '../widgets/drawer_lensys.dart';
-import 'asociado_screen.dart';
 import 'empresas_screen.dart';
-import 'tablas_screen.dart';
+import 'asociado_screen.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -94,7 +96,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => scaffoldKey.currentState?.openEndDrawer(),
+            onPressed: () {
+              scaffoldKey.currentState?.openEndDrawer();
+            },
           ),
         ],
       ),
@@ -110,7 +114,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                   child: Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -118,10 +124,17 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                         children: [
                           ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: Icon(dimension['icono'], color: dimension['color'], size: 36),
+                            leading: Icon(
+                              dimension['icono'],
+                              color: dimension['color'],
+                              size: 36,
+                            ),
                             title: Text(
                               dimension['nombre'],
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             onTap: () async {
                               await Navigator.push(
@@ -156,7 +169,10 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                                 );
                               }
                               if (snapshot.hasError) {
-                                return const Text('Error al cargar progreso', style: TextStyle(fontSize: 12, color: Colors.red));
+                                return const Text(
+                                  'Error al cargar progreso',
+                                  style: TextStyle(fontSize: 12, color: Colors.red),
+                                );
                               }
                               final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
                               return Column(
@@ -196,44 +212,61 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: () async {
+                    await SupabaseService().guardarEvaluacionDraft(widget.evaluacionId);
                     await EvaluacionCacheService().guardarPendiente(widget.evaluacionId);
-                    await EvaluacionCacheService().guardarTablas(TablasDimensionScreen.tablaDatos);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Progreso guardado localmente')),
                     );
                   },
                 ),
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                  icon: const Icon(Icons.check_circle),
                   label: const Text('Finalizar evaluación'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  onPressed: () async {
-                    try {
-                      await EvaluacionCacheService().eliminarPendiente();
-                      TablasDimensionScreen.tablaDatos.clear();
-                      TablasDimensionScreen.dataChanged.value = !TablasDimensionScreen.dataChanged.value;
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  ),
+                 onPressed: () async {
+  try {
+    final supabase = SupabaseService();
 
-                      final prefs = await SharedPreferences.getInstance();
-                      final hist = prefs.getStringList('empresas_historial') ?? [];
-                      if (!hist.contains(widget.empresa.id)) {
-                        hist.add(widget.empresa.id);
-                        await prefs.setStringList('empresas_historial', hist);
-                      }
+    // 1. Finaliza en Supabase
+    await supabase.finalizarEvaluacion(widget.evaluacionId);
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Evaluación finalizada')),
-                      );
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => const EmpresasScreen()),
-                        (route) => false,
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error al finalizar: $e')),
-                      );
-                    }
-                  },
+    // 2. Elimina caché local
+    await EvaluacionCacheService().eliminarPendiente();
+
+    // 3. Agrega al historial en SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final historial = prefs.getStringList('empresas_historial') ?? [];
+    final key = 'empresa_${widget.empresa.id}';
+
+    if (!historial.contains(widget.empresa.id)) {
+      historial.add(widget.empresa.id);
+      await prefs.setStringList('empresas_historial', historial);
+      await prefs.setString(key, jsonEncode(widget.empresa.toMap()));
+    }
+
+    // 4. Mensaje de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Evaluación finalizada y archivada')),
+    );
+
+    // 5. Redirige a EmpresasScreen
+    await Future.delayed(const Duration(milliseconds: 500));
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const EmpresasScreen()),
+      (route) => false,
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al finalizar evaluación: $e')),
+    );
+  }
+},
+
                 ),
               ],
             ),
