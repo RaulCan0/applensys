@@ -3,10 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/empresa.dart';
+import '../services/evaluacion_cache_service.dart';
 import '../services/supabase_service.dart';
 import '../widgets/drawer_lensys.dart';
-import 'empresas_screen.dart';
 import 'asociado_screen.dart';
+import 'empresas_screen.dart';
+import 'tablas_screen.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -74,9 +76,12 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-    onPressed: () {
-      Navigator.pop(context, false);
-    },
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const EmpresasScreen()),
+            );
+          },
         ),
         title: Text(
           'Dimensiones - ${widget.empresa.nombre}',
@@ -89,9 +94,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              scaffoldKey.currentState?.openEndDrawer();
-            },
+            onPressed: () => scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
       ),
@@ -107,9 +110,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                   child: Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -117,17 +118,10 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                         children: [
                           ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: Icon(
-                              dimension['icono'],
-                              color: dimension['color'],
-                              size: 36,
-                            ),
+                            leading: Icon(dimension['icono'], color: dimension['color'], size: 36),
                             title: Text(
                               dimension['nombre'],
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             onTap: () async {
                               await Navigator.push(
@@ -162,10 +156,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                                 );
                               }
                               if (snapshot.hasError) {
-                                return const Text(
-                                  'Error al cargar progreso',
-                                  style: TextStyle(fontSize: 12, color: Colors.red),
-                                );
+                                return const Text('Error al cargar progreso', style: TextStyle(fontSize: 12, color: Colors.red));
                               }
                               final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
                               return Column(
@@ -205,46 +196,45 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: () async {
-                    await SupabaseService().guardarEvaluacionDraft(widget.evaluacionId);
                     await EvaluacionCacheService().guardarPendiente(widget.evaluacionId);
+                    await EvaluacionCacheService().guardarTablas(TablasDimensionScreen.tablaDatos);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Progreso guardado localmente')),
                     );
                   },
                 ),
-              ElevatedButton.icon(
-  icon: const Icon(Icons.check_circle, color: Colors.white),
-  label: const Text('Finalizar evaluación', style: TextStyle(color: Colors.white)),
-  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-  onPressed: () async {
-    try {
-      // 1) Marca finalizada en Supabase:
-      await SupabaseService().finalizarEvaluacion(widget.evaluacionId);
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                  label: const Text('Finalizar evaluación'),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  onPressed: () async {
+                    try {
+                      await EvaluacionCacheService().eliminarPendiente();
+                      TablasDimensionScreen.tablaDatos.clear();
+                      TablasDimensionScreen.dataChanged.value = !TablasDimensionScreen.dataChanged.value;
 
-      // 2) Elimina cache local:
-      await EvaluacionCacheService().eliminarPendiente();
+                      final prefs = await SharedPreferences.getInstance();
+                      final hist = prefs.getStringList('empresas_historial') ?? [];
+                      if (!hist.contains(widget.empresa.id)) {
+                        hist.add(widget.empresa.id);
+                        await prefs.setStringList('empresas_historial', hist);
+                      }
 
-      // 3) Guarda en historial:
-      final prefs = await SharedPreferences.getInstance();
-      final hist = prefs.getStringList('empresas_historial') ?? [];
-      if (!hist.contains(widget.empresa.id)) {
-        hist.add(widget.empresa.id);
-        await prefs.setStringList('empresas_historial', hist);
-      }
-
-      // 4) Snack y retorno true
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Evaluación finalizada')),
-      );
-      Navigator.pop(context, true);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al finalizar: $e')),
-      );
-    }
-  },
-),
-
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Evaluación finalizada')),
+                      );
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const EmpresasScreen()),
+                        (route) => false,
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error al finalizar: $e')),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -253,23 +243,3 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
     );
   }
 }
-
-class EvaluacionCacheService {
-  static const _keyEvaluacionPendiente = 'evaluacion_pendiente';
-
-  Future<void> guardarPendiente(String evaluacionId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyEvaluacionPendiente, evaluacionId);
-  }
-
-  Future<String?> obtenerPendiente() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyEvaluacionPendiente);
-  }
-
-  Future<void> eliminarPendiente() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyEvaluacionPendiente);
-  }
-}
-

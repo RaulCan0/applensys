@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:applensys/screens/detalles_evaluacion.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/drawer_lensys.dart';
 import '../models/empresa.dart';
 
@@ -21,7 +23,13 @@ class TablasDimensionScreen extends StatefulWidget {
 
   final Empresa empresa;
 
-  const TablasDimensionScreen({super.key, required String dimension, required String empresaId, required this.empresa, required String evaluacionId});
+  const TablasDimensionScreen({
+    super.key,
+    required String dimension,
+    required String empresaId,
+    required this.empresa,
+    required String evaluacionId,
+  });
 
   @override
   State<TablasDimensionScreen> createState() => _TablasDimensionScreenState();
@@ -34,7 +42,7 @@ class TablasDimensionScreen extends StatefulWidget {
     required String cargo,
     required int valor,
     required List<String> sistemas,
-  }) {
+  }) async {
     final tablaDim = tablaDatos.putIfAbsent(dimension, () => {});
     final lista = tablaDim.putIfAbsent(evaluacionId, () => []);
     lista.add({
@@ -45,6 +53,11 @@ class TablasDimensionScreen extends StatefulWidget {
       'sistemas': sistemas,
     });
     dataChanged.value = !dataChanged.value;
+
+    // Guardar automáticamente
+    final prefs = await SharedPreferences.getInstance();
+    final json = tablaDatos.map((k, v) => MapEntry(k, v.map((kk, vv) => MapEntry(kk, vv))));
+    await prefs.setString('tabla_datos', jsonEncode(json));
   }
 }
 
@@ -52,6 +65,32 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool mostrarPromedio = false;
   final List<String> dimensiones = ['Dimensión 1', 'Dimensión 2', 'Dimensión 3'];
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatosTablas();
+  }
+
+  void _cargarDatosTablas() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('tabla_datos');
+    if (raw == null) return;
+
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final data = decoded.map((k, v) {
+      final inner = (v as Map<String, dynamic>).map((kk, vv) =>
+          MapEntry(kk, List<Map<String, dynamic>>.from(vv)));
+      return MapEntry(k, inner);
+    });
+
+    setState(() {
+      TablasDimensionScreen.tablaDatos
+        ..clear()
+        ..addAll(data);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -130,13 +169,14 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
 
                           promediosPorDimension[dim] = promediosNivel;
                         }
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => DetallesEvaluacionScreen(
                               empresa: widget.empresa,
                               dimensionesPromedios: promediosPorDimension,
-                              evaluacionId: 'someEvaluacionId', // Replace with the actual evaluacionId
+                              evaluacionId: 'someEvaluacionId',
                             ),
                           ),
                         );
@@ -183,7 +223,6 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
     );
   }
 
-
   List<DataRow> _buildRows(List<Map<String, dynamic>> filas) {
     final sumas = <String, Map<String, Map<String, int>>>{};
     final conteos = <String, Map<String, Map<String, int>>>{};
@@ -223,7 +262,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
         String valorCell(String key) {
           if (!mostrarPromedio) return sumaMap[key]!.toString();
           final cnt = cntMap[key]!;
-          return cnt == 0 ? '0' : (sumaMap[key]! / cnt).toString();
+          return cnt == 0 ? '0' : (sumaMap[key]! / cnt).toStringAsFixed(1);
         }
 
         String sysCell(String key) {
@@ -266,12 +305,7 @@ class SistemasPromedio {
     final total = _sistemasPorNivel.values.fold<int>(0, (sum, set) => sum + set.length);
     return total / _sistemasPorNivel.length;
   }
-
-  Map<String, int> conteoPorNivel() {
-    return _sistemasPorNivel.map((nivel, set) => MapEntry(nivel, set.length));
-  }
 }
-
 
 
 
