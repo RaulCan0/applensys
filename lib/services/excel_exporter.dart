@@ -46,23 +46,24 @@ class ExcelExporter {
       sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: r), b.miembro as CellValue?);
     }
 
-    // Datos de sistemas asociados (inician después de comportamientos)
-    for (var j = 0; j < systemAverages.length; j++) {
-      final s = systemAverages[j];
-      final r = rowIndex + 1 + behaviorAverages.length + j;
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: r), 'Sistema Asociado' as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: r), s.nombre as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: r), s.ejecutivo as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: r), s.gerente as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: r), s.miembro as CellValue?);
+        // Datos de sistemas asociados (inician después de comportamientos)
+        for (var j = 0; j < systemAverages.length; j++) {
+          final s = systemAverages[j];
+          final r = rowIndex + 1 + behaviorAverages.length + j;
+          sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: r), 'Sistema Asociado' as CellValue?);
+          sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: r), s.nombre as CellValue?);
+          sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: r), s.ejecutivo as CellValue?);
+          sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: r), s.gerente as CellValue?);
+          sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: r), s.miembro as CellValue?);
+        }
+    
+        // Guardar y retornar el archivo Excel generado
+        final encodedBytes = excel.encode();
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/correlacion_shingo_export.xlsx';
+        final file = File(filePath)
+          ..writeAsBytesSync(encodedBytes!);
+        return file;
+      }
     }
-
-    // Guardar en dispositivo
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('\${dir.path}/Lensys_Report.xlsx');
-    final encoded = excel.encode();
-    if (encoded == null) throw Exception('Error al codificar Excel');
-    await file.writeAsBytes(encoded, flush: true);
-    return file;
-  }
-}
+    

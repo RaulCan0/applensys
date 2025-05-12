@@ -1,22 +1,17 @@
-// dashboard_screen.dart
-
 import 'dart:developer';
-import 'package:applensys/charts/behavior_scroll_chart.dart';
-import 'package:applensys/charts/donut_chart.dart';
-import 'package:applensys/charts/grouped_bar_chart.dart';
-import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
-import 'package:applensys/charts/line_chart_sample.dart';
-import 'package:applensys/charts/scatter_bubble_chart.dart' show ScatterBubbleChart;
-import 'package:applensys/charts/radar_chart.dart';
+
+import 'package:applensys/models/behavior_scroll_chart.dart';
 import 'package:applensys/utils/dashboard_mock_data.dart';
+import 'package:applensys/widgets/chart_widgets.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/models/level_averages.dart' as models;
 import '../models/empresa.dart';
 import '../services/supabase_service.dart';
+import 'package:fl_chart/fl_chart.dart';
+
 import '../services/excel_exporter.dart';
-import 'package:applensys/charts/scatter_bubble_chart.dart' show ScatterBubbleData;
 
 class DashboardScreen extends StatefulWidget {
   final Empresa? empresa;
@@ -140,113 +135,100 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildTablet() {
     return Padding(
       padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: _buildChartContainer(
-                    data: _dimAverages,
-                    builder: () => DonutChart(
-                      data: DashboardChartAdapter.toDonutChartData(_dimAverages),
-                      title: 'GRAFICO DE LAS 3 DIMENSIONES',
-                      min: 0,
-                      max: 5,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Column 1 (left)
+            Container(
+              width: MediaQuery.of(context).size.width * 0.3, // Adjusted width
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _buildChartContainer(
+                      data: _dimAverages,
+                      builder: () => DimensionsDonutChart(
+                        cultural: _dimAverages[0].general,
+                        alignment: _dimAverages[1].general,
+                        improvement: _dimAverages[2].general,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: _buildChartContainer(
-                    data: _lineAverages,
-                    builder: () => LineChartSample(
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _buildChartContainer(
                       data: _lineAverages,
-                      title: 'Ejecutivo / Gerente / Miembro',
-                      minY: 0,
-                      maxY: 5,
+                      builder: () => MonthlyLineChart(
+                        data: _lineAverages.map((e) => e.general).toList(),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
-            child: Column(
-              children: [
-                Expanded(
-                  child: _buildChartContainer(
-                    data: _princAverages,
-                    builder: () => ScatterBubbleChart(
-                      data: DashboardChartAdapter.toScatterBubbleData(_princAverages),
-                      title: '10 Principios',
-                      minValue: 0,
-                      maxValue: 5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: _buildChartContainer(
-                    data: _behavAverages,
-                    builder: () => GroupedBarChart(
-                      data: _behavAverages,
-                      title: '28 Comportamientos',
-                      minY: 0,
-                      maxY: 5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: _buildChartContainer(
-                    data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
-                    builder: () => BehaviorsScrollChart(
-                      data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
-                      title: 'Scroll por Principios',
-                      minY: 0,
-                      maxY: 5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: _buildChartContainer(
-                    data: _sysAverages,
-                    builder: () => HorizontalBarSystemsChart(
-                      data: _sysAverages,
-                      title: 'Sistemas Asociados',
-                      min: 0,
-                      max: 5,
-                      minY: 0,
-                      maxY: 5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: _buildChartContainer(
-                    data: _princAverages,
-                    builder: () => RadarChartWidget(
+            const SizedBox(width: 12),
+            // Column 2 (center)
+            Container(
+              width: MediaQuery.of(context).size.width * 0.4, // Adjusted width
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _buildChartContainer(
                       data: _princAverages,
-                      title: 'Radar Principios',
-                      min: 0,
-                      max: 5,
+                      builder: () => PrinciplesBubbleChart(
+                        values: _princAverages.map((e) => e.general).toList(),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _buildChartContainer(
+                      data: _behavAverages,
+                      builder: () => BehaviorsGroupedBarChart(
+                        values: _behavAverages.map((e) => e.general).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _buildChartContainer(
+                      data: _behavAverages,
+                      builder: () => BehaviorsScrollChart(
+                        data: _behavAverages.map((e) => e.general).toList(), title: '',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            // Column 3 (right)
+            Container(
+              width: MediaQuery.of(context).size.width * 0.3, // Adjusted width
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _buildChartContainer(
+                      data: _sysAverages,
+                      builder: () => SystemsVerticalBarChart(
+                        values: _sysAverages.map((e) => e.general).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _buildChartContainer(
+                      data: _princAverages,
+                      builder: () => RadarChartWidget(
+                        values: _princAverages.map((e) => e.general).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -259,11 +241,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           height: 250,
           child: _buildChartContainer(
             data: _dimAverages,
-            builder: () => DonutChart(
-              data: DashboardChartAdapter.toDonutChartData(_dimAverages),
-              title: '3 Dimensiones',
-              min: 0,
-              max: 5,
+            builder: () => DimensionsDonutChart(
+              cultural: _dimAverages[0].general,
+              alignment: _dimAverages[1].general,
+              improvement: _dimAverages[2].general,
             ),
           ),
         ),
@@ -272,11 +253,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           height: 250,
           child: _buildChartContainer(
             data: _lineAverages,
-            builder: () => LineChartSample(
-              data: _lineAverages,
-              title: 'Ejecutivo / Gerente / Miembro',
-              minY: 0,
-              maxY: 5,
+            builder: () => MonthlyLineChart(
+              data: _lineAverages.map((e) => e.general).toList(),
             ),
           ),
         ),
@@ -285,11 +263,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           height: 250,
           child: _buildChartContainer(
             data: _princAverages,
-            builder: () => ScatterBubbleChart(
-              data: DashboardChartAdapter.toScatterBubbleData(_princAverages),
-              title: '10 Principios',
-              minValue: 0,
-              maxValue: 5,
+            builder: () => PrinciplesBubbleChart(
+              values: _princAverages.map((e) => e.general).toList(),
             ),
           ),
         ),
@@ -298,11 +273,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           height: 250,
           child: _buildChartContainer(
             data: _behavAverages,
-            builder: () => GroupedBarChart(
-              data: _behavAverages,
-              title: '28 Comportamientos',
-              minY: 0,
-              maxY: 5,
+            builder: () => BehaviorsGroupedBarChart(
+              values: _behavAverages.map((e) => e.general).toList(),
             ),
           ),
         ),
@@ -310,12 +282,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         SizedBox(
           height: 250,
           child: _buildChartContainer(
-            data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
+            data: _behavAverages,
             builder: () => BehaviorsScrollChart(
-              data: DashboardChartAdapter.toScatterBubbleData(_behavAverages),
-              title: 'Scroll por Principios',
-              minY: 0,
-              maxY: 5,
+              data: _behavAverages.map((e) => e.general).toList(), title: '',
             ),
           ),
         ),
@@ -324,11 +293,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           height: 250,
           child: _buildChartContainer(
             data: _sysAverages,
-            builder: () => HorizontalBarSystemsChart(
-              data: _sysAverages,
-              title: 'Sistemas Asociados',
-              minY: 0,
-              maxY: 5,
+            builder: () => SystemsVerticalBarChart(
+              values: _sysAverages.map((e) => e.general).toList(),
             ),
           ),
         ),
@@ -338,38 +304,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: _buildChartContainer(
             data: _princAverages,
             builder: () => RadarChartWidget(
-              data: _princAverages,
-              title: 'Radar Principios',
-              min: 0,
-              max: 5,
+              values: _princAverages.map((e) => e.general).toList(),
             ),
           ),
         ),
       ],
     );
   }
-}
-
-class DashboardChartAdapter {
-  static List<DonutChartData> toDonutChartData(List<models.LevelAverages> list) {
-    return list.map((e) => DonutChartData(label: e.nombre, value: e.general)).toList();
-  }
-
-  static List<ScatterBubbleData> toScatterBubbleData(List<models.LevelAverages> list) {
-    return list.map((e) => ScatterBubbleData(x: e.id.toDouble(), y: e.general)).toList();
-  }
-
-  static List<double> toRadarValues(List<models.LevelAverages> list) {
-    return list.map((e) => e.general).toList();
-  }
-
-  static List<String> toRadarLabels(List<models.LevelAverages> list) {
-    return list.map((e) => e.nombre).toList();
-  }
-}
-
-class DonutChartData {
-  final String label;
-  final double value;
-  DonutChartData({required this.label, required this.value});
 }
