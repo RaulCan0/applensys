@@ -140,7 +140,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Row(
           children: [
             // Column 1 (left)
-            Container(
+            SizedBox(
               width: MediaQuery.of(context).size.width * 0.3, // Adjusted width
               child: Column(
                 children: [
@@ -168,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(width: 12),
             // Column 2 (center)
-            Container(
+            SizedBox(
               width: MediaQuery.of(context).size.width * 0.4, // Adjusted width
               child: Column(
                 children: [
@@ -203,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(width: 12),
             // Column 3 (right)
-            Container(
+            SizedBox(
               width: MediaQuery.of(context).size.width * 0.3, // Adjusted width
               child: Column(
                 children: [

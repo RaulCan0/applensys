@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -27,7 +29,6 @@ class ComportamientoEvaluacionScreen extends StatefulWidget {
   final String dimensionId;
   final String empresaId;
   final String asociadoId;
-  final String dimension;
 
   const ComportamientoEvaluacionScreen({
     super.key,
@@ -36,13 +37,11 @@ class ComportamientoEvaluacionScreen extends StatefulWidget {
     required this.evaluacionId,
     required this.dimensionId,
     required this.empresaId,
-    required this.asociadoId,
-    required this.dimension,
+    required this.asociadoId, required String dimension,
   });
 
   @override
-  // ignore: library_private_types_in_public_api
-  _ComportamientoEvaluacionScreenState createState() => _ComportamientoEvaluacionScreenState();
+  State<ComportamientoEvaluacionScreen> createState() => _ComportamientoEvaluacionScreenState();
 }
 
 class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacionScreen> {
@@ -62,9 +61,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       builder: (_) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar'))
-        ],
+        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar'))],
       ),
     );
   }
@@ -87,7 +84,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       setState(() {});
       _showAlert('Evidencia', 'Imagen subida correctamente.');
     } catch (e) {
-      _showAlert('Error', 'No se pudo obtener la imagen: \$e');
+      _showAlert('Error', 'No se pudo obtener la imagen: $e');
     }
   }
 
@@ -127,10 +124,9 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
         valor: calificacion,
         sistemas: sistemasSeleccionados,
       );
-      // ignore: use_build_context_synchronously
       Navigator.pop(context, nombreComp);
     } catch (e) {
-      _showAlert('Error', 'No se pudo guardar: \$e');
+      _showAlert('Error', 'No se pudo guardar: $e');
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
@@ -162,27 +158,27 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       rows: [
         DataRow(cells: [
           const DataCell(Text('Ejecutivos')),
-          wrapText('Los ejecutivos se centran principalmente en la lucha contra incendios y en gran parte están ausentes de los esfuerzos de mejora.'),
-          wrapText('Los ejecutivos son conscientes de las iniciativas de otros para mejorar, pero en gran parte no están involucrados.'),
-          wrapText('Los ejecutivos establecen la dirección para la mejora y respaldan los esfuerzos de los demás.'),
-          wrapText('Los ejecutivos participan en los esfuerzos de mejora y respaldan el alineamiento de los principios de excelencia operacional con los sistemas.'),
-          wrapText('Los ejecutivos se centran en garantizar que los principios de excelencia operativa se arraiguen profundamente en la cultura y se evalúen regularmente para mejorar.'),
+          wrapText('Se centran en la lucha contra incendios y están ausentes de los esfuerzos de mejora.'),
+          wrapText('Son conscientes de iniciativas de mejora, pero no se involucran.'),
+          wrapText('Establecen dirección para la mejora y apoyan esfuerzos.'),
+          wrapText('Participan activamente y alinean principios con sistemas.'),
+          wrapText('Aseguran arraigo de principios en la cultura y evalúan regularmente.'),
         ]),
         DataRow(cells: [
           const DataCell(Text('Gerentes')),
-          wrapText('Los gerentes están orientados a obtener resultados "a toda costa".'),
-          wrapText('Los gerentes generalmente buscan especialistas para crear mejoras a través de la orientación del proyecto.'),
-          wrapText('Los gerentes participan en el desarrollo de sistemas y ayudan a otros a usar herramientas de manera efectiva.'),
-          wrapText('Los gerentes se enfocan en conductas de manejo a través del diseño de sistemas.'),
-          wrapText('Los gerentes están "principalmente enfocados" en la mejora continua de los sistemas para impulsar un comportamiento más alineado con los principios de excelencia operativa.'),
+          wrapText('Orientados a resultados "a toda costa".'),
+          wrapText('Delegan mejoras a especialistas con guía externa.'),
+          wrapText('Ayudan a usar herramientas y desarrollan sistemas.'),
+          wrapText('Diseñan sistemas para moldear comportamientos.'),
+          wrapText('Enfocados en mejora continua para alinear sistemas con excelencia.'),
         ]),
         DataRow(cells: [
           const DataCell(Text('Miembros del equipo')),
-          wrapText('Los miembros del equipo se enfocan en hacer su trabajo y son tratados en gran medida como un gasto.'),
-          wrapText('A veces se solicita a los asociados que participen en un equipo de mejora usualmente dirigido por alguien externo a su equipo de trabajo natural.'),
-          wrapText('Están capacitados y participan en proyectos de mejora.'),
-          wrapText('Están involucrados todos los días en el uso de herramientas para la mejora continua en sus propias áreas de responsabilidad.'),
-          wrapText('Entienden los principios "el por qué" detrás de las herramientas y son líderes para mejorar sus propios sistemas y ayudar a otros.'),
+          wrapText('Se enfocan en hacer su trabajo; tratados como gasto.'),
+          wrapText('Participan ocasionalmente en proyectos dirigidos externamente.'),
+          wrapText('Capacitados y activos en proyectos de mejora.'),
+          wrapText('Usan herramientas de mejora en su área.'),
+          wrapText('Líderes en mejora de sistemas propios y apoyo a otros.'),
         ]),
         DataRow(cells: [
           const DataCell(Text('Frecuencia')),
@@ -213,8 +209,8 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           wrapText('Aislado • Punto de Solución'),
           wrapText('Silos • Flujo de Valor Interno'),
           wrapText('Predominantemente Operaciones • Flujo de Valor Funcional'),
-          wrapText('Múltiples Procesos de Negocios • Flujo de Valor Integrado'),
-          wrapText('En Toda la Empresa • Flujo de Valor Extendido'),
+          wrapText('Múltiples Procesos • Flujo de Valor Integrado'),
+          wrapText('Toda la Empresa • Flujo de Valor Extendido'),
         ]),
       ],
     );
@@ -251,17 +247,16 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final desc = widget.principio.calificaciones['C\$calificacion'] ?? 'Sin descripción disponible';
+    final desc = widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible';
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: const DrawerLensys(),
       appBar: AppBar(
         backgroundColor: Colors.indigo,
         centerTitle: true,
-        title: Text('El principio:${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
+        title: Text('El principio: ${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [IconButton(icon: const Icon(Icons.menu), onPressed: () => _scaffoldKey.currentState?.openEndDrawer())],
       ),
@@ -272,7 +267,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
             ElevatedButton.icon(
               icon: const Icon(Icons.info_outline, size: 18),
               label: const Text('Benchmark Nivel', style: TextStyle(fontSize: 12)),
-              onPressed: () => _showAlert('Benchmark  del Nivel', widget.principio.benchmarkPorNivel),
+              onPressed: () => _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
@@ -281,38 +276,53 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
               onPressed: () => _showAlert('Guía', widget.principio.preguntas),
             ),
             const SizedBox(width: 8),
-           ElevatedButton.icon(
-  icon: const Icon(Icons.settings, size: 18),
-  label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
-  onPressed: isSaving
-      ? null
-      : () async {
-          final sel = await showModalBottomSheet<List<String>>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => SistemasScreen(
-              onSeleccionar: (s) {
-                Navigator.pop(context, s.map((e) => e['nombre'].toString()).toList());
-              },
+            ElevatedButton.icon(
+              icon: const Icon(Icons.settings, size: 18),
+              label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final sel = await showModalBottomSheet<List<String>>(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => SistemasScreen(
+                          onSeleccionar: (s) {
+                            Navigator.pop(context, s.map((e) => e['nombre'].toString()).toList());
+                          },
+                        ),
+                      );
+                      if (sel != null) setState(() => sistemasSeleccionados = sel);
+                    },
             ),
-          );
-          if (sel != null) setState(() => sistemasSeleccionados = sel);
-        },
-),
-
           ]),
-         
           const SizedBox(height: 16),
           const Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
-          Slider(value: calificacion.toDouble(), min: 1, max: 5, divisions: 4, label: calificacion.toString(), onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round())),
-            Text('Descripción ($calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible'),
+          Slider(
+            value: calificacion.toDouble(),
+            min: 1,
+            max: 5,
+            divisions: 4,
+            label: calificacion.toString(),
+            onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round()),
+          ),
+          Text('Descripción ($calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(desc),
           const SizedBox(height: 16),
-          ElevatedButton.icon(icon: const Icon(Icons.remove_red_eye), label: const Text('Ver lentes de madurez'), onPressed: _mostrarLentesRolDialog),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.remove_red_eye),
+            label: const Text('Ver lentes de madurez'),
+            onPressed: _mostrarLentesRolDialog,
+          ),
           const SizedBox(height: 16),
           Row(children: [
-            Expanded(child: TextField(controller: observacionController, maxLines: 2, enabled: !isSaving, decoration: const InputDecoration(hintText: 'Observaciones...', border: OutlineInputBorder()))),
+            Expanded(
+              child: TextField(
+                controller: observacionController,
+                maxLines: 2,
+                enabled: !isSaving,
+                decoration: const InputDecoration(hintText: 'Observaciones...', border: OutlineInputBorder()),
+              ),
+            ),
             const SizedBox(width: 8),
             IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: isSaving ? null : _takePhoto),
           ]),
@@ -326,11 +336,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
               children: sistemasSeleccionados.map((sistema) {
                 return Chip(
                   label: Text(sistema),
-                  onDeleted: () {
-                    setState(() {
-                      sistemasSeleccionados.remove(sistema);
-                    });
-                  },
+                  onDeleted: () => setState(() => sistemasSeleccionados.remove(sistema)),
                   deleteIcon: const Icon(Icons.close, size: 18),
                 );
               }).toList(),
@@ -342,7 +348,9 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           ],
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            icon: isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save, color: Colors.white),
+            icon: isSaving
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.save, color: Colors.white),
             label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación', style: const TextStyle(color: Colors.white)),
             onPressed: isSaving ? null : _guardarEvaluacion,
             style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: Colors.indigo),
