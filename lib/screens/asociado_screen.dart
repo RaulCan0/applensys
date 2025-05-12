@@ -90,7 +90,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: cargoSeleccionado,
-                items: ['Ejecutivo', 'Gerente', 'Miembro'].map((nivel) {
+                items: ['Ejecutivo', 'Gerente', 'Miembro de Equipo'].map((nivel) {
                   return DropdownMenuItem<String>(
                     value: nivel,
                     child: Text(nivel),
@@ -226,8 +226,9 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${asociado.cargo.toUpperCase()} - ${asociado.antiguedad} años'),
-                          const SizedBox(height: 4),
+Text(
+  '${asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : asociado.cargo.toUpperCase()} - ${asociado.antiguedad} años',
+),                          const SizedBox(height: 4),
                           LinearProgressIndicator(
                             value: progreso,
                             backgroundColor: Colors.grey[300],

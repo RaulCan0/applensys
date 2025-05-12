@@ -70,7 +70,6 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
   }
 
   Future<void> _takePhoto() async {
-    // En Windows la cámara no está soportada; usar galería como fallback
     final source = Platform.isWindows ? ImageSource.gallery : ImageSource.camera;
     try {
       final XFile? photo = await _picker.pickImage(source: source);
@@ -252,6 +251,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     final desc = widget.principio.calificaciones['C\$calificacion'] ?? 'Sin descripción disponible';
@@ -272,7 +272,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
             ElevatedButton.icon(
               icon: const Icon(Icons.info_outline, size: 18),
               label: const Text('Benchmark Nivel', style: TextStyle(fontSize: 12)),
-              onPressed: () => _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
+              onPressed: () => _showAlert('Benchmark  del Nivel', widget.principio.benchmarkPorNivel),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
@@ -281,22 +281,27 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
               onPressed: () => _showAlert('Guía', widget.principio.preguntas),
             ),
             const SizedBox(width: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.settings, size: 18),
-              label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
-              onPressed: isSaving
-                  ? null
-                  : () async {
-                      final sel = await showModalBottomSheet<List<String>>(context: context, isScrollControlled: true, builder: (_) => SistemasScreen(onSeleccionar: (s) {
-                        Navigator.pop(context, s.map((e) => e['nombre'].toString()).toList());
-                      }));
-                      if (sel != null) setState(() => sistemasSeleccionados = sel);
-                    },
+           ElevatedButton.icon(
+  icon: const Icon(Icons.settings, size: 18),
+  label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
+  onPressed: isSaving
+      ? null
+      : () async {
+          final sel = await showModalBottomSheet<List<String>>(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => SistemasScreen(
+              onSeleccionar: (s) {
+                Navigator.pop(context, s.map((e) => e['nombre'].toString()).toList());
+              },
             ),
+          );
+          if (sel != null) setState(() => sistemasSeleccionados = sel);
+        },
+),
+
           ]),
-          const SizedBox(height: 16),
-          const Text('Benchmark:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          Text(widget.principio.benchmarkComportamiento),
+         
           const SizedBox(height: 16),
           const Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
           Slider(value: calificacion.toDouble(), min: 1, max: 5, divisions: 4, label: calificacion.toString(), onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round())),
@@ -311,6 +316,26 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
             const SizedBox(width: 8),
             IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: isSaving ? null : _takePhoto),
           ]),
+          if (sistemasSeleccionados.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text('Sistemas Asociados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 4.0,
+              children: sistemasSeleccionados.map((sistema) {
+                return Chip(
+                  label: Text(sistema),
+                  onDeleted: () {
+                    setState(() {
+                      sistemasSeleccionados.remove(sistema);
+                    });
+                  },
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                );
+              }).toList(),
+            ),
+          ],
           if (evidenciaUrl != null) ...[
             const SizedBox(height: 16),
             Image.network(evidenciaUrl!, height: MediaQuery.of(context).size.height * 0.2),

@@ -11,9 +11,11 @@ class SistemasScreen extends StatefulWidget {
 
 class _SistemasScreenState extends State<SistemasScreen> {
   final TextEditingController nuevoController = TextEditingController();
+  final TextEditingController busquedaController = TextEditingController();
   final supabase = Supabase.instance.client;
 
   List<Map<String, dynamic>> sistemas = [];
+  List<Map<String, dynamic>> sistemasFiltrados = [];
   Set<int> seleccionados = {};
   bool isLoading = true;
 
@@ -21,6 +23,16 @@ class _SistemasScreenState extends State<SistemasScreen> {
   void initState() {
     super.initState();
     cargarSistemas();
+    busquedaController.addListener(_filtrarBusqueda);
+  }
+
+  void _filtrarBusqueda() {
+    final query = busquedaController.text.trim().toLowerCase();
+    setState(() {
+      sistemasFiltrados = query.isEmpty
+          ? List.from(sistemas)
+          : sistemas.where((s) => s['nombre'].toLowerCase().contains(query)).toList();
+    });
   }
 
   Future<void> cargarSistemas() async {
@@ -28,6 +40,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
     if (!mounted) return;
     setState(() {
       sistemas = List<Map<String, dynamic>>.from(response);
+      sistemasFiltrados = List.from(sistemas);
       isLoading = false;
     });
   }
@@ -43,6 +56,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
       setState(() {
         sistemas.add(response);
         nuevoController.clear();
+        _filtrarBusqueda();
       });
     }
   }
@@ -53,6 +67,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
     setState(() {
       sistemas.removeWhere((s) => s['id'] == id);
       seleccionados.remove(id);
+      _filtrarBusqueda();
     });
   }
 
@@ -67,9 +82,8 @@ class _SistemasScreenState extends State<SistemasScreen> {
     if (!mounted) return;
     setState(() {
       final idx = sistemas.indexWhere((s) => s['id'] == id);
-      if (idx != -1) {
-        sistemas[idx] = updated;
-      }
+      if (idx != -1) sistemas[idx] = updated;
+      _filtrarBusqueda();
     });
   }
 
@@ -81,16 +95,26 @@ class _SistemasScreenState extends State<SistemasScreen> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 350.0,
+      height: 380.0,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Sistemas Asociados'),
           backgroundColor: Colors.indigo,
-          elevation: 0,
           automaticallyImplyLeading: false,
+          elevation: 0,
+          title: TextField(
+            controller: busquedaController,
+            style: const TextStyle(color: Colors.white),
+            cursorColor: Colors.white,
+            decoration: const InputDecoration(
+              hintText: 'Buscar sistema...',
+              hintStyle: TextStyle(color: Colors.white70),
+              prefixIcon: Icon(Icons.search, color: Colors.white),
+              border: InputBorder.none,
+            ),
+          ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.check),
+              icon: const Icon(Icons.check, color: Colors.white),
               onPressed: _notificarSeleccion,
               tooltip: 'Confirmar selección',
             ),
@@ -103,13 +127,13 @@ class _SistemasScreenState extends State<SistemasScreen> {
                 child: Column(
                   children: [
                     Expanded(
-                      child: sistemas.isEmpty
+                      child: sistemasFiltrados.isEmpty
                           ? const Center(child: Text('No hay sistemas. Añade uno nuevo.'))
                           : ListView.separated(
-                              itemCount: sistemas.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
+                              itemCount: sistemasFiltrados.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
                               itemBuilder: (context, i) {
-                                final s = sistemas[i];
+                                final s = sistemasFiltrados[i];
                                 return _SistemaTile(
                                   sistema: s,
                                   isSelected: seleccionados.contains(s['id']),
@@ -148,10 +172,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
                               backgroundColor: Colors.indigo,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             ),
-                            child: const Text(
-                              'Añadir',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                            child: const Text('Añadir', style: TextStyle(color: Colors.white)),
                           ),
                         ],
                       ),
@@ -215,24 +236,21 @@ class __SistemaTileState extends State<_SistemaTile> {
               style: const TextStyle(fontSize: 14),
               decoration: const InputDecoration(
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 4)
+                contentPadding: EdgeInsets.symmetric(vertical: 4),
               ),
               onSubmitted: (v) {
                 widget.onEdit(v.trim());
                 setState(() => editing = false);
               },
-              onTapOutside: (_){ 
-                 if(editing && editController.text.trim() == widget.sistema['nombre']) {
-                   setState(() => editing = false);
-                 }
+              onTapOutside: (_) {
+                if (editing && editController.text.trim() == widget.sistema['nombre']) {
+                  setState(() => editing = false);
+                }
               },
             )
           : GestureDetector(
               onDoubleTap: () => setState(() => editing = true),
-              child: Text(
-                widget.sistema['nombre'],
-                style: const TextStyle(fontSize: 14),
-              ),
+              child: Text(widget.sistema['nombre'], style: const TextStyle(fontSize: 14)),
             ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -245,7 +263,7 @@ class __SistemaTileState extends State<_SistemaTile> {
               }
               setState(() => editing = !editing);
             },
-            tooltip: editing? 'Guardar' : 'Editar',
+            tooltip: editing ? 'Guardar' : 'Editar',
             visualDensity: VisualDensity.compact,
           ),
           IconButton(

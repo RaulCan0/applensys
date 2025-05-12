@@ -29,8 +29,22 @@ class PrincipiosScreen extends StatefulWidget {
 
 class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Map<String, List<PrincipioJson>> principiosUnicos = {};
+  
   List<String> comportamientosEvaluados = [];
   bool cargando = true;
+  String _nombreDimension(String id) {
+  switch (id) {
+    case '1':
+      return 'IMPULSORES CULTURALES';
+    case '2':
+      return 'MEJORA CONTINUA';
+    case '3':
+      return 'ALINEAMIENTO EMPRESARIAL';
+    default:
+      return 'DIMENSIÓN DESCONOCIDA';
+  }
+}
+
   final SupabaseService _supabaseService = SupabaseService();
 
   @override
@@ -90,7 +104,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
       appBar: AppBar(
         title: Center(
           child: Text(
-        'Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre}',
+            'Dimensión ${_nombreDimension(widget.dimensionId)}',
         style: const TextStyle(color: Colors.white),
           ),
         ),
@@ -128,12 +142,22 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                         margin: const EdgeInsets.symmetric(vertical: 16),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            'Nivel: ${widget.asociado.cargo.toUpperCase()}',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          child: Center(
+                            child: Text(
+                              'EVALUANDO A: ${widget.asociado.nombre}\n'
+                              'Nivel Organizacional: ${widget.asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : widget.asociado.cargo.toUpperCase()}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontFamily: 'Arial',
+                              ),
+                            ),
                           ),
                         ),
                       ),
+
+                        
+                      
                       Expanded(
                         child: ListView.builder(
                           itemCount: principiosUnicos.length,
@@ -143,6 +167,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                               builder: (context, setStateTile) {
                                 final totalComportamientos = entry.value.length;
                                 final evaluados = entry.value.where((p) {
+                                  
                                   final comportamientoNombre = p.benchmarkComportamiento.split(":").first.trim();
                                   return comportamientosEvaluados.contains(comportamientoNombre);
                                 }).length;
@@ -158,7 +183,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         Text(
                                           entry.key,
                                           style: const TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 18,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -177,15 +202,21 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                       final evaluado = comportamientosEvaluados.contains(comportamientoNombre);
 
                                       return ListTile(
-                                        title: Text(
-                                          comportamientoNombre,
-                                          style: TextStyle(
-                                            color: evaluado ? Colors.green : Colors.black,
-                                            fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
-                                          ),
-                                        ),
-                                        subtitle: const Text('Ir a evaluación'),
-                                        trailing: const Icon(Icons.arrow_forward_ios),
+                                     
+  title: Text(
+  comportamientoNombre,
+  style: TextStyle(
+    color: evaluado ? Colors.green : Colors.black,
+    fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
+  ),
+),
+subtitle: Text(
+  principio.benchmarkComportamiento,
+  style: const TextStyle(fontSize: 15, color: Colors.black54),
+),
+trailing: const Icon(Icons.arrow_forward_ios),
+
+
                                         onTap: () async {
                                           final resultado = await Navigator.push<String>(
                                             context,
