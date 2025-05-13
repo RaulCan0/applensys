@@ -94,6 +94,7 @@ class DrawerLensys extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => DetallesEvaluacionScreen(
                       dimensionesPromedios: const {},
+                      promedios: const {},
                       empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: '', createdAt: DateTime.now()),
                       evaluacionId: '',
                     ),

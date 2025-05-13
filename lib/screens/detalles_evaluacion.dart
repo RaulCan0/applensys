@@ -15,6 +15,7 @@ class DetallesEvaluacionScreen extends StatefulWidget {
     required this.dimensionesPromedios,
     required this.empresa,
     required this.evaluacionId,
+    required Map promedios, // <--- ESTE PARÁMETRO
   });
 
   @override
