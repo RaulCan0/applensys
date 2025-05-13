@@ -88,42 +88,34 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
         controller: _tabController,
         children: dimensiones.map((dimension) {
           final promedios = widget.dimensionesPromedios[dimension]!;
-          return _buildDimensionDetails(context, dimension, promedios);
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildDimensionDetails(
-    BuildContext context,
-    String dimension,
-    Map<String, double> promedios,
-  ) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPromedioGeneralCard(context, promedios),
-          const SizedBox(height: 16),
-          Center(
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.dashboard),
-              label: const Text('Ver Dashboard'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DashboardScreen(
-                      empresa: widget.empresa,
-                      evaluacionId: widget.evaluacionId,
-                    ),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildPromedioGeneralCard(context, promedios),
+                const SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.dashboard),
+                    label: const Text('Ver Dashboard'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DashboardScreen(
+                            empresa: widget.empresa,
+                            evaluacionId: widget.evaluacionId,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }
@@ -245,5 +237,56 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     if (value < 3) return Colors.red;
     if (value < 4) return Colors.amber;
     return Colors.green;
+  }
+}
+
+// Modelo y generador final para prereporte
+class PrereporteDimension {
+  final String dimension;
+  final double promedioEjecutivo;
+  final double promedioGerente;
+  final double promedioMiembro;
+  final double promedioGeneral;
+  final Set<String> sistemasUnicos;
+
+  PrereporteDimension({
+    required this.dimension,
+    required this.promedioEjecutivo,
+    required this.promedioGerente,
+    required this.promedioMiembro,
+    required this.promedioGeneral,
+    required this.sistemasUnicos,
+  });
+}
+
+class PrereporteGeneratorFinal {
+  static List<PrereporteDimension> generarDesde({
+    required Map<String, Map<String, double>> promedios,
+    required Map<String, Set<String>> sistemas,
+  }) {
+    final List<PrereporteDimension> lista = [];
+
+    for (final dimension in promedios.keys) {
+      final nivelData = promedios[dimension]!;
+      final promedioEjecutivo = nivelData['Ejecutivo'] ?? 0;
+      final promedioGerente = nivelData['Gerente'] ?? 0;
+      final promedioMiembro = nivelData['Miembro'] ?? 0;
+      final promedioGeneral = nivelData['General'] ?? 0;
+
+      final sistemasUnicos = sistemas[dimension] ?? {};
+
+      lista.add(
+        PrereporteDimension(
+          dimension: dimension,
+          promedioEjecutivo: promedioEjecutivo,
+          promedioGerente: promedioGerente,
+          promedioMiembro: promedioMiembro,
+          promedioGeneral: promedioGeneral,
+          sistemasUnicos: sistemasUnicos,
+        ),
+      );
+    }
+
+    return lista;
   }
 }
