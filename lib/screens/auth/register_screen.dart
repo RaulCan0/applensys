@@ -1,3 +1,4 @@
+import 'package:applensys/screens/auth/loader_screen.dart';
 import 'package:flutter/material.dart';
 import '../../services/supabase_service.dart';
 import 'login_screen.dart';
@@ -118,9 +119,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
             left: 16,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoaderScreen()),
+              );
+              },
             ),
-          ),
+            ),
+          
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 280, 24, 24),
             child: Column(

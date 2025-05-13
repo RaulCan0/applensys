@@ -116,7 +116,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
       drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
       endDrawer: DrawerLensys(),
       appBar: AppBar(
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.message, color: Colors.white),
@@ -197,7 +197,7 @@ onTap: () {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarDialogoNuevaEmpresa(context),
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(100),
         ),
@@ -214,14 +214,14 @@ onTap: () {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.indigo),
+          border: Border.all(color:  const Color.fromARGB(255, 35, 47, 112)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const SizedBox(width: 20),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 35, 47, 112))),
             const Padding(
               padding: EdgeInsets.only(right: 20),
               child: Icon(Icons.chevron_right, color: Colors.indigo),
@@ -231,6 +231,7 @@ onTap: () {
       ),
     );
   }
+//        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
 
   void _mostrarDialogoNuevaEmpresa(BuildContext context) {
     final nombreController = TextEditingController();

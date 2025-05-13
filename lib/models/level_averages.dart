@@ -14,24 +14,49 @@ class LevelAverages {
     required this.gerente,
     required this.miembro,
     this.dimensionId,
-    double? general, required String nivel,
+    double? general,
+    required String nivel, // <--- Parámetro nivel reintroducido
   }) : general = general ?? ((ejecutivo + gerente + miembro) / 3.0);
 
   factory LevelAverages.fromMap(Map<String, dynamic> map) {
-    final ejecutivo = (map['ejecutivo'] as num?)?.toDouble() ?? 0.0;
-    final gerente = (map['gerente'] as num?)?.toDouble() ?? 0.0;
-    final miembro = (map['miembro'] as num?)?.toDouble() ?? 0.0;
+    final double? rawEjecutivo = (map['ejecutivo'] as num?)?.toDouble();
+    final double? rawGerente = (map['gerente'] as num?)?.toDouble();
+    final double? rawMiembro = (map['miembro'] as num?)?.toDouble();
+
+    final ejecutivoFinal = rawEjecutivo ?? 0.0;
+    final gerenteFinal = rawGerente ?? 0.0;
+    final miembroFinal = rawMiembro ?? 0.0;
+
+    double calculatedGeneral;
+    if (map['general'] != null) {
+      calculatedGeneral = (map['general'] as num).toDouble();
+    } else {
+      double sum = 0;
+      int count = 0;
+      if (rawEjecutivo != null) {
+        sum += ejecutivoFinal;
+        count++;
+      }
+      if (rawGerente != null) {
+        sum += gerenteFinal;
+        count++;
+      }
+      if (rawMiembro != null) {
+        sum += miembroFinal;
+        count++;
+      }
+      calculatedGeneral = count > 0 ? sum / count : 0.0;
+    }
 
     return LevelAverages(
       id: map['id'] as int,
       nombre: map['nombre'] as String,
-      ejecutivo: ejecutivo,
-      gerente: gerente,
-      miembro: miembro,
-      dimensionId: map['dimensionId'] != null ? map['dimensionId'] as int : null,
-      general: map['general'] != null
-          ? (map['general'] as num).toDouble()
-          : ((ejecutivo + gerente + miembro) / 3.0), nivel: '',
+      ejecutivo: ejecutivoFinal,
+      gerente: gerenteFinal,
+      miembro: miembroFinal,
+      dimensionId: map['dimensionId'] as int?,
+      general: calculatedGeneral,
+      nivel: map['nivel'] as String? ?? '', // <--- Parámetro nivel reintroducido, se usa el valor del map o un string vacío
     );
   }
 
@@ -44,6 +69,7 @@ class LevelAverages {
       'miembro': miembro,
       'dimensionId': dimensionId,
       'general': general,
+      // 'nivel': nivel, // Si se quisiera persistir el nivel, se añadiría aquí
     };
   }
 }

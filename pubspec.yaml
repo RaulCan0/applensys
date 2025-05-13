@@ -30,6 +30,7 @@ dependencies:
   url_launcher: ^6.3.1
   flutter_local_notifications: ^9.7.0
   timezone: ^0.8.0
+  carousel_slider: ^5.0.0
   
 dev_dependencies:
   flutter_test:

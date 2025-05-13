@@ -1,5 +1,3 @@
-// asociado_screen.dart
-
 import 'dart:math';
 
 import 'package:applensys/services/supabase_service.dart';
@@ -39,6 +37,12 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
     _cargarAsociados();
   }
 
+  @override
+  void dispose() {
+    // If you had any subscriptions or controllers, cancel here
+    super.dispose();
+  }
+
   Future<void> _cargarAsociados() async {
     try {
       final asociadosCargados = await _supabaseService.getAsociadosPorEmpresa(widget.empresa.id);
@@ -50,11 +54,13 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
         );
         progresoAsociado[asociado.id] = progreso;
       }
+      if (!mounted) return;
       setState(() {
         asociados = asociadosCargados;
       });
     } catch (e) {
-      _mostrarAlerta('Error', 'Error al cargar asociados: $e');
+      if (!mounted) return;
+      _mostrarAlerta('Error', 'Error al cargar asociados: \$e');
     }
   }
 
@@ -145,17 +151,18 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
                   'antiguedad': antiguedad,
                 });
 
+                if (!mounted) return;
                 setState(() {
                   asociados.add(nuevo);
                   progresoAsociado[nuevoId] = 0.0;
                 });
 
-                if (mounted) Navigator.pop(context);
-
+                Navigator.pop(context);
                 _mostrarAlerta('Éxito', 'Asociado agregado exitosamente.');
               } catch (e) {
-                if (mounted) Navigator.pop(context);
-                _mostrarAlerta('Error', 'Error al guardar asociado: $e');
+                if (!mounted) return;
+                Navigator.pop(context);
+                _mostrarAlerta('Error', 'Error al guardar asociado: \$e');
               }
             },
             style: ElevatedButton.styleFrom(
@@ -170,6 +177,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
   }
 
   void _mostrarAlerta(String titulo, String mensaje) {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -226,9 +234,10 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-Text(
-  '${asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : asociado.cargo.toUpperCase()} - ${asociado.antiguedad} años',
-),                          const SizedBox(height: 4),
+                          Text(
+                            '${asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : asociado.cargo.toUpperCase()} - ${asociado.antiguedad} años',
+                          ),
+                          const SizedBox(height: 4),
                           LinearProgressIndicator(
                             value: progreso,
                             backgroundColor: Colors.grey[300],
