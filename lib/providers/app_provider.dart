@@ -63,8 +63,20 @@ class AppProvider with ChangeNotifier {
   }
 
   Future<void> syncData() async {
-    // Implementar lógica de sincronización con Supabase
-    debugPrint('Sincronizando datos...');
+    try {
+      debugPrint('Sincronizando datos...');
+      await _loadEmpresas();
+      for (var empresa in _empresas) {
+        await loadAsociados(empresa.id);
+        await loadProgresoDimensiones(empresa.id);
+        await loadProgresoAsociados(empresa.id);
+        await loadPrincipios(empresa.id);
+        await loadTablaDatos(empresa.id);
+      }
+      debugPrint('Sincronización completada.');
+    } catch (e) {
+      debugPrint('Error durante la sincronización: $e');
+    }
   }
 
   Future<void> clearCache() async {
@@ -113,6 +125,10 @@ class AppProvider with ChangeNotifier {
 
   // PROMEDIOS
   Future<void> uploadPromedios(String evaluacionId, String dimension, List<Map<String, dynamic>> filas) async {
+    if (filas.isEmpty) {
+      debugPrint('No hay datos para subir en uploadPromedios.');
+      return;
+    }
     try {
       final data = filas.map((fila) => {
         'evaluacion_id': evaluacionId,
@@ -122,8 +138,9 @@ class AppProvider with ChangeNotifier {
         'created_at': DateTime.now().toIso8601String(),
       }).toList();
       await _client.from('promedios_comportamientos').insert(data);
+      debugPrint('Promedios subidos exitosamente.');
     } catch (e) {
-      debugPrint('Error uploading promedios: $e');
+      debugPrint('Error subiendo promedios: $e');
     }
   }
 
@@ -195,6 +212,7 @@ class AppProvider with ChangeNotifier {
           .from('tabla_datos')
           .select()
           .eq('empresa_id', empresaId);
+
       for (var item in response) {
         final dimensionId = item['dimension_id'];
         final evaluacionId = item['evaluacion_id'];
@@ -202,9 +220,10 @@ class AppProvider with ChangeNotifier {
         _tablaDatos[dimensionId]![evaluacionId] ??= [];
         _tablaDatos[dimensionId]![evaluacionId]!.add(item);
       }
+
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading tablaDatos: $e');
+      debugPrint('Error al cargar tablaDatos: $e');
     }
   }
 
@@ -244,25 +263,25 @@ class AppProvider with ChangeNotifier {
       });
     }
 
+    debugPrint('Dato actualizado en la dimensión $dimensionId para la evaluación $evaluacionId.');
     notifyListeners();
   }
 
   double getPromedio(String dimensionId, String comportamiento, String nivel) {
-    // Verificar si existen datos para la dimensión y nivel
     if (!_tablaDatos.containsKey(dimensionId) || !_tablaDatos[dimensionId]!.containsKey(nivel)) {
+      debugPrint('Datos no encontrados para la dimensión $dimensionId y nivel $nivel.');
       return 0.0;
     }
 
-    // Filtrar los datos por comportamiento
     final datos = _tablaDatos[dimensionId]![nivel]!
         .where((item) => item['comportamiento'] == comportamiento)
         .toList();
 
     if (datos.isEmpty) {
+      debugPrint('No hay datos para el comportamiento $comportamiento en la dimensión $dimensionId y nivel $nivel.');
       return 0.0;
     }
 
-    // Calcular el promedio
     final suma = datos.fold(0.0, (acc, item) => acc + (item['valor'] as num).toDouble());
     return suma / datos.length;
   }

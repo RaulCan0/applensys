@@ -265,7 +265,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _mostrarDialogoAgregarAsociado,
-        backgroundColor: Colors.indigo,
+        backgroundColor: Color.fromARGB(255, 35, 47, 112),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(100),
         ),

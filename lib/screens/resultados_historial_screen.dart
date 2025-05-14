@@ -52,7 +52,7 @@ class _ResultadosHistorialScreenState extends State<ResultadosHistorialScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Resultados: ${widget.empresaNombre}'),
-        backgroundColor: Colors.indigo,
+        backgroundColor: Color.fromARGB(255, 35, 47, 112),
         centerTitle: true,
       ),
       body: isLoading

@@ -67,7 +67,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: Colors.indigo,
+        backgroundColor: Color.fromARGB(255, 35, 47, 112),
         actions: [
           IconButton(
             icon: const Icon(

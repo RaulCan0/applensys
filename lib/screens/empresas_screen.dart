@@ -224,7 +224,7 @@ onTap: () {
             Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color.fromARGB(255, 35, 47, 112))),
             const Padding(
               padding: EdgeInsets.only(right: 20),
-              child: Icon(Icons.chevron_right, color: Colors.indigo),
+              child: Icon(Icons.chevron_right, color: Color.fromARGB(255, 35, 47, 112), size: 30),
             ),
           ],
         ),

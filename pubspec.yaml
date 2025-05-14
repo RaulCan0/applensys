@@ -15,12 +15,12 @@ dependencies:
   uuid: ^4.3.1
   animated_fl_chart: ^0.0.6
   fl_chart: ^0.63.0
-  google_fonts: ^6.2.1 
+  google_fonts: ^6.2.1
   syncfusion_flutter_charts: ^29.1.38
   image_picker: ^1.1.2
   file_selector: ^1.0.3
   path_provider: ^2.0.15
-  font_awesome_flutter: ^10.1.0   # para el icono de Excel
+  font_awesome_flutter: ^10.1.0
 
   path: ^1.8.3
   meta: ^1.16.0
@@ -28,8 +28,9 @@ dependencies:
   excel: ^4.0.6
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.1
-  flutter_local_notifications: ^9.7.0
-  timezone: ^0.8.0
+  flutter_local_notifications: ^19.2.0
+  flutter_local_notifications_linux: ^6.0.0
+  timezone: ^0.10.1
   carousel_slider: ^5.0.0
   provider: ^6.1.5
   connectivity_plus: ^6.1.4
@@ -37,7 +38,7 @@ dependencies:
   open_file: ^3.5.10
   share_plus: ^11.0.0
   docx_template: ^0.4.0
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

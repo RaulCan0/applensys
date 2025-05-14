@@ -63,6 +63,19 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+        elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 30), // Espacio de 30 píxeles desde el inicio
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/loaderScreen');
+            },
+          ),
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),

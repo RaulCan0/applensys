@@ -27,14 +27,12 @@ class _EvaluationCarouselState extends State<EvaluationCarousel> {
 
   // Lista de títulos para cada contenedor del carrusel
   final List<String> _titulos = [
-    'Información General',
-    'Datos Técnicos',
-    'Inspección Visual',
-    'Pruebas Operativas',
-    'Mediciones',
-    'Resultados',
-    'Recomendaciones',
-    'Fotos y Evidencias',
+    'Dimensiones',
+    'Nivel por Dimensión',
+    'Principios',
+    'Comportamientos',
+    'Niveles de Comportamiento',
+    'Sistemas Asociados',
   ];
   
   // Lista de colores para los contenedores
@@ -42,11 +40,10 @@ class _EvaluationCarouselState extends State<EvaluationCarousel> {
     Colors.blue.shade200,
     Colors.green.shade200,
     Colors.amber.shade200,
-    Colors.purple.shade200,
+    Colors.grey.shade200,
     Colors.teal.shade200,
-    Colors.pink.shade200,
     Colors.indigo.shade200,
-    Colors.lime.shade200,
+  
   ];
 
   // Lista de íconos para cada contenedor
@@ -57,20 +54,16 @@ class _EvaluationCarouselState extends State<EvaluationCarousel> {
     Icons.settings,
     Icons.straighten,
     Icons.assessment,
-    Icons.lightbulb_outline,
-    Icons.photo_library,
   ];
 
   // Lista de descripciones para cada contenedor
   final List<String> _descriptions = [
-    'Datos básicos y generales de la evaluación',
-    'Especificaciones técnicas y parámetros',
-    'Resultados de inspección visual realizada',
-    'Reporte de pruebas funcionales ejecutadas',
-    'Valores registrados en las mediciones',
-    'Conclusiones y resultados principales',
-    'Acciones recomendadas a seguir',
-    'Evidencia fotográfica y documentos anexos',
+    'Datos de dimensiones y generales de la evaluación',
+    'Datos de los niveles por dimensión',
+    'Datos generales de los principios',
+    'Datos de los comportamientos generales',
+    'Niveles por comportamiento',
+    'Sistemas Asociados',
   ];
 
   @override
