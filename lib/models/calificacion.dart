@@ -25,6 +25,8 @@ class Calificacion {
     this.evidenciaUrl,
   });
 
+  String get evaluacionId => id;
+
   factory Calificacion.fromMap(Map<String, dynamic> map) {
     List<String> sistemasDesdeMapa = [];
     if (map['sistemas'] is List) {
@@ -66,5 +68,13 @@ class Calificacion {
       'sistemas': sistemas,
       'evidencia_url': evidenciaUrl,
     };
+  }
+
+  factory Calificacion.fromJson(String source) {
+    return Calificacion.fromMap(json.decode(source) as Map<String, dynamic>);
+  }
+
+  String toJson() {
+    return json.encode(toMap());
   }
 }

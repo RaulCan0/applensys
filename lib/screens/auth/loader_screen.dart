@@ -76,7 +76,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo,
+                        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -94,8 +94,8 @@ class _LoaderScreenState extends State<LoaderScreen> {
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.indigo,
-                        side: const BorderSide(color: Colors.indigo, width: 2),
+                        foregroundColor: const Color.fromARGB(255, 35, 47, 112),
+                        side: const BorderSide(color: Color.fromARGB(255, 35, 47, 112), width: 2),
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -120,7 +120,7 @@ class DiagonalPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.indigo
+      ..color = const Color.fromARGB(255, 35, 47, 112)
       ..style = PaintingStyle.fill;
 
     final path = Path();

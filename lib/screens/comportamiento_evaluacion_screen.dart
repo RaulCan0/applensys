@@ -8,10 +8,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:applensys/models/calificacion.dart';
 import 'package:applensys/services/supabase_service.dart';
+import 'package:provider/provider.dart';
 import '../models/principio_json.dart';
 import '../screens/tablas_screen.dart';
 import '../widgets/sistema_selector.dart';
 import '../widgets/drawer_lensys.dart';
+import '../providers/app_provider.dart';
 
 String obtenerNombreDimension(String dimensionId) {
   switch (dimensionId) {
@@ -67,7 +69,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
   }
 
   Future<void> _takePhoto() async {
-    final source = Platform.isWindows ? ImageSource.gallery : ImageSource.camera;
+    final source = ImageSource.gallery; // Usar siempre la galería como fuente
     try {
       final XFile? photo = await _picker.pickImage(source: source);
       if (photo == null) return;
@@ -114,16 +116,21 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
         sistemas: sistemasSeleccionados,
         evidenciaUrl: evidenciaUrl,
       );
+
       await _supabase.addCalificacion(cal, id: widget.evaluacionId, idAsociado: widget.asociadoId);
-      TablasDimensionScreen.actualizarDato(
+
+      // Actualizar datos dinámicamente usando AppProvider
+      final appProvider = Provider.of<AppProvider>(context, listen: false);
+      appProvider.actualizarDato(
         widget.evaluacionId,
         dimension: obtenerNombreDimension(widget.dimensionId),
         principio: widget.principio.nombre,
         comportamiento: nombreComp,
         cargo: widget.cargo,
-        valor: calificacion,
+        valor: calificacion.toDouble(), // Conversión a double
         sistemas: sistemasSeleccionados,
       );
+
       Navigator.pop(context, nombreComp);
     } catch (e) {
       _showAlert('Error', 'No se pudo guardar: $e');
@@ -254,7 +261,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       key: _scaffoldKey,
       endDrawer: const DrawerLensys(),
       appBar: AppBar(
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
         centerTitle: true,
         title: Text('El principio: ${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -295,6 +302,17 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
                     },
             ),
           ]),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _takePhoto,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+            ),
+            child: const Text('Subir o Tomar Foto'),
+          ),
+          const SizedBox(height: 20),
+          if (evidenciaUrl != null)
+            Image.network(evidenciaUrl!, height: 200),
           const SizedBox(height: 16),
           const Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
           Slider(
@@ -353,7 +371,7 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
                 : const Icon(Icons.save, color: Colors.white),
             label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación', style: const TextStyle(color: Colors.white)),
             onPressed: isSaving ? null : _guardarEvaluacion,
-            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: Colors.indigo),
+            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: const Color.fromARGB(255, 35, 47, 112)),
           ),
         ]),
       ),

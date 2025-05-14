@@ -26,65 +26,216 @@ class _SistemasScreenState extends State<SistemasScreen> {
     busquedaController.addListener(_filtrarBusqueda);
   }
 
+  @override
+  void dispose() {
+    nuevoController.dispose();
+    busquedaController.dispose();
+    super.dispose();
+  }
+
   void _filtrarBusqueda() {
     final query = busquedaController.text.trim().toLowerCase();
     setState(() {
       sistemasFiltrados = query.isEmpty
           ? List.from(sistemas)
           : sistemas.where((s) => s['nombre'].toLowerCase().contains(query)).toList();
+      _ordenarAlfabeticamente(sistemasFiltrados);
     });
+  }
+
+  void _ordenarAlfabeticamente(List<Map<String, dynamic>> lista) {
+    lista.sort((a, b) => a['nombre'].toString().toLowerCase().compareTo(b['nombre'].toString().toLowerCase()));
   }
 
   Future<void> cargarSistemas() async {
-    final response = await supabase.from('sistemas_asociados').select();
-    if (!mounted) return;
-    setState(() {
-      sistemas = List<Map<String, dynamic>>.from(response);
-      sistemasFiltrados = List.from(sistemas);
-      isLoading = false;
-    });
+    try {
+      final response = await supabase.from('sistemas_asociados').select();
+      if (!mounted) return;
+
+      final sistemas = List<Map<String, dynamic>>.from(response);
+      _ordenarAlfabeticamente(sistemas);
+
+      setState(() {
+        this.sistemas = sistemas;
+        sistemasFiltrados = List.from(sistemas);
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+      _mostrarError('Error al cargar sistemas: $e');
+    }
   }
 
   Future<void> agregarSistema(String nombre) async {
-    if (nombre.isNotEmpty) {
+    if (nombre.isEmpty) {
+      _mostrarError('El nombre no puede estar vacío');
+      return;
+    }
+
+    setState(() => isLoading = true);
+    try {
       final response = await supabase
           .from('sistemas_asociados')
           .insert({'nombre': nombre})
           .select()
           .single();
+
       if (!mounted) return;
+
       setState(() {
         sistemas.add(response);
+        _ordenarAlfabeticamente(sistemas);
         nuevoController.clear();
         _filtrarBusqueda();
+        isLoading = false;
       });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      _mostrarError('Error al agregar sistema: $e');
     }
   }
 
   Future<void> eliminarSistema(int id) async {
-    await supabase.from('sistemas_asociados').delete().eq('id', id);
-    if (!mounted) return;
-    setState(() {
-      sistemas.removeWhere((s) => s['id'] == id);
-      seleccionados.remove(id);
-      _filtrarBusqueda();
-    });
+    setState(() => isLoading = true);
+    try {
+      await supabase.from('sistemas_asociados').delete().eq('id', id);
+      if (!mounted) return;
+
+      setState(() {
+        sistemas.removeWhere((s) => s['id'] == id);
+        seleccionados.remove(id);
+        _filtrarBusqueda();
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      _mostrarError('Error al eliminar sistema: $e');
+    }
   }
 
   Future<void> editarSistema(int id, String nuevoNombre) async {
-    if (nuevoNombre.isEmpty) return;
-    final updated = await supabase
-        .from('sistemas_asociados')
-        .update({'nombre': nuevoNombre})
-        .eq('id', id)
-        .select()
-        .single();
-    if (!mounted) return;
-    setState(() {
-      final idx = sistemas.indexWhere((s) => s['id'] == id);
-      if (idx != -1) sistemas[idx] = updated;
-      _filtrarBusqueda();
-    });
+    if (nuevoNombre.isEmpty) {
+      _mostrarError('El nombre no puede estar vacío');
+      return;
+    }
+
+    setState(() => isLoading = true);
+    try {
+      final updated = await supabase
+          .from('sistemas_asociados')
+          .update({'nombre': nuevoNombre})
+          .eq('id', id)
+          .select()
+          .single();
+
+      if (!mounted) return;
+
+      setState(() {
+        final idx = sistemas.indexWhere((s) => s['id'] == id);
+        if (idx != -1) sistemas[idx] = updated;
+        _ordenarAlfabeticamente(sistemas);
+        _filtrarBusqueda();
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      _mostrarError('Error al editar sistema: $e');
+    }
+  }
+
+  void _mostrarError(String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
+    );
+  }
+
+  void _mostrarDialogo(Map<String, dynamic> sistema) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Sistema: ${sistema['nombre']}'),
+        content: const Text('¿Qué acción deseas realizar?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _mostrarDialogoEditar(sistema);
+            },
+            child: const Text('Editar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _mostrarDialogoConfirmarEliminar(sistema);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _mostrarDialogoEditar(Map<String, dynamic> sistema) {
+    final editController = TextEditingController(text: sistema['nombre']);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Editar sistema'),
+        content: TextField(
+          controller: editController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nombre',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              final texto = editController.text.trim();
+              if (texto.isNotEmpty) {
+                Navigator.pop(context);
+                editarSistema(sistema['id'], texto);
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    ).then((_) => editController.dispose());
+  }
+
+  void _mostrarDialogoConfirmarEliminar(Map<String, dynamic> sistema) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar eliminación'),
+        content: Text('¿Estás seguro de eliminar "${sistema['nombre']}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              eliminarSistema(sistema['id']);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _notificarSeleccion() {
@@ -98,7 +249,7 @@ class _SistemasScreenState extends State<SistemasScreen> {
       height: 380.0,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.indigo,
+          backgroundColor: const Color.fromARGB(255, 35, 47, 112),
           automaticallyImplyLeading: false,
           elevation: 0,
           title: TextField(
@@ -120,160 +271,107 @@ class _SistemasScreenState extends State<SistemasScreen> {
             ),
           ],
         ),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: sistemasFiltrados.isEmpty
-                          ? const Center(child: Text('No hay sistemas. Añade uno nuevo.'))
-                          : ListView.separated(
-                              itemCount: sistemasFiltrados.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (context, i) {
-                                final s = sistemasFiltrados[i];
-                                return _SistemaTile(
-                                  sistema: s,
-                                  isSelected: seleccionados.contains(s['id']),
-                                  onSelect: (sel) {
-                                    setState(() {
-                                      sel == true
-                                          ? seleccionados.add(s['id'])
-                                          : seleccionados.remove(s['id']);
-                                    });
-                                  },
-                                  onDelete: () => eliminarSistema(s['id']),
-                                  onEdit: (nuevo) => editarSistema(s['id'], nuevo),
-                                );
-                              },
-                            ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: nuevoController,
-                              decoration: const InputDecoration(
-                                hintText: 'Nuevo sistema',
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
+        body: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: sistemasFiltrados.isEmpty && !isLoading
+                        ? const Center(child: Text('No hay sistemas. Añade uno nuevo.'))
+                        : ListView.separated(
+                            itemCount: sistemasFiltrados.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (context, i) {
+                              final s = sistemasFiltrados[i];
+                              return _SistemaTile(
+                                sistema: s,
+                                isSelected: seleccionados.contains(s['id']),
+                                onSelect: (sel) {
+                                  setState(() {
+                                    sel == true
+                                        ? seleccionados.add(s['id'])
+                                        : seleccionados.remove(s['id']);
+                                  });
+                                },
+                                onTap: () => _mostrarDialogo(s),
+                              );
+                            },
                           ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () => agregarSistema(nuevoController.text.trim()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.indigo,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: nuevoController,
+                            decoration: const InputDecoration(
+                              hintText: 'Nuevo sistema',
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(),
                             ),
-                            child: const Text('Añadir', style: TextStyle(color: Colors.white)),
+                            onSubmitted: (texto) => agregarSistema(texto.trim()),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => agregarSistema(nuevoController.text.trim()),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                          child: const Text('Añadir', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            if (isLoading)
+              Container(
+                color: Colors.black12,
+                child: const Center(
+                  child: CircularProgressIndicator(),
                 ),
               ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _SistemaTile extends StatefulWidget {
+class _SistemaTile extends StatelessWidget {
   final Map<String, dynamic> sistema;
   final bool isSelected;
   final ValueChanged<bool?> onSelect;
-  final VoidCallback onDelete;
-  final ValueChanged<String> onEdit;
+  final VoidCallback onTap;
 
   const _SistemaTile({
     required this.sistema,
     required this.isSelected,
     required this.onSelect,
-    required this.onDelete,
-    required this.onEdit,
+    required this.onTap,
   });
-
-  @override
-  State<_SistemaTile> createState() => __SistemaTileState();
-}
-
-class __SistemaTileState extends State<_SistemaTile> {
-  bool editing = false;
-  late TextEditingController editController;
-
-  @override
-  void initState() {
-    super.initState();
-    editController = TextEditingController(text: widget.sistema['nombre']);
-  }
-
-  @override
-  void dispose() {
-    editController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Checkbox(
-        value: widget.isSelected,
-        onChanged: widget.onSelect,
+        value: isSelected,
+        onChanged: onSelect,
         visualDensity: VisualDensity.compact,
       ),
-      title: editing
-          ? TextField(
-              controller: editController,
-              autofocus: true,
-              style: const TextStyle(fontSize: 14),
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 4),
-              ),
-              onSubmitted: (v) {
-                widget.onEdit(v.trim());
-                setState(() => editing = false);
-              },
-              onTapOutside: (_) {
-                if (editing && editController.text.trim() == widget.sistema['nombre']) {
-                  setState(() => editing = false);
-                }
-              },
-            )
-          : GestureDetector(
-              onDoubleTap: () => setState(() => editing = true),
-              child: Text(widget.sistema['nombre'], style: const TextStyle(fontSize: 14)),
-            ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: Icon(editing ? Icons.done : Icons.edit, size: 20),
-            onPressed: () {
-              if (editing) {
-                widget.onEdit(editController.text.trim());
-              }
-              setState(() => editing = !editing);
-            },
-            tooltip: editing ? 'Guardar' : 'Editar',
-            visualDensity: VisualDensity.compact,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, size: 20, color: Colors.redAccent),
-            onPressed: widget.onDelete,
-            tooltip: 'Eliminar',
-            visualDensity: VisualDensity.compact,
-          ),
-        ],
+      title: Text(
+        sistema['nombre'],
+        style: const TextStyle(fontSize: 14),
       ),
+      onTap: onTap,
     );
   }
 }

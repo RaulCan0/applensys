@@ -114,7 +114,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Mi Perfil")),
+      appBar: AppBar(
+        title: const Text("Mi Perfil"),
+        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+      ),
       body:
           _loading
               ? const Center(child: CircularProgressIndicator())
@@ -150,14 +153,21 @@ class _PerfilScreenState extends State<PerfilScreen> {
                               ),
                               padding: const EdgeInsets.all(6),
                               child: const Icon(
-                                Icons.add,
+                                Icons.camera_alt,
                                 color: Colors.white,
-                                size: 20,
                               ),
                             ),
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _seleccionarFoto,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+                      ),
+                      child: const Text('Subir Foto de Perfil'),
                     ),
                     const SizedBox(height: 16),
                     TextField(

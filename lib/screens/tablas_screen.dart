@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:applensys/providers/app_provider.dart';
 import 'package:applensys/screens/detalles_evaluacion.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
-import 'package:applensys/services/evaluacion_cache_service.dart';
 
-// Extensión para capitalizar cadenas
 extension CapitalizeExtension on String {
   String capitalize() {
     if (isEmpty) return this;
@@ -13,14 +13,12 @@ extension CapitalizeExtension on String {
 }
 
 class TablasDimensionScreen extends StatefulWidget {
-  /// Mapa estático con datos por dimensión y evaluación
   static Map<String, Map<String, List<Map<String, dynamic>>>> tablaDatos = {
     'Dimensión 1': {},
     'Dimensión 2': {},
     'Dimensión 3': {},
   };
 
-  /// Notificador para reconstruir UI al cambiar datos
   static final ValueNotifier<bool> dataChanged = ValueNotifier<bool>(false);
 
   final Empresa empresa;
@@ -29,35 +27,8 @@ class TablasDimensionScreen extends StatefulWidget {
   const TablasDimensionScreen({
     super.key,
     required this.empresa,
-    required this.evaluacionId,
-    required String empresaId,
-    required String dimension,
+    required this.evaluacionId, required String empresaId, required String dimension,
   });
-
-  /// Agrega un nuevo registro, persiste en cache y notifica cambio
-  static Future<void> actualizarDato(
-    String evaluacionId, {
-    required String dimension,
-    required String principio,
-    required String comportamiento,
-    required String cargo,
-    required int valor,
-    required List<String> sistemas,
-  }) async {
-    final tablaDim = tablaDatos.putIfAbsent(dimension, () => {});
-    final lista = tablaDim.putIfAbsent(evaluacionId, () => []);
-    lista.add({
-      'principio': principio,
-      'comportamiento': comportamiento,
-      'cargo_raw': cargo.trim(),
-      'valor': valor,
-      'sistemas': sistemas,
-    });
-    // Guardar estado en cache
-    await EvaluacionCacheService().guardarTablas(tablaDatos);
-    // Disparar reconstrucción de la pantalla
-    dataChanged.value = !dataChanged.value;
-  }
 
   @override
   State<TablasDimensionScreen> createState() => _TablasDimensionScreenState();
@@ -72,7 +43,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   void initState() {
     super.initState();
     TablasDimensionScreen.dataChanged.addListener(_onDataChanged);
-    _cargarDesdeCache();
+    _cargarDesdeProveedor();
   }
 
   @override
@@ -83,29 +54,21 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
 
   void _onDataChanged() => setState(() {});
 
-  Future<void> _cargarDesdeCache() async {
-    final data = await EvaluacionCacheService().cargarTablas();
-    if (data.values.any((m) => m.isNotEmpty)) {
-      setState(() => TablasDimensionScreen.tablaDatos = data);
-    }
-  }
-
-  // Normaliza valores de cargo a etiquetas fijas
-  String _normalizeNivel(String raw) {
-    final lower = raw.toLowerCase();
-    if (lower.contains('miembro')) return 'Miembro';
-    if (lower.contains('gerente')) return 'Gerente';
-    return 'Ejecutivo';
+  Future<void> _cargarDesdeProveedor() async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    await appProvider.loadTablaDatos(widget.empresa.id);
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final appProvider = Provider.of<AppProvider>(context);
     return DefaultTabController(
       length: dimensiones.length,
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          backgroundColor: Colors.indigo,
+          backgroundColor: const Color.fromARGB(255, 35, 47, 112),
           leading: const BackButton(color: Colors.white),
           title: const Text('Resultados', style: TextStyle(color: Colors.white)),
           centerTitle: true,
@@ -117,7 +80,8 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
           ],
           bottom: TabBar(
             indicatorColor: Colors.white,
-            isScrollable: true,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey,
             tabs: dimensiones.map((d) => Tab(text: d)).toList(),
           ),
         ),
@@ -144,10 +108,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
             Expanded(
               child: TabBarView(
                 children: dimensiones.map((dimension) {
-                  final filas = TablasDimensionScreen.tablaDatos[dimension]
-                          ?.values
-                          .expand((l) => l)
-                          .toList() ?? [];
+                  final filas = appProvider.tablaDatos[dimension]?.values.expand((l) => l).toList() ?? [];
                   if (filas.isEmpty) {
                     return const Center(child: Text('No hay datos para mostrar'));
                   }
@@ -162,12 +123,11 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   }
 
   void _irADetalles() {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
     final promediosPorDimension = <String, Map<String, double>>{};
+
     for (final dim in dimensiones) {
-      final filas = TablasDimensionScreen.tablaDatos[dim]
-              ?.values
-              .expand((l) => l)
-              .toList() ?? [];
+      final filas = appProvider.tablaDatos[dim]?.values.expand((l) => l).toList() ?? [];
       final sumasNivel = {'Ejecutivo': 0.0, 'Gerente': 0.0, 'Miembro': 0.0};
       final conteosNivel = {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0};
       final sistemasPromedio = SistemasPromedio();
@@ -175,7 +135,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
       for (var f in filas) {
         final rawCargo = (f['cargo_raw'] as String?) ?? '';
         final nivel = _normalizeNivel(rawCargo);
-        final valor = (f['valor'] as int?)?.toDouble() ?? 0.0;
+        final valor = (f['valor'] as num?)?.toDouble() ?? 0.0;
         final sis = (f['sistemas'] as List?)?.whereType<String>().toList() ?? [];
         sumasNivel[nivel] = sumasNivel[nivel]! + valor;
         conteosNivel[nivel] = conteosNivel[nivel]! + 1;
@@ -195,6 +155,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
 
       promediosPorDimension[dim] = promediosNivel;
     }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -216,18 +177,18 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
         padding: const EdgeInsets.all(8),
         child: DataTable(
           columnSpacing: 20,
-          headingRowColor: WidgetStateProperty.all(Colors.indigo.shade300),
+          headingRowColor: WidgetStateProperty.all(const Color.fromARGB(255, 35, 47, 112)),
           dataRowColor: WidgetStateProperty.all(Colors.white),
-          border: TableBorder.all(color: Colors.indigo.shade200),
+          border: TableBorder.all(color: const Color.fromARGB(255, 35, 47, 112)),
           columns: const [
-            DataColumn(label: Text('Principio')),
-            DataColumn(label: Text('Comportamiento')),
-            DataColumn(label: Text('Ejecutivo')),
-            DataColumn(label: Text('Gerente')),
-            DataColumn(label: Text('Miembro')),
-            DataColumn(label: Text('Ejecutivo Sistemas')),
-            DataColumn(label: Text('Gerente Sistemas')),
-            DataColumn(label: Text('Miembro Sistemas')),
+            DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
+            DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
+            DataColumn(label: Text('Ejecutivo', style: TextStyle(color: Colors.white))),
+            DataColumn(label: Text('Gerente', style: TextStyle(color: Colors.white))),
+            DataColumn(label: Text('Miembro', style: TextStyle(color: Colors.white))),
+            DataColumn(label: Text('Ejecutivo Sistemas', style: TextStyle(color: Colors.white))),
+            DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
+            DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
           ],
           rows: _buildRows(filas),
         ),
@@ -236,76 +197,35 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   }
 
   List<DataRow> _buildRows(List<Map<String, dynamic>> filas) {
-    final sumas = <String, Map<String, Map<String, int>>>{};
-    final conteos = <String, Map<String, Map<String, int>>>{};
-    final sistemasPorNivel = <String, Map<String, Map<String, Set<String>>>>{};
+    return filas.map((fila) {
+      return DataRow(
+        cells: [
+          DataCell(Text(fila['principio'] ?? '')),
+          DataCell(Text(fila['comportamiento'] ?? '')),
+          DataCell(Text('${fila['ejecutivo'] ?? ''}')),
+          DataCell(Text('${fila['gerente'] ?? ''}')),
+          DataCell(Text('${fila['miembro'] ?? ''}')),
+          DataCell(Text('${fila['ejecutivo_sistemas'] ?? ''}')),
+          DataCell(Text('${fila['gerente_sistemas'] ?? ''}')),
+          DataCell(Text('${fila['miembro_sistemas'] ?? ''}')),
+        ],
+      );
+    }).toList();
+  }
 
-    for (var f in filas) {
-      final principio = (f['principio'] as String?) ?? '';
-      final comportamiento = (f['comportamiento'] as String?) ?? '';
-      final rawCargo = (f['cargo_raw'] as String?) ?? '';
-      final nivel = _normalizeNivel(rawCargo);
-      final valor = (f['valor'] as int?) ?? 0;
-      final sistemas = (f['sistemas'] as List<dynamic>?)?.whereType<String>().toList() ?? [];
-
-      sumas.putIfAbsent(principio, () => {});
-      sumas[principio]!.putIfAbsent(comportamiento, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
-      conteos.putIfAbsent(principio, () => {});
-      conteos[principio]!.putIfAbsent(comportamiento, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
-
-      sistemasPorNivel.putIfAbsent(principio, () => {});
-      sistemasPorNivel[principio]!.putIfAbsent(comportamiento, () => {
-        'Ejecutivo': <String>{},
-        'Gerente':   <String>{},
-        'Miembro':   <String>{},
-      });
-
-      sumas[principio]![comportamiento]![nivel] = sumas[principio]![comportamiento]![nivel]! + valor;
-      conteos[principio]![comportamiento]![nivel] = conteos[principio]![comportamiento]![nivel]! + 1;
-      for (var s in sistemas) {
-        sistemasPorNivel[principio]![comportamiento]![nivel]!.add(s);
-      }
-    }
-
-    final rows = <DataRow>[];
-    sumas.forEach((p, compMap) {
-      compMap.forEach((c, sumaMap) {
-        final cntMap = conteos[p]![c]!;
-        final sysMap = sistemasPorNivel[p]![c]!;
-
-        String valorCell(String key) {
-          final cnt = cntMap[key]!;
-          if (!mostrarPromedio || cnt == 0) return sumaMap[key]!.toString();
-          return (sumaMap[key]! / cnt).toStringAsFixed(2);
-        }
-
-        String sysCell(String key) {
-          final set = sysMap[key]!;
-          return set.isEmpty ? '-' : set.join(', ');
-        }
-
-        rows.add(DataRow(cells: [
-          DataCell(Text(p)),
-          DataCell(Text(c)),
-          DataCell(Text(valorCell('Ejecutivo'))),
-          DataCell(Text(valorCell('Gerente'))),
-          DataCell(Text(valorCell('Miembro'))),
-          DataCell(Text(sysCell('Ejecutivo'))),
-          DataCell(Text(sysCell('Gerente'))),
-          DataCell(Text(sysCell('Miembro'))),
-        ]));
-      });
-    });
-
-    return rows;
+  String _normalizeNivel(String raw) {
+    final l = raw.toLowerCase();
+    if (l.contains('ejecutivo')) return 'Ejecutivo';
+    if (l.contains('gerente')) return 'Gerente';
+    return 'Miembro';
   }
 }
 
 class SistemasPromedio {
   final Map<String, Set<String>> _sistemasPorNivel = {
     'Ejecutivo': <String>{},
-    'Gerente':   <String>{},
-    'Miembro':   <String>{},
+    'Gerente': <String>{},
+    'Miembro': <String>{},
   };
 
   void agregar(String nivel, List<String> sistemas) {

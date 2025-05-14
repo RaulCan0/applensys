@@ -5,10 +5,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../models/empresa.dart';
-import '../services/evaluacion_cache_service.dart';
 import '../services/supabase_service.dart';
 import '../widgets/drawer_lensys.dart';
+import '../providers/app_provider.dart';
 import 'asociado_screen.dart';
 import 'empresas_screen.dart';
 
@@ -64,39 +65,35 @@ class _DimensionesScreenState extends State<DimensionesScreen> {
   }
 
   Future<void> _guardarProgreso() async {
-    await SupabaseService().guardarEvaluacionDraft(widget.evaluacionId);
-    await EvaluacionCacheService().guardarPendiente(widget.evaluacionId);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Progreso guardado localmente')),
-    );
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    try {
+      appProvider.syncData(); // Sincroniza los datos con el proveedor
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Progreso guardado localmente')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar progreso: $e')),
+      );
+    }
   }
 
   Future<void> _finalizarEvaluacion() async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
     try {
-      
+      // Elimina el caché local
+      appProvider.clearCache();
 
-      // 2. Elimina caché local
-      await EvaluacionCacheService().eliminarPendiente();
-
-      // 3. Agrega al historial en SharedPreferences
+      // Marca la evaluación como finalizada
       final prefs = await SharedPreferences.getInstance();
-      final historial = prefs.getStringList('empresas_historial') ?? [];
-      final key = 'empresa_${widget.empresa.id}';
+      await prefs.setBool('evaluacion_finalizada_${widget.evaluacionId}', true);
 
-      if (!historial.contains(widget.empresa.id)) {
-        historial.add(widget.empresa.id);
-        await prefs.setStringList('empresas_historial', historial);
-        await prefs.setString(key, jsonEncode(widget.empresa.toMap()));
-      }
-
-      // 4. Marca evaluación como 
-
-      // 5. Mensaje de éxito
+      // Mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Evaluación finalizada y archivada')),
       );
 
-      // 6. Redirige a EmpresasScreen
+      // Redirige a EmpresasScreen
       await Future.delayed(const Duration(milliseconds: 500));
       Navigator.pushAndRemoveUntil(
         context,
@@ -117,7 +114,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> {
     return Scaffold(
       key: scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -252,7 +249,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> {
                   icon: const Icon(Icons.save),
                   label: const Text('Salvar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
+                    backgroundColor: const Color.fromARGB(255, 35, 47, 112),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
