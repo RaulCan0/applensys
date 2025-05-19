@@ -1,17 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:applensys/services/empresa_service.dart';
 import '../models/empresa.dart';
 
 class HistorialScreen extends StatefulWidget {
-  const HistorialScreen({super.key, required List<Empresa> empresas});
+  const HistorialScreen({super.key, required List<Empresa> empresas, required List empresasHistorial});
 
   @override
   State<HistorialScreen> createState() => _HistorialScreenState();
 }
 
 class _HistorialScreenState extends State<HistorialScreen> {
-  final _supabase = Supabase.instance.client;
+  final empresaService = EmpresaService();
   List<Empresa> empresas = [];
   bool isLoading = true;
 
@@ -23,39 +23,9 @@ class _HistorialScreenState extends State<HistorialScreen> {
 
   Future<void> _cargarEmpresas() async {
     try {
-      final response = await _supabase.from('empresas').select();
-
-      final List<Empresa> empresasCargadas =
-          (response as List).map((item) {
-            List<String> empleadosAsociados = [];
-            if (item['empleados_asociados'] is List) {
-              empleadosAsociados = List<String>.from(
-                item['empleados_asociados'],
-              );
-            } else if (item['empleados_asociados'] is String &&
-                item['empleados_asociados'].isNotEmpty) {
-              try {
-                empleadosAsociados = List<String>.from(
-                  jsonDecode(item['empleados_asociados']),
-                );
-              } catch (_) {
-                empleadosAsociados = [];
-              }
-            }
-            return Empresa(
-              id: item['id'] ?? '',
-              nombre: item['nombre'] ?? '',
-              tamano: item['tamano'] ?? '',
-              empleadosTotal: item['empleados_total'] ?? 0,
-              empleadosAsociados: empleadosAsociados,
-              unidades: item['unidades'] ?? '',
-              areas: item['areas'] ?? 0,
-              sector: item['sector'] ?? '',
-            );
-          }).toList();
-
+      final data = await empresaService.getEmpresas();
       setState(() {
-        empresas = empresasCargadas;
+        empresas = data;
         isLoading = false;
       });
     } catch (e) {
@@ -73,7 +43,13 @@ class _HistorialScreenState extends State<HistorialScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Historial de Empresas'),
-        backgroundColor: Colors.indigo,
+                backgroundColor: const Color(0xFF003056),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _cargarEmpresas,
+          ),
+        ],
       ),
       body:
           isLoading
@@ -86,7 +62,7 @@ class _HistorialScreenState extends State<HistorialScreen> {
                 itemBuilder: (context, index) {
                   final empresa = empresas[index];
                   return ExpansionTile(
-                    leading: const Icon(Icons.business, color: Colors.indigo),
+                    leading: const Icon(Icons.business, color: Color(0xFF003056)),
                     title: Text(
                       empresa.nombre,
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -106,14 +82,9 @@ class _HistorialScreenState extends State<HistorialScreen> {
                               empresa.empleadosTotal.toString(),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Empleados asociados:',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            empresa.empleadosAsociados.isEmpty
-                                ? const Text('No hay empleados asociados')
-                                : Column(
+                           
+                          
+                                 Column(
                                   children:
                                       empresa.empleadosAsociados
                                           .map(

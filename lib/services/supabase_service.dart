@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:applensys/models/asociado.dart';
 import 'package:applensys/models/calificacion.dart';
 import 'package:applensys/models/empresa.dart';
 import 'package:applensys/models/evaluacion.dart';
+import 'package:applensys/models/level_averages.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -11,9 +13,9 @@ class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
 
   // AUTH
-  Future<Map<String, dynamic>> register(String email, String password) async {
+  Future<Map<String, dynamic>> register(String email, String password, String telefono) async {
     try {
-      await _client.auth.signUp(email: email, password: password);
+      await _client.auth.signUp(email: email, password: password, data: {'telefono': telefono});
       return {'success': true};
     } on AuthException catch (e) {
       return {'success': false, 'message': e.message};
@@ -22,21 +24,25 @@ class SupabaseService {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       await _client.auth.signInWithPassword(email: email, password: password);
-      return true;
-    } catch (_) {
-      return false;
+      return {'success': true};
+    } on AuthException catch (e) {
+      return {'success': false, 'message': e.message};
+    } catch (e) {
+      return {'success': false, 'message': 'Error desconocido: $e'};
     }
   }
 
-  Future<bool> resetPassword(String email) async {
+  Future<Map<String, dynamic>> resetPassword(String email) async {
     try {
       await _client.auth.resetPasswordForEmail(email);
-      return true;
-    } catch (_) {
-      return false;
+      return {'success': true};
+    } on AuthException catch (e) {
+      return {'success': false, 'message': e.message};
+    } catch (e) {
+      return {'success': false, 'message': 'Error desconocido: $e'};
     }
   }
 
@@ -246,8 +252,12 @@ class SupabaseService {
   }
 
   Future<String> subirFotoPerfil(String rutaLocal) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception("Usuario no autenticado");
+
     final archivo = File(rutaLocal);
-    final storagePath = 'fotos_perfil/\$userId/\$nombre';
+    final fileName = archivo.uri.pathSegments.last;
+    final storagePath = '$userId/$fileName';
 
     await _client.storage
         .from('perfil')
@@ -257,9 +267,15 @@ class SupabaseService {
           fileOptions: const FileOptions(upsert: true),
         );
 
-    return _client.storage.from('perfil').getPublicUrl(storagePath);
+    final publicUrl = _client.storage.from('perfil').getPublicUrl(storagePath);
+
+    // Guarda la URL en la tabla usuarios
+    await _client.from('usuarios').update({'foto_url': publicUrl}).eq('id', userId);
+
+    return publicUrl;
   }
-   // NUEVO: Buscar evaluacion existente
+
+  // NUEVO: Buscar evaluacion existente
   Future<Evaluacion?> buscarEvaluacionExistente(String empresaId, String asociadoId) async {
     final response = await _client
         .from('evaluaciones')
@@ -285,5 +301,339 @@ class SupabaseService {
     );
     await _client.from('evaluaciones').insert(nuevaEvaluacion.toMap());
     return nuevaEvaluacion;
+  }
+
+  Future<void> insertar(String tabla, Map<String, dynamic> valores) async {
+    await _client.from(tabla).insert(valores);
+  }
+
+  Future<void> subirPromediosCompletos({
+    required String evaluacionId,
+    required String dimension,
+    required List<Map<String, dynamic>> filas,
+  }) async {
+    final sumas = <String, Map<String, Map<String, int>>>{};
+    final conteos = <String, Map<String, Map<String, int>>>{};
+    final sistemasPorNivel = <String, Map<String, Map<String, int>>>{};
+
+    for (var f in filas) {
+      final principio = f['principio'] as String;
+      final comportamiento = f['comportamiento'] as String;
+      final nivel = (f['cargo'] as String).trim();
+      final valor = f['valor'] as int;
+      final sistemas = (f['sistemas'] as List<dynamic>?)?.cast<String>() ?? [];
+
+      sumas.putIfAbsent(principio, () => {});
+      sumas[principio]!.putIfAbsent(comportamiento, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
+      conteos.putIfAbsent(principio, () => {});
+      conteos[principio]!.putIfAbsent(comportamiento, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
+
+      sumas[principio]![comportamiento]![nivel] =
+        sumas[principio]![comportamiento]![nivel]! + valor;
+      conteos[principio]![comportamiento]![nivel] =
+        (conteos[principio]![comportamiento]![nivel] ?? 0) + 1;
+
+      for (final sistema in sistemas) {
+        sistemasPorNivel.putIfAbsent(sistema, () => {
+          'Ejecutivo': {},
+          'Gerente': {},
+          'Miembro': {},
+        });
+        sistemasPorNivel[sistema]![nivel]![dimension] =
+          (sistemasPorNivel[sistema]![nivel]![dimension] ?? 0) + 1;
+      }
+    }
+
+    for (final p in sumas.keys) {
+      for (final c in sumas[p]!.keys) {
+        for (final nivel in ['Ejecutivo', 'Gerente', 'Miembro']) {
+          final suma = sumas[p]![c]![nivel]!;
+          final count = conteos[p]![c]![nivel]!;
+          final promedio = count == 0 ? 0 : suma / count;
+          await insertar('promedios_comportamientos', {
+            'evaluacion_id': evaluacionId,
+            'dimension': dimension,
+            'principio': p,
+            'comportamiento': c,
+            'nivel': nivel,
+            'valor': double.parse(promedio.toStringAsFixed(2)),
+          });
+        }
+      }
+    }
+
+    for (final sistema in sistemasPorNivel.keys) {
+      for (final nivel in ['Ejecutivo', 'Gerente', 'Miembro']) {
+        final conteo = sistemasPorNivel[sistema]![nivel]?[dimension] ?? 0;
+        await insertar('promedios_sistemas', {
+          'evaluacion_id': evaluacionId,
+          'dimension': dimension,
+          'sistema': sistema,
+          'nivel': nivel,
+          'conteo': conteo,
+        });
+      }
+    }
+  }
+
+  Future<List<LevelAverages>> getDimensionAverages(dynamic empresaId) async {
+    final res = await _client
+        .from('detalle_evaluacion')
+        .select('dimension_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
+        .eq('empresa_id', empresaId.toString());
+
+    return (res as List).map((m) => LevelAverages(
+      id: m['dimension_id'] as int,
+      nombre: 'Dimensión ${m['dimension_id']}',
+      ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+      gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+      miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+      dimensionId: m['dimension_id'] as int,
+      general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+                ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+      nivel: '',
+    )).toList();
+  }
+
+  Future<List<LevelAverages>> getLevelLineData(dynamic empresaId) async {
+    final res = await _client
+        .from('detalle_evaluacion')
+        .select('nivel, avg(calificacion) as promedio')
+        .eq('empresa_id', empresaId.toString());
+
+    return (res as List).map((m) {
+      final nivel = (m['nivel'] as String).trim();
+      final promedio = (m['promedio'] as num?)?.toDouble() ?? 0.0;
+
+      double ejecutivo = 0.0;
+      double gerente = 0.0;
+      double miembro = 0.0;
+
+      switch (nivel.toLowerCase()) {
+        case 'ejecutivo':
+          ejecutivo = promedio;
+          break;
+        case 'gerente':
+          gerente = promedio;
+          break;
+        case 'miembro':
+          miembro = promedio;
+          break;
+      }
+
+      return LevelAverages(
+        id: 0,
+        nombre: nivel,
+        ejecutivo: ejecutivo,
+        gerente: gerente,
+        miembro: miembro,
+        dimensionId: 0,
+        general: promedio,
+        nivel: nivel,
+      );
+    }).toList();
+  }
+
+  Future<List<LevelAverages>> getPrinciplesAverages(dynamic empresaId) async {
+    final res = await _client
+        .from('detalle_evaluacion')
+        .select('principio_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
+        .eq('empresa_id', empresaId.toString());
+
+    return (res as List).map((m) => LevelAverages(
+      id: m['principio_id'] as int,
+      nombre: 'Principio ${m['principio_id']}',
+      ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+      gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+      miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+      dimensionId: 0,
+      general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+                ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+      nivel: '',
+    )).toList();
+  }
+
+  Future<List<LevelAverages>> getBehaviorAverages(dynamic empresaId) async {
+    final res = await _client
+        .from('detalle_evaluacion')
+        .select('comportamiento_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
+        .eq('empresa_id', empresaId.toString());
+
+    return (res as List).map((m) => LevelAverages(
+      id: m['comportamiento_id'] as int,
+      nombre: 'Comportamiento ${m['comportamiento_id']}',
+      ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+      gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+      miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+      dimensionId: 0,
+      general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+                ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+      nivel: '',
+    )).toList();
+  }
+
+  Future<List<LevelAverages>> getSystemAverages(dynamic empresaId) async {
+    final res = await _client
+        .from('detalle_sistema')
+        .select('sistema_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
+        .eq('empresa_id', empresaId.toString());
+
+    return (res as List).map((m) => LevelAverages(
+      id: m['sistema_id'] as int,
+      nombre: 'Sistema ${m['sistema_id']}',
+      ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+      gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
+      miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
+      dimensionId: 0,
+      general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
+                ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
+                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
+      nivel: '',
+    )).toList();
+  }
+
+  Future<double> obtenerProgresoAsociado({
+    required String evaluacionId,
+    required String asociadoId,
+    required String dimensionId,
+  }) async {
+    final response = await _client
+        .from('calificaciones')
+        .select('comportamiento')
+        .eq('id_asociado', asociadoId)
+        .eq('id_empresa', evaluacionId)
+        .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
+
+    final total = response.length;
+    final mapaTotales = {'1': 6, '2': 14, '3': 8};
+    final totalDimension = mapaTotales[dimensionId] ?? 1;
+    return total / totalDimension;
+  }
+
+  Future<double> obtenerProgresoDimension(String empresaId, String dimensionId) async {
+    try {
+      final response = await _client
+          .from('calificaciones')
+          .select('comportamiento')
+          .eq('id_empresa', empresaId)
+          .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
+
+      final total = (response as List).length;
+      const mapaTotales = {'1': 6, '2': 14, '3': 8};
+      final totalDimension = mapaTotales[dimensionId] ?? 1;
+
+      return total / totalDimension;
+    } catch (e) {
+      return 0.0; // Return 0.0 in case of an error
+    }
+  }
+
+  Future<void> guardarEvaluacionDraft(String evaluacionId) async {
+    await _client
+        .from('evaluaciones')
+        .update({'finalizada': false})
+        .eq('id', evaluacionId);
+  }
+
+  Future<void> finalizarEvaluacion(String evaluacionId) async {
+  await _client
+      .from('detalles_evaluacion')
+      .update({'finalizada': true})
+      .eq('id', evaluacionId);
+
+}
+
+
+  Future<double> calcularProgresoDimensionGlobal(String empresaId, String dimensionId) async {
+    try {
+      final response = await _client
+          .from('calificaciones')
+          .select('comportamiento')
+          .eq('id_empresa', empresaId)
+          .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
+
+      final evaluados = (response as List).map((e) => e['comportamiento'].toString()).toSet().length;
+
+      const mapaTotales = {'1': 6, '2': 14, '3': 8};
+      final totalDimension = mapaTotales[dimensionId] ?? 1;
+
+      return evaluados / totalDimension;
+    } catch (e) {
+      return 0.0;
+    }
+  }
+  
+
+  /// Inserta promedios en la tabla resultados_dashboard
+  Future<void> insertarPromediosDashboard({
+    required String evaluacionId,
+    required String dimension,
+    required Map<String, double> promedios,
+  }) async {
+    final uuid = const Uuid();
+    final now = DateTime.now().toIso8601String();
+
+    final data = promedios.entries.map((entry) => {
+      'id': uuid.v4(),
+      'evaluacion_id': evaluacionId,
+      'dimension': dimension,
+      'nivel': entry.key,
+      'promedio': entry.value,
+      'created_at': now,
+    }).toList();
+
+    await _client.from('resultados_dashboard').insert(data);
+  }
+
+  /// Inserta conteo de sistemas por nivel en tabla promedios_sistemas
+  Future<void> insertarPromediosSistemas({
+    required String evaluacionId,
+    required String dimension,
+    required Map<String, int> conteos,
+  }) async {
+    final uuid = const Uuid();
+    final now = DateTime.now().toIso8601String();
+
+    final data = conteos.entries.map((entry) => {
+      'id': uuid.v4(),
+      'evaluacion_id': evaluacionId,
+      'dimension': dimension,
+      'nivel': entry.key,
+      'conteo_sistemas': entry.value,
+      'created_at': now,
+    }).toList();
+
+    await _client.from('promedios_sistemas').insert(data);
+  }
+  Future<void> uploadFile({
+    required String bucket,
+    required String path,
+    required Uint8List bytes,
+    String contentType = 'application/octet-stream',
+  }) async {
+    final response = await _client.storage.from(bucket).uploadBinary(
+      path,
+      bytes,
+      fileOptions: FileOptions(contentType: contentType),
+    );
+  }
+
+  /// Devuelve la URL pública de un archivo subido en el bucket.
+  String getPublicUrl({
+    required String bucket,
+    required String path,
+  }) {
+    final res = _client.storage.from(bucket).getPublicUrl(path);
+    if (res.isEmpty) {
+      throw Exception('Failed to generate public URL for the file.');
+    }
+    return res;
+  }
+
+  Future<void> limpiarDatosEvaluacion() async {
+    // Implementar lógica para limpiar datos de evaluaciones en Supabase
   }
 }

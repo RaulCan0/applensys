@@ -52,4 +52,9 @@ class Asociado {
       'antiguedad': antiguedad,
     };
   }
+
+  void limpiarProgreso() {
+    progresoDimensiones.clear();
+    comportamientosEvaluados.clear();
+  }
 }

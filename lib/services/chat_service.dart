@@ -13,8 +13,6 @@ class ChatService {
           'content': content,
         });
   }
-
-  /// Stream de mensajes ordenados por fecha
   /// Stream de mensajes ordenados por fecha
   Stream<List<Message>> messageStream() {
     return _client

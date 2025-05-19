@@ -1,6 +1,7 @@
 import 'package:applensys/screens/auth/login_screen.dart';
 import 'package:applensys/screens/auth/register_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class LoaderScreen extends StatefulWidget {
   const LoaderScreen({super.key});
@@ -15,23 +16,31 @@ class _LoaderScreenState extends State<LoaderScreen> {
   @override
   void initState() {
     super.initState();
-    _cargarDatos();
+    // Usar callback de post-frame para indicar preparado sin timers
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _isReady = true);
+    });
   }
 
-  Future<void> _cargarDatos() async {
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _isReady = true;
-    });
+  @override
+  void dispose() {
+    // Ningún Timer que cancelar
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_isReady) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: const Color(0xFF003056),
+        body: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
     }
 
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 254, 255, 255),
       body: Stack(
         children: [
           CustomPaint(size: Size.infinite, painter: DiagonalPainter()),
@@ -40,7 +49,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 34),
                 Text(
                   'LEAN TRAINING CENTER',
                   style: TextStyle(
@@ -52,9 +61,9 @@ class _LoaderScreenState extends State<LoaderScreen> {
                 const SizedBox(height: 5),
                 const Text(
                   'Bienvenido a la \naplicación oficial',
-                  style: TextStyle(
+                    style: TextStyle(
                     fontSize: 18,
-                    color: Color.fromARGB(255, 156, 152, 152),
+                    color: Color.fromARGB(255, 221, 221, 221),
                   ),
                 ),
                 const SizedBox(height: 50),
@@ -69,14 +78,12 @@ class _LoaderScreenState extends State<LoaderScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ElevatedButton(
-                      onPressed: () => Navigator.push(
+                      onPressed: () => Navigator.pushReplacementNamed(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const LoginScreen(),
-                        ),
+                        '/login',
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo,
+                        backgroundColor: const Color(0xFF003056),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -87,22 +94,20 @@ class _LoaderScreenState extends State<LoaderScreen> {
                     ),
                     const SizedBox(height: 20),
                     OutlinedButton(
-                      onPressed: () => Navigator.push(
+                      onPressed: () => Navigator.pushReplacementNamed(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
-                        ),
+                        '/register',
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.indigo,
-                        side: const BorderSide(color: Colors.indigo, width: 2),
+                        side: const BorderSide(color: Color(0xFF003056)),
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('Registrarse', style: TextStyle(fontSize: 16)),
+                        ),
+                        child: const Text('Registrarse', style: TextStyle(fontSize: 16, color: Color(0xFF003056))),
+
                     ),
                   ],
                 ),
@@ -120,7 +125,7 @@ class DiagonalPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.indigo
+      ..color = const Color(0xFF003056)
       ..style = PaintingStyle.fill;
 
     final path = Path();
