@@ -1,4 +1,3 @@
-// 📄 main.dart modificado para usar color personalizado y fuente adaptable
 
 import 'package:applensys/screens/auth/loader_screen.dart';
 import 'package:flutter/material.dart';
