@@ -2,7 +2,7 @@
 
 import 'dart:math';
 
-import 'package:applensys/services/supabase_service.dart';
+import 'package:applensys/services/remote/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';

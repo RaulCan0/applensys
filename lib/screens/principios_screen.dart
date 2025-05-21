@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:applensys/models/asociado.dart';
 import 'package:applensys/models/principio_json.dart';
 import 'package:applensys/screens/tablas_screen.dart' as tablas_screen;
@@ -5,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/empresa.dart';
-import '../services/json_service.dart';
-import '../services/supabase_service.dart';
+import '../services/domain/json_service.dart';
+import '../services/remote/supabase_service.dart';
 import 'comportamiento_evaluacion_screen.dart';
 
 class PrincipiosScreen extends StatefulWidget {
@@ -57,20 +59,33 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
       });
     } catch (e) {
       debugPrint('Error al cargar JSON: $e');
+      if (mounted) {
+        setState(() => cargando = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar principios: ${e.toString()}')),
+        );
+      }
     }
   }
 
   void cargarComportamientosEvaluados() async {
     try {
       final calificaciones = await _supabaseService.getCalificacionesPorAsociado(widget.asociado.id);
-      setState(() {
-        comportamientosEvaluados = calificaciones
-            .where((c) => c.idDimension.toString() == widget.dimensionId)
-            .map((c) => c.comportamiento)
-            .toList();
-      });
+      if (mounted) {
+        setState(() {
+          comportamientosEvaluados = calificaciones
+              .where((c) => c.idDimension.toString() == widget.dimensionId)
+              .map((c) => c.comportamiento)
+              .toList();
+        });
+      }
     } catch (e) {
       debugPrint('Error al cargar comportamientos evaluados: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar evaluaciones previas: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -88,8 +103,9 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
       appBar: AppBar(
         title: Center(
           child: Text(
-            'Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre}',
-            style: const TextStyle(color: Colors.white),
+            'Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre.toUpperCase()}',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         backgroundColor: const Color(0xFF003056),
@@ -97,15 +113,19 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.table_chart_outlined, color: Colors.white),
+            tooltip: 'Ver Tablas de Resultados',
             onPressed: () {
+              final String evaluacionIdParaTabla = const Uuid().v4();
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => tablas_screen.TablasDimensionScreen(
                     empresaId: widget.empresa.id,
-                    dimension: '',
+                    dimension: widget.dimensionId,
                     empresa: widget.empresa,
-                    evaluacionId: '', asociadoId: '',
+                    evaluacionId: evaluacionIdParaTabla,
+                    asociadoId: widget.asociado.id,
                   ),
                 ),
               );
@@ -116,7 +136,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
       body: cargando
           ? const Center(child: CircularProgressIndicator())
           : principiosUnicos.isEmpty
-              ? const Center(child: Text('No hay principios para este nivel'))
+              ? const Center(child: Text('No hay principios para este nivel y dimensión'))
               : Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -165,10 +185,10 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         LinearProgressIndicator(
                                           value: progreso,
                                           backgroundColor: Colors.grey[300],
-                                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                                          valueColor: AlwaysStoppedAnimation<Color>(progreso == 1.0 ? Colors.blueAccent : Colors.green),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text('$evaluados de $totalComportamientos comportamientos evaluados'),
+                                        Text('$evaluados de $totalComportamientos comportamientos evaluados', style: const TextStyle(fontSize: 12)),
                                       ],
                                     ),
                                     children: entry.value.map((principio) {
@@ -179,14 +199,15 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         title: Text(
                                           comportamientoNombre,
                                           style: TextStyle(
-                                            color: evaluado ? Colors.green : Colors.black,
+                                            color: evaluado ? Colors.green : Colors.black87,
                                             fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
                                           ),
                                         ),
-                                        subtitle: const Text('Ir a evaluación'),
+                                        subtitle: Text(evaluado ? 'Evaluado (Editar)' : 'Ir a evaluación', style: const TextStyle(fontSize: 12)),
                                         trailing: evaluado
                                             ? IconButton(
                                                 icon: const Icon(Icons.edit, color: Colors.blue),
+                                                tooltip: 'Editar Calificación',
                                                 onPressed: () async {
                                                   final nuevoPuntaje = await showDialog<int>(
                                                     context: context,
@@ -196,7 +217,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                                         title: const Text('Editar Calificación'),
                                                         content: TextField(
                                                           keyboardType: TextInputType.number,
-                                                          decoration: const InputDecoration(labelText: 'Nuevo Puntaje'),
+                                                          decoration: const InputDecoration(labelText: 'Nuevo Puntaje (0-100)'),
                                                           onChanged: (value) {
                                                             tempScore = int.tryParse(value);
                                                           },
@@ -207,7 +228,15 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                                             child: const Text('Cancelar'),
                                                           ),
                                                           ElevatedButton(
-                                                            onPressed: () => Navigator.pop(context, tempScore),
+                                                            onPressed: () {
+                                                              if (tempScore != null && tempScore! >= 0 && tempScore! <= 100) {
+                                                                Navigator.pop(context, tempScore);
+                                                              } else {
+                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                  const SnackBar(content: Text('Puntaje debe estar entre 0 y 100')),
+                                                                );
+                                                              }
+                                                            },
                                                             child: const Text('Guardar'),
                                                           ),
                                                         ],
@@ -223,42 +252,37 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                                       comportamiento: comportamientoNombre,
                                                       nuevoPuntaje: nuevoPuntaje,
                                                     );
-                                                    // ignore: use_build_context_synchronously
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       const SnackBar(content: Text('Calificación actualizada')),
                                                     );
                                                   }
                                                 },
                                               )
-                                            : const Icon(Icons.arrow_forward_ios),
+                                            : const Icon(Icons.arrow_forward_ios, color: Colors.grey),
                                         onTap: () async {
-                                          if (!evaluado) {
-                                            final resultado = await Navigator.push<String>(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => ComportamientoEvaluacionScreen(
-                                                  principio: principio,
-                                                  cargo: widget.asociado.cargo,
-                                                  evaluacionId: const Uuid().v4(),
-                                                  dimensionId: widget.dimensionId,
-                                                  empresaId: widget.empresa.id,
-                                                  asociadoId: widget.asociado.id,
-                                                  dimension: '',
-                                                ),
-                                              ),
-                                            );
-                                            if (resultado != null && !comportamientosEvaluados.contains(resultado)) {
-                                              setState(() {
-                                                comportamientosEvaluados.add(resultado);
-                                              });
-                                              setStateTile(() {});
-                                              await _supabaseService.registrarComportamientoEvaluado(
+                                          final String evaluacionIdParaComportamiento = const Uuid().v4();
+
+                                          final resultado = await Navigator.push<String>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ComportamientoEvaluacionScreen(
+                                                principio: principio,
+                                                cargo: widget.asociado.cargo,
+                                                evaluacionId: evaluacionIdParaComportamiento,
+                                                dimensionId: widget.dimensionId,
                                                 empresaId: widget.empresa.id,
                                                 asociadoId: widget.asociado.id,
-                                                dimensionId: widget.dimensionId,
-                                                comportamiento: resultado,
-                                              );
-                                            }
+                                                dimension: widget.dimensionId,
+                                              ),
+                                            ),
+                                          );
+                                          if (resultado != null && resultado == 'guardado' && !comportamientosEvaluados.contains(comportamientoNombre)) {
+                                            setState(() {
+                                              comportamientosEvaluados.add(comportamientoNombre);
+                                            });
+                                            setStateTile(() {});
+                                          } else if (resultado == 'guardado') {
+                                            setStateTile(() {});
                                           }
                                         },
                                       );
@@ -273,6 +297,56 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                     ],
                   ),
                 ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          if (principiosUnicos.isEmpty || principiosUnicos.values.every((list) => list.isEmpty)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No hay principios cargados para iniciar una nueva evaluación desde aquí.')),
+            );
+            return;
+          }
+
+          PrincipioJson? primerPrincipioParaEvaluar;
+          try {
+            primerPrincipioParaEvaluar = principiosUnicos.values.firstWhere((list) => list.isNotEmpty).first;
+          // ignore: empty_catches
+          } catch (e) {}
+
+          if (primerPrincipioParaEvaluar == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No se encontró un comportamiento válido para iniciar la evaluación.')),
+            );
+            return;
+          }
+
+          final String evaluacionIdParaNuevaEvaluacion = const Uuid().v4();
+
+          final resultado = await Navigator.push<String>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ComportamientoEvaluacionScreen(
+                principio: primerPrincipioParaEvaluar!,
+                cargo: widget.asociado.cargo,
+                evaluacionId: evaluacionIdParaNuevaEvaluacion,
+                dimensionId: widget.dimensionId,
+                empresaId: widget.empresa.id,
+                asociadoId: widget.asociado.id,
+                dimension: widget.dimensionId,
+              ),
+            ),
+          );
+
+          if (resultado != null && resultado == 'guardado') {
+            cargarComportamientosEvaluados();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Nueva evaluación iniciada/guardada.')),
+            );
+          }
+        },
+        backgroundColor: Colors.blue,
+        tooltip: 'Iniciar Nueva Evaluación (Primer Comportamiento)',
+        child: const Icon(Icons.edit, color: Colors.white),
+      ),
     );
   }
 }
@@ -292,6 +366,7 @@ extension ProgresoSupabase on SupabaseService {
     required String asociadoId,
     required String dimensionId,
     required String comportamiento,
+    int puntajeInicial = 0,
   }) async {
     final response = await Supabase.instance.client
         .from('calificaciones')
@@ -299,16 +374,17 @@ extension ProgresoSupabase on SupabaseService {
         .eq('id_asociado', asociadoId)
         .eq('id_empresa', empresaId)
         .eq('id_dimension', int.tryParse(dimensionId) ?? 0)
-        .eq('comportamiento', comportamiento);
+        .eq('comportamiento', comportamiento)
+        .maybeSingle();
 
-    if (response.isEmpty) {
+    if (response == null) {
       await Supabase.instance.client.from('calificaciones').insert({
         'id': const Uuid().v4(),
         'id_asociado': asociadoId,
         'id_empresa': empresaId,
         'id_dimension': int.tryParse(dimensionId),
         'comportamiento': comportamiento,
-        'puntaje': 0,
+        'puntaje': puntajeInicial,
       });
     }
   }
@@ -322,12 +398,32 @@ extension EditarCalificacionSupabase on SupabaseService {
     required String comportamiento,
     required int nuevoPuntaje,
   }) async {
-    await Supabase.instance.client
+    final existeResponse = await Supabase.instance.client
         .from('calificaciones')
-        .update({'puntaje': nuevoPuntaje})
+        .select('id')
         .eq('id_asociado', asociadoId)
         .eq('id_empresa', empresaId)
         .eq('id_dimension', int.tryParse(dimensionId) ?? 0)
-        .eq('comportamiento', comportamiento);
+        .eq('comportamiento', comportamiento)
+        .maybeSingle();
+
+    if (existeResponse == null) {
+      await Supabase.instance.client.from('calificaciones').insert({
+        'id': const Uuid().v4(),
+        'id_asociado': asociadoId,
+        'id_empresa': empresaId,
+        'id_dimension': int.tryParse(dimensionId),
+        'comportamiento': comportamiento,
+        'puntaje': nuevoPuntaje,
+      });
+    } else {
+      await Supabase.instance.client
+          .from('calificaciones')
+          .update({'puntaje': nuevoPuntaje})
+          .eq('id_asociado', asociadoId)
+          .eq('id_empresa', empresaId)
+          .eq('id_dimension', int.tryParse(dimensionId) ?? 0)
+          .eq('comportamiento', comportamiento);
+    }
   }
 }

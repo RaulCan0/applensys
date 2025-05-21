@@ -9,7 +9,7 @@ import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/screens/error_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:applensys/custom/service_locator.dart';
-import 'package:applensys/services/evaluacion_cache_service.dart';
+import 'package:applensys/services/local/evaluacion_cache_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

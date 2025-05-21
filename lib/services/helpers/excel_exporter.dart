@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/level_averages.dart';
+import '../../models/level_averages.dart';
 
 /// Servicio para exportar promedios a un Excel basado en plantilla.
 class ExcelExporter {

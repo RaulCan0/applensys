@@ -129,6 +129,27 @@ class SupabaseService {
     await _client.from('detalles_evaluacion').delete().eq('id', id);
   }
 
+  // Obtener evaluaciones por empresa
+  Future<List<Evaluacion>> getEvaluacionesPorEmpresa(String empresaId) async {
+    try {
+      final response = await _client
+          .from('evaluaciones')
+          .select()
+          .eq('empresa_id', empresaId)
+          .order('fecha', ascending: false);
+
+      if (response.isEmpty) {
+        return [];
+      }
+
+      return (response as List<dynamic>)
+          .map((e) => Evaluacion.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Error al obtener evaluaciones: $e');
+    }
+  }
+
   // CALIFICACIONES
   Future<List<Calificacion>> getCalificacionesPorAsociado(
     String idAsociado,

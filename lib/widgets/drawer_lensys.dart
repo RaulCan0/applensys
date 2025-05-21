@@ -8,7 +8,7 @@ import 'package:applensys/screens/perfil_screen.dart';
 import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/screens/tablas_screen.dart';
 import 'package:applensys/screens/detalles_evaluacion.dart';
-import 'package:applensys/services/supabase_service.dart';
+import 'package:applensys/services/remote/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DrawerLensys extends StatelessWidget {

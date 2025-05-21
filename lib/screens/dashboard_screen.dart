@@ -1,10 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:applensys/services/evaluation_carrousel.dart';
+import 'package:applensys/services/helpers/evaluation_carrousel.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/models/empresa.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
-import 'package:applensys/services/evaluacion_cache_service.dart';
+import 'package:applensys/services/local/evaluacion_cache_service.dart';
 import 'package:applensys/services/reporte_utils_final.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';

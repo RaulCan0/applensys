@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/message.dart';
-import '../services/chat_service.dart';
-import '../services/notification_service.dart';
+import '../services/helpers/chat_service.dart';
+import '../services/helpers/notification_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';

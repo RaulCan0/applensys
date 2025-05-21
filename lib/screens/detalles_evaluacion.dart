@@ -103,7 +103,6 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
         children: [
           _buildPromedioGeneralCard(context, promedios),
           const SizedBox(height: 16),
-          _buildDropdownAssociates(dimension),
           const SizedBox(height: 16),
           Center(
             child: ElevatedButton.icon(
@@ -246,8 +245,8 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     return Colors.green;
   }
 
-  Widget _buildDropdownAssociates(String dimension) {
-    final calificaciones = _getCalificacionesByDimension(dimension);
+  /*Widget _buildDropdownAssociates(String dimension) {
+    final calificaciones = (dimension);
 
     return Column(
       children: calificaciones.map<Widget>((calificacion) {
@@ -267,13 +266,6 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     );
   }
 
-  List<Map<String, dynamic>> _getCalificacionesByDimension(String dimension) {
-    return [
-      // Aquí debes poner los datos reales, esto es un ejemplo.
-      {'asociado_nombre': 'Juan Pérez', 'nivel': 'Ejecutivo', 'calificacion': 4, 'observacion': 'Buena actitud', 'sistemas_asociados': 'Sistema A'},
-      {'asociado_nombre': 'Ana Gómez', 'nivel': 'Gerente', 'calificacion': 5, 'observacion': 'Excelente desempeño', 'sistemas_asociados': 'Sistema B'},
-    ];
-  }
 
   void _showCalificacionDetails(Map<String, dynamic> calificacion) {
     // Aquí se puede mostrar la vista detallada de la calificación
@@ -546,5 +538,4 @@ Color _getColor(double value) {
   if (value < 4) return Colors.amber;
   return Colors.green;
 }
-}
-*/
+*/*/}

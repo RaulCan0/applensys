@@ -1,7 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:applensys/services/empresa_service.dart';
-import '../models/empresa.dart';
+import 'package:applensys/services/domain/empresa_service.dart';
+import 'package:applensys/models/empresa.dart';
+import 'package:applensys/screens/resultados_historial_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Importa la pantalla de resultados
 
 class HistorialScreen extends StatefulWidget {
   const HistorialScreen({super.key, required List<Empresa> empresas, required List empresasHistorial});
@@ -42,8 +43,14 @@ class _HistorialScreenState extends State<HistorialScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial de Empresas'),
-                backgroundColor: const Color(0xFF003056),
+        title: const Center(
+          child: Text(
+            'Historial de Empresas',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        backgroundColor: const Color(0xFF003056),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -51,74 +58,53 @@ class _HistorialScreenState extends State<HistorialScreen> {
           ),
         ],
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : empresas.isEmpty
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : empresas.isEmpty
               ? const Center(child: Text('No hay empresas registradas.'))
               : ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: empresas.length,
-                itemBuilder: (context, index) {
-                  final empresa = empresas[index];
-                  return ExpansionTile(
-                    leading: const Icon(Icons.business, color: Color(0xFF003056)),
-                    title: Text(
-                      empresa.nombre,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _infoRow('Tamaño', empresa.tamano),
-                            _infoRow('Sector', empresa.sector),
-                            _infoRow('Unidades', empresa.unidades),
-                            _infoRow('Áreas', empresa.areas.toString()),
-                            _infoRow(
-                              'Empleados',
-                              empresa.empleadosTotal.toString(),
+                  padding: const EdgeInsets.all(12),
+                  itemCount: empresas.length,
+                  itemBuilder: (context, index) {
+                    final empresa = empresas[index];
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ResultadosHistorialScreen(
+                              empresa: empresa,
                             ),
-                            const SizedBox(height: 8),
-                           
-                          
-                                 Column(
-                                  children:
-                                      empresa.empleadosAsociados
-                                          .map(
-                                            (empleado) => Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 8.0,
-                                                top: 4.0,
-                                              ),
-                                              child: Text('• $empleado'),
-                                            ),
-                                          )
-                                          .toList(),
-                                ),
-                            const SizedBox(height: 8),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              // ignore: deprecated_member_use
+                              color: Colors.grey.withOpacity(0.3),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: const Offset(0, 3),
+                            ),
                           ],
                         ),
+                        child: ListTile(
+                          leading: const Icon(Icons.business, color: Color(0xFF003056)),
+                          title: Text(
+                            empresa.nombre,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF003056)),
+                        ),
                       ),
-                    ],
-                  );
-                },
-              ),
-    );
-  }
-
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value)),
-        ],
-      ),
+                    );
+                  },
+                ),
     );
   }
 }

@@ -1,7 +1,7 @@
 // Servicio para alimentar EvaluationCarousel con datos estructurados desde caché o Supabase
 import 'dart:math';
 import 'package:applensys/models/level_averages.dart';
-import 'package:applensys/services/evaluacion_cache_service.dart';
+import 'package:applensys/services/local/evaluacion_cache_service.dart';
 
 const List<String> dimensionesFijas = [
   'Impulsores culturales',
