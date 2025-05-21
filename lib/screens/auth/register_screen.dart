@@ -1,7 +1,7 @@
 // register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:applensys/screens/auth/login_screen.dart';
-import '../../services/remote/supabase_service.dart';
+import '../../services/supabase_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

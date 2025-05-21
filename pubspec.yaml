@@ -30,7 +30,9 @@ dependencies:
   flutter_local_notifications: ^19.2.0
   carousel_slider: ^5.0.0
   get_it: ^8.0.3
-  dart_docx: ^0.3.0
+  flutter_riverpod: ^2.6.1
+  # Eliminada la dependencia dart_docx porque no existe en pub.dev
+  # Puedes considerar usar alternativas como docx_template o flutter_docx para manejar documentos .docx.
 
 dev_dependencies:
   flutter_test:

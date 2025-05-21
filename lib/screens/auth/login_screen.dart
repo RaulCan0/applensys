@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:applensys/screens/auth/recoveru_screee.dart';
 import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/custom/service_locator.dart';
-import 'package:applensys/services/remote/auth_service.dart';
+import 'package:applensys/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

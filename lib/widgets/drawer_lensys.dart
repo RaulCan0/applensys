@@ -1,17 +1,24 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:applensys/models/empresa.dart';
 import 'package:applensys/screens/auth/loader_screen.dart';
-import 'package:applensys/widgets/chat_scren.dart';
-import 'package:flutter/material.dart';
 import 'package:applensys/screens/dashboard_screen.dart';
+import 'package:applensys/screens/detalles_evaluacion.dart';
+import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/screens/historial_screen.dart';
 import 'package:applensys/screens/perfil_screen.dart';
-import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/screens/tablas_screen.dart';
-import 'package:applensys/screens/detalles_evaluacion.dart';
-import 'package:applensys/services/remote/supabase_service.dart';
+import 'package:applensys/services/supabase_service.dart';
+import 'package:applensys/widgets/chat_scren.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DrawerLensys extends StatelessWidget {
+import '../main.dart';
+import '../screens/anotaciones_screen.dart';
+import 'package:applensys/providers/text_size_provider.dart';
+
+class DrawerLensys extends ConsumerWidget {
   const DrawerLensys({super.key});
 
   Future<Map<String, dynamic>> _getUserData() async {
@@ -29,9 +36,11 @@ class DrawerLensys extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = Supabase.instance.client.auth.currentUser;
     final userEmail = user?.email ?? 'usuario@ejemplo.com';
+    final textSize = ref.watch(textSizeProvider);
+    final double scaleFactor = textSize / 14.0;
 
     return Drawer(
       child: Container(
@@ -45,28 +54,24 @@ class DrawerLensys extends StatelessWidget {
                 final nombre = snapshot.data?['nombre'] ?? 'Usuario';
                 final fotoUrl = snapshot.data?['foto_url'];
                 return UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(color: Colors.indigo),
-                  accountName: Text(
-                    nombre,
-                    style: const TextStyle(fontSize: 18),
+                  decoration: const BoxDecoration(
+                    color: Color.fromARGB(255, 35, 47, 112),
                   ),
-                  accountEmail: Text(userEmail),
+                  accountName: Text(nombre, style: TextStyle(fontSize: 18 * scaleFactor)),
+                  accountEmail: Text(userEmail, style: TextStyle(fontSize: 14 * scaleFactor)),
                   currentAccountPicture: (fotoUrl != null && fotoUrl != '')
-                      ? CircleAvatar(backgroundImage: NetworkImage(fotoUrl))
-                      : const CircleAvatar(
+                      ? CircleAvatar(backgroundImage: NetworkImage(fotoUrl), radius: 30 * scaleFactor)
+                      : CircleAvatar(
                           backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.indigo,
-                          ),
+                          radius: 30 * scaleFactor,
+                          child: Icon(Icons.person, size: 40 * scaleFactor, color: const Color.fromARGB(255, 35, 47, 112)),
                         ),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.home, color: Colors.black),
-              title: const Text("Inicio"),
+              leading: Icon(Icons.home, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Inicio", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.pushAndRemoveUntil(
                   context,
@@ -76,50 +81,75 @@ class DrawerLensys extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.table_chart, color: Colors.black),
-              title: const Text("Resultados"),
+              leading: Icon(Icons.table_chart, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Resultados", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>  TablasDimensionScreen(
-                      dimension: 'Dimensión 1',
-                      empresaId: '',
-                      evaluacionId: '', empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: '', createdAt: DateTime.now()), asociadoId: '',
+                    builder: (_) => TablasDimensionScreen(
+                      empresa: Empresa(
+                        id: 'defaultId',
+                        nombre: 'Default Empresa',
+                        tamano: 'Default Tamano',
+                        empleadosTotal: 0,
+                        empleadosAsociados: [],
+                        unidades: 'Default Unidades',
+                        areas: 0,
+                        sector: 'Default Sector',
+                        createdAt: DateTime.now(),
+                      ),
+                      evaluacionId: '', empresaId: '', dimension: '', asociadoId: '',
                     ),
                   ),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.insert_chart, color: Colors.black),
-              title: const Text("Detalle Evaluación"),
+              leading: Icon(Icons.insert_chart, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Detalle Evaluación", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => DetallesEvaluacionScreen(
                       dimensionesPromedios: const {},
-                      empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: '', createdAt: DateTime.now()),
-                      evaluacionId: '', promedios: {}, dimension: '', 
+                      promedios: const {},
+                      empresa: Empresa(
+                        id: '',
+                        nombre: '',
+                        tamano: '',
+                        empleadosTotal: 0,
+                        empleadosAsociados: [],
+                        unidades: '',
+                        areas: 0,
+                        sector: '',
+                        createdAt: DateTime.now(),
+                      ),
+                      evaluacionId: '', dimension: '',
                     ),
                   ),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.history, color: Colors.black),
-              title: const Text("Historial"),
+              leading: Icon(Icons.history, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Historial", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => HistorialScreen(empresas: [], empresasHistorial: [],)),
+                  MaterialPageRoute(
+                    builder: (_) => HistorialScreen(
+                      empresas: [], // Proporcionar una lista vacía o los datos reales
+                      empresasHistorial: [], // Proporcionar una lista vacía o los datos reales
+                    ),
+                  ),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.person, color: Colors.black),
-              title: const Text("Perfil"),
+              leading: Icon(Icons.settings, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Configuración", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -128,43 +158,81 @@ class DrawerLensys extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.dashboard, color: Colors.black),
-              title: const Text("Dashboard"),
+              leading: Icon(Icons.dashboard, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Dashboard", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => DashboardScreen(empresa: Empresa(id: '', nombre: '', tamano: '', empleadosTotal: 0, empleadosAsociados: [], unidades: '', areas: 0, sector: '', createdAt: DateTime.now()), evaluacionId: '')),
+                  MaterialPageRoute(
+                    builder: (_) => DashboardScreen(
+                      empresa: Empresa(
+                        id: '',
+                        nombre: '',
+                        tamano: '',
+                        empleadosTotal: 0,
+                        empleadosAsociados: [],
+                        unidades: '',
+                        areas: 0,
+                        sector: '',
+                        createdAt: DateTime.now(),
+                      ),
+                      evaluacionId: '',
+                    ),
+                  ),
                 );
               },
             ),
             const Divider(),
-
-            // 👉 Chat agregado aquí
-ListTile(
-  leading: const Icon(Icons.chat, color: Colors.black),
-  title: const Text("Chat"),
-  onTap: () {
-    Navigator.of(context).pop(); // Cierra el drawer actual
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ChatWidgetDrawer()),
-    );
-  },
-),
-const Divider(),
-
             ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                "Cerrar sesión",
-                style: TextStyle(color: Colors.red),
+              leading: Icon(Icons.chat, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Chat", style: TextStyle(fontSize: 14 * scaleFactor)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChatWidgetDrawer()),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(Icons.note_add, size: 24 * scaleFactor),
+              title: Text('Mis Anotaciones', style: TextStyle(fontSize: 14 * scaleFactor)),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => AnotacionesScreen(userId: Supabase.instance.client.auth.currentUser!.id),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            // Selector de tamaño de letra
+            ListTile(
+              leading: Icon(Icons.text_fields, color: Colors.black, size: 24 * scaleFactor),
+              title: Text('Letra', style: TextStyle(fontSize: 14 * scaleFactor)),
+              trailing: DropdownButton<double>(
+                value: ref.watch(textSizeProvider),
+                iconSize: 24 * scaleFactor,
+                items: [
+                  DropdownMenuItem(value: 12.0, child: Text('CH', style: TextStyle(fontSize: 12 * scaleFactor))),
+                  DropdownMenuItem(value: 14.0, child: Text('M', style: TextStyle(fontSize: 14 * scaleFactor))),
+                  DropdownMenuItem(value: 16.0, child: Text('G', style: TextStyle(fontSize: 16 * scaleFactor))),
+                ],
+                onChanged: (size) {
+                  if (size != null) {
+                    ref.read(textSizeProvider.notifier).state = size;
+                  }
+                },
               ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Cerrar sesión", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () async {
-                final supabaseService = SupabaseService();
-                await supabaseService.signOut();
-
+                await Supabase.instance.client.auth.signOut();
                 Navigator.pushAndRemoveUntil(
-                  // ignore: use_build_context_synchronously
                   context,
                   MaterialPageRoute(builder: (_) => const LoaderScreen()),
                   (route) => false,
@@ -177,193 +245,3 @@ const Divider(),
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*import 'package:applensys/screens/auth/loader_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:applensys/screens/dashboard_screen.dart';
-import 'package:applensys/screens/historial_screen.dart';
-import 'package:applensys/screens/perfil_screen.dart';
-import 'package:applensys/screens/empresas_screen.dart';
-import 'package:applensys/screens/tablas_screen.dart';
-import 'package:applensys/screens/detalles_evaluacion.dart';
-import 'package:applensys/services/supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-class DrawerLensys extends StatelessWidget {
-  const DrawerLensys({super.key});
-
-  Future<Map<String, dynamic>> _getUserData() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return {'nombre': 'Usuario', 'foto_url': null};
-    final data = await Supabase.instance.client
-        .from('usuarios')
-        .select('nombre, foto_url')
-        .eq('id', user.id)
-        .single();
-    return {
-      'nombre': data['nombre'] ?? 'Usuario',
-      'foto_url': data['foto_url'],
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final userEmail = user?.email ?? 'usuario@ejemplo.com';
-
-    return Drawer(
-      child: Container(
-        color: Colors.white,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            FutureBuilder<Map<String, dynamic>>(
-              future: _getUserData(),
-              builder: (context, snapshot) {
-                final nombre = snapshot.data?['nombre'] ?? 'Usuario';
-                final fotoUrl = snapshot.data?['foto_url'];
-                return UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(color: Colors.indigo),
-                  accountName: Text(
-                    nombre,
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                  accountEmail: Text(userEmail),
-                  currentAccountPicture: (fotoUrl != null && fotoUrl != '')
-                      ? CircleAvatar(backgroundImage: NetworkImage(fotoUrl))
-                      : const CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.indigo,
-                          ),
-                        ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.home, color: Colors.black),
-              title: const Text("Inicio"),
-              onTap: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const EmpresasScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.table_chart, color: Colors.black),
-              title: const Text("Resultados"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TablasDimensionScreen(dimension: 'Dimensión 1')),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.insert_chart, color: Colors.black),
-              title: const Text("Detalle Evaluación"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const DetallesEvaluacionScreen(
-                      dimensionesPromedios: {},
-                      promedios: {},
-                      dimension: '',
-                    ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.history, color: Colors.black),
-              title: const Text("Historial"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => HistorialScreen(empresas: [])),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person, color: Colors.black),
-              title: const Text("Perfil"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PerfilScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard, color: Colors.black),
-              title: const Text("Dashboard"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                "Cerrar sesión",
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () async {
-                final supabaseService = SupabaseService();
-                await supabaseService.signOut();
-
-                Navigator.pushAndRemoveUntil(
-                  // ignore: use_build_context_synchronously
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoaderScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}*/

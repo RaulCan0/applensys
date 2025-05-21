@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:applensys/screens/detalles_evaluacion.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
-import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:applensys/services/evaluacion_cache_service.dart';
 
 extension CapitalizeExtension on String {
   String capitalize() {
@@ -119,7 +119,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
               labelColor: Colors.white,
               unselectedLabelColor: Colors.grey.shade300,
               isScrollable: true,
-              tabs: dimensiones.map((d) => Tab(text: d)).toList(),
+                tabs: dimensiones.map((d) => Tab(child: Center(child: Text(d)))).toList(),
               ),
             ),
           ),

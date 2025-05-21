@@ -1,10 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:applensys/services/helpers/evaluation_carrousel.dart';
+import 'package:applensys/services/evaluation_carrousel.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/models/empresa.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
-import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:applensys/services/evaluacion_cache_service.dart';
 import 'package:applensys/services/reporte_utils_final.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
@@ -27,36 +27,101 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isLoading = false;
+  final int _itemsPerPage = 10;
+  int _currentPage = 0;
+  List<Map<String, dynamic>> _allData = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+  Future<void> _loadInitialData() async {
+    setState(() => _isLoading = true);
+    try {
+      final cache = EvaluacionCacheService();
+      final tablaDatos = await cache.cargarTablas();
+      setState(() {
+        _allData = _flattenTableData(tablaDatos);
+        _currentPage = 0;
+      });
+    } catch (e) {
+      _showError('Error al cargar datos: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  List<Map<String, dynamic>> _flattenTableData(Map<String, Map<String, List<Map<String, dynamic>>>> tablaDatos) {
+    final flattened = <Map<String, dynamic>>[];
+    tablaDatos.forEach((dim, mapEval) {
+      // Solo agregamos las filas de la evaluación actual
+      final lista = mapEval[widget.evaluacionId];
+      if (lista != null) {
+        flattened.addAll(lista);
+      }
+    });
+    return flattened;
+  }
+  List<Map<String, dynamic>> _getCurrentPageData() {
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage;
+    return _allData.sublist(
+      startIndex,
+      endIndex > _allData.length ? _allData.length : endIndex,
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   Future<void> _generatePreReport() async {
-    final cache = EvaluacionCacheService();
-    final tablaDatos = await cache.cargarTablas();
-    final sb = StringBuffer();
-    sb.writeln('Dimensión,EvaluacionId,Principio,Comportamiento,Cargo,Valor,Sistemas');
-    tablaDatos.forEach((dim, mapEval) {
-      mapEval.forEach((evalId, lista) {
-        for (var row in lista) {
-          final sistemas = (row['sistemas'] as List<dynamic>?)?.join(';') ?? '';
-          sb.writeln(
-            '"$dim","$evalId","${row['principio']}","${row['comportamiento']}","${row['cargo_raw']}","${row['valor']}","$sistemas"'
-          );
-        }
-      });
-    });
+    setState(() => _isLoading = true);
     try {
+      final cache = EvaluacionCacheService();
+      final tablaDatos = await cache.cargarTablas();
+      final sb = StringBuffer();
+      sb.writeln('Dimensión,EvaluacionId,Principio,Comportamiento,Cargo,Valor,Sistemas');
+      
+      for (var data in _allData) {
+        final sistemas = (data['sistemas'] as List<dynamic>?)?.join(';') ?? '';
+        sb.writeln(
+          '"${data['dimension'] ?? ''}","${data['evaluacionId'] ?? ''}","${data['principio']}","${data['comportamiento']}","${data['cargo_raw']}","${data['valor']}","$sistemas"'
+        );
+      }
+      
       final dir = await getApplicationDocumentsDirectory();
       final path = '${dir.path}/pre_reporte_${DateTime.now().millisecondsSinceEpoch}.csv';
       final file = File(path);
       await file.writeAsString(sb.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pre-reporte guardado en $path')));
+      _showSuccess('Pre-reporte guardado en $path');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al generar reporte: $e')));
+      _showError('Error al generar pre-reporte: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _exportReport() async {
+    setState(() => _isLoading = true);
     try {
       final t1String = await rootBundle.loadString('assets/t1.json');
       final t2String = await rootBundle.loadString('assets/t2.json');
@@ -71,13 +136,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         tablaDatos.values.expand((m) => m.values.expand((l) => l)).toList(),
         t1, t2, t3,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pre-reporte y documento Word generados. Ver: $docPath'))
-      );
+      _showSuccess('Reporte exportado exitosamente: $docPath');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al exportar reporte: $e'))
-      );
+      _showError('Error al exportar reporte: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -86,42 +149,102 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(widget.empresa.nombre),
-        backgroundColor: Colors.blue,
+        title: Text(
+          widget.empresa.nombre,
+          style: const TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color(0xFF003056),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _isLoading ? null : _loadInitialData,
+            tooltip: 'Recargar datos',
+          ),
+        ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Column(
-            children: [
-              Expanded(
-                child: EvaluationCarousel(
-                  evaluacionId: widget.evaluacionId,
-                  empresaNombre: widget.empresa.nombre,
-                  onPageChanged: (index) {
-                    // Removed unused _currentPage field
-                  },
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _generatePreReport,
-                      child: const Text('Generar Pre-Reporte'),
+      body: _isLoading 
+        ? const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Cargando datos...'),
+              ],
+            ),
+          )
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              return Column(
+                children: [                  Expanded(
+                    child: EvaluationCarousel(
+                      evaluacionId: widget.evaluacionId,
+                      empresaNombre: widget.empresa.nombre,
+                      data: _getCurrentPageData(),
+                      onPageChanged: (index) {},
                     ),
-                    ElevatedButton(
-                      onPressed: _exportReport,
-                      child: const Text('Exportar Reporte'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),                          onPressed: _currentPage > 0 
+                            ? () {
+                                setState(() {
+                                  _currentPage--;
+                                });
+                              }
+                            : null,
+                        ),
+                        Text(
+                          'Página ${_currentPage + 1} de ${(_allData.length / _itemsPerPage).ceil()}',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_forward),                          onPressed: (_currentPage + 1) * _itemsPerPage < _allData.length
+                            ? () {
+                                setState(() {
+                                  _currentPage++;
+                                });
+                              }
+                            : null,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.file_download),
+                          label: const Text('Pre-Reporte'),
+                          onPressed: _isLoading ? null : _generatePreReport,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF003056),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.picture_as_pdf),
+                          label: const Text('Exportar Reporte'),
+                          onPressed: _isLoading ? null : _exportReport,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF003056),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
     );
   }
 }

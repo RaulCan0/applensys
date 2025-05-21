@@ -143,17 +143,20 @@ class ReporteUtils {
     buffer.writeln('</table>');
     
     // Tabla con las calificaciones detalladas de asociados, dimensión, principio, comportamiento, observaciones y sistemas asociados
-    buffer.writeln('<h2>Detalles de Evaluación</h2>');
+    buffer.writeln('<h2>Detalles de Evaluacion</h2>');
     buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
-    buffer.writeln('<tr><th>Asociado</th><th>Dimensión</th><th>Principio</th><th>Comportamiento</th><th>Observaciones</th><th>Sistemas Asociados</th></tr>');
+    buffer.writeln('<tr><th>Asociado</th><th>Dimensión</th><th>Principio</th>'
+        '<th>Comportamiento</th><th>Observaciones</th><th>Sistemas Asociados</th></tr>');
     for (var dato in tablaDatos) {
       buffer.writeln('<tr>');
-      buffer.writeln('<td>${dato['asociado_nombre']}</td>');
-      buffer.writeln('<td>${dato['dimension']}</td>');
-      buffer.writeln('<td>${dato['principio']}</td>');
-      buffer.writeln('<td>${dato['comportamiento']}</td>');
-      buffer.writeln('<td>${dato['observacion']}</td>');
-      buffer.writeln('<td>${dato['sistemas_asociados'].join(", ")}</td>');
+      // Evitamos nulls forzando a String y validamos lista de sistemas
+      buffer.writeln('<td>${dato['asociado_nombre']?.toString() ?? ''}</td>');
+      buffer.writeln('<td>${dato['dimension']?.toString() ?? ''}</td>');
+      buffer.writeln('<td>${dato['principio']?.toString() ?? ''}</td>');
+      buffer.writeln('<td>${dato['comportamiento']?.toString() ?? ''}</td>');
+      buffer.writeln('<td>${dato['observacion']?.toString() ?? ''}</td>');
+      final sis = dato['sistemas_asociados'];
+      buffer.writeln('<td>${sis is List ? sis.join(', ') : ''}</td>');
       buffer.writeln('</tr>');
     }
     buffer.writeln('</table></body></html>');

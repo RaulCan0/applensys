@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:applensys/services/remote/supabase_service.dart';
+import 'package:applensys/services/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:applensys/services/evaluacion_cache_service.dart';
 import 'package:applensys/screens/empresas_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
@@ -67,15 +67,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
       }
 
       _mostrarMensaje("Perfil actualizado correctamente");
-
-      // Limpia los datos de las pantallas relacionadas
-      await EvaluacionCacheService().eliminarPendiente();
+      
+      // Simplemente regresamos a la pantalla anterior
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const EmpresasScreen()),
-        (route) => false,
-      );
+      Navigator.pop(context);
+      
     } catch (e) {
       _mostrarError("Error al actualizar: $e");
     }
