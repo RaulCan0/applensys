@@ -1,0 +1,4 @@
+arb_dir: lib/l10n
+template_arbs:
+  - app_en.arb
+output_dir: lib/generated

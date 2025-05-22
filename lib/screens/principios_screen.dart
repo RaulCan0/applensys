@@ -173,92 +173,47 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                     ),
                                     children: entry.value.map((principio) {
                                       final comportamientoNombre = principio.benchmarkComportamiento.split(":").first.trim();
-                                      final evaluado = comportamientosEvaluados.contains(comportamientoNombre);
 
                                       return ListTile(
                                         title: Text(
                                           comportamientoNombre,
                                           style: TextStyle(
-                                            color: evaluado ? Colors.green : Colors.black,
-                                            fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
+                                            color: comportamientosEvaluados.contains(comportamientoNombre)
+                                                ? Colors.green
+                                                : Colors.black,
+                                            fontWeight: comportamientosEvaluados.contains(comportamientoNombre)
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                           ),
                                         ),
                                         subtitle: const Text('Ir a evaluación'),
-                                        trailing: evaluado
-                                            ? IconButton(
-                                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                                onPressed: () async {
-                                                  final nuevoPuntaje = await showDialog<int>(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      int? tempScore;
-                                                      return AlertDialog(
-                                                        title: const Text('Editar Calificación'),
-                                                        content: TextField(
-                                                          keyboardType: TextInputType.number,
-                                                          decoration: const InputDecoration(labelText: 'Nuevo Puntaje'),
-                                                          onChanged: (value) {
-                                                            tempScore = int.tryParse(value);
-                                                          },
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed: () => Navigator.pop(context),
-                                                            child: const Text('Cancelar'),
-                                                          ),
-                                                          ElevatedButton(
-                                                            onPressed: () => Navigator.pop(context, tempScore),
-                                                            child: const Text('Guardar'),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  );
-
-                                                  if (nuevoPuntaje != null) {
-                                                    await _supabaseService.actualizarPuntajeComportamiento(
-                                                      empresaId: widget.empresa.id,
-                                                      asociadoId: widget.asociado.id,
-                                                      dimensionId: widget.dimensionId,
-                                                      comportamiento: comportamientoNombre,
-                                                      nuevoPuntaje: nuevoPuntaje,
-                                                    );
-                                                    // ignore: use_build_context_synchronously
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(content: Text('Calificación actualizada')),
-                                                    );
-                                                  }
-                                                },
-                                              )
-                                            : const Icon(Icons.arrow_forward_ios),
+                                        trailing: const Icon(Icons.arrow_forward_ios),
                                         onTap: () async {
-                                          if (!evaluado) {
-                                            final resultado = await Navigator.push<String>(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => ComportamientoEvaluacionScreen(
-                                                  principio: principio,
-                                                  cargo: widget.asociado.cargo,
-                                                  evaluacionId: const Uuid().v4(),
-                                                  dimensionId: widget.dimensionId,
-                                                  empresaId: widget.empresa.id,
-                                                  asociadoId: widget.asociado.id,
-                                                  dimension: '',
-                                                ),
-                                              ),
-                                            );
-                                            if (resultado != null && !comportamientosEvaluados.contains(resultado)) {
-                                              setState(() {
-                                                comportamientosEvaluados.add(resultado);
-                                              });
-                                              setStateTile(() {});
-                                              await _supabaseService.registrarComportamientoEvaluado(
+                                          final resultado = await Navigator.push<String>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ComportamientoEvaluacionScreen(
+                                                principio: principio,
+                                                cargo: widget.asociado.cargo,
+                                                evaluacionId: const Uuid().v4(),
+                                                dimensionId: widget.dimensionId,
                                                 empresaId: widget.empresa.id,
                                                 asociadoId: widget.asociado.id,
-                                                dimensionId: widget.dimensionId,
-                                                comportamiento: resultado,
-                                              );
-                                            }
+                                                dimension: '',
+                                              ),
+                                            ),
+                                          );
+                                          if (resultado != null && !comportamientosEvaluados.contains(resultado)) {
+                                            setState(() {
+                                              comportamientosEvaluados.add(resultado);
+                                            });
+                                            setStateTile(() {});
+                                            await _supabaseService.registrarComportamientoEvaluado(
+                                              empresaId: widget.empresa.id,
+                                              asociadoId: widget.asociado.id,
+                                              dimensionId: widget.dimensionId,
+                                              comportamiento: resultado,
+                                            );
                                           }
                                         },
                                       );

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:applensys/models/evaluacion.dart';
+import 'package:applensys/models/calificacion.dart';
 import 'package:uuid/uuid.dart';
 
 /// Servicio para gestión de evaluaciones
@@ -82,5 +83,46 @@ class EvaluacionService {
     } catch (e) {
       return 0.0;
     }
+  }
+
+  // Métodos de calificaciones fusionados desde calificacion_service.dart
+
+  Future<void> addCalificacion(Calificacion calificacion) async {
+    await _client.from('calificaciones').insert(calificacion.toMap());
+  }
+
+  Future<void> updateCalificacion(String id, int puntaje) async {
+    await _client.from('calificaciones').update({'puntaje': puntaje}).eq('id', id);
+  }
+
+  Future<void> updateCalificacionFull(Calificacion calificacion) async {
+    await _client.from('calificaciones').update(calificacion.toMap()).eq('id', calificacion.id);
+  }
+
+  Future<void> deleteCalificacion(String id) async {
+    await _client.from('calificaciones').delete().eq('id', id);
+  }
+
+  Future<List<Calificacion>> getCalificacionesPorAsociado(String idAsociado) async {
+    final res = await _client.from('calificaciones').select().eq('id_asociado', idAsociado);
+    return (res as List).map((e) => Calificacion.fromMap(e)).toList();
+  }
+
+  Future<Calificacion?> getCalificacionExistente({
+    required String idAsociado,
+    required String idEmpresa,
+    required int idDimension,
+    required String comportamiento,
+  }) async {
+    final res = await _client
+        .from('calificaciones')
+        .select()
+        .eq('id_asociado', idAsociado)
+        .eq('id_empresa', idEmpresa)
+        .eq('id_dimension', idDimension)
+        .eq('comportamiento', comportamiento)
+        .maybeSingle();
+    if (res == null) return null;
+    return Calificacion.fromMap(res);
   }
 }

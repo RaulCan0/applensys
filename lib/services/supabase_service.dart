@@ -8,6 +8,7 @@ import 'package:applensys/models/evaluacion.dart';
 import 'package:applensys/models/level_averages.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
@@ -16,6 +17,8 @@ class SupabaseService {
   Future<Map<String, dynamic>> register(String email, String password, String telefono) async {
     try {
       await _client.auth.signUp(email: email, password: password, data: {'telefono': telefono});
+      final userId = _client.auth.currentUser?.id;
+      if (userId != null) await _saveLocalCredentials(email, password, userId);
       return {'success': true};
     } on AuthException catch (e) {
       return {'success': false, 'message': e.message};
@@ -26,11 +29,17 @@ class SupabaseService {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      await _client.auth.signInWithPassword(email: email, password: password);
+      final res = await _client.auth.signInWithPassword(email: email, password: password);
+      final userId = res.user?.id;
+      if (userId != null) await _saveLocalCredentials(email, password, userId);
       return {'success': true};
     } on AuthException catch (e) {
+      final ok = await _checkLocalCredentials(email, password);
+      if (ok) return {'success': true, 'message': 'Login offline'};
       return {'success': false, 'message': e.message};
     } catch (e) {
+      final ok = await _checkLocalCredentials(email, password);
+      if (ok) return {'success': true, 'message': 'Login offline'};
       return {'success': false, 'message': 'Error desconocido: $e'};
     }
   }
@@ -47,10 +56,33 @@ class SupabaseService {
   }
 
   Future<void> signOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_email');
+    await prefs.remove('auth_password');
+    await prefs.remove('auth_userId');
     await _client.auth.signOut();
   }
 
   String? get userId => _client.auth.currentUser?.id;
+
+  Future<String?> get userIdOffline async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_userId');
+  }
+
+  Future<void> _saveLocalCredentials(String email, String password, String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_email', email);
+    await prefs.setString('auth_password', password);
+    await prefs.setString('auth_userId', userId);
+  }
+
+  Future<bool> _checkLocalCredentials(String email, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('auth_email');
+    final savedPass = prefs.getString('auth_password');
+    return email == savedEmail && password == savedPass;
+  }
 
   // EMPRESAS
   Future<List<Empresa>> getEmpresas() async {
@@ -539,13 +571,11 @@ class SupabaseService {
   }
 
   Future<void> finalizarEvaluacion(String evaluacionId) async {
-  await _client
-      .from('detalles_evaluacion')
-      .update({'finalizada': true})
-      .eq('id', evaluacionId);
-
-}
-
+    await _client
+        .from('detalles_evaluacion')
+        .update({'finalizada': true})
+        .eq('id', evaluacionId);
+  }
 
   Future<double> calcularProgresoDimensionGlobal(String empresaId, String dimensionId) async {
     try {
@@ -565,7 +595,6 @@ class SupabaseService {
       return 0.0;
     }
   }
-  
 
   /// Inserta promedios en la tabla resultados_dashboard
   Future<void> insertarPromediosDashboard({
@@ -608,6 +637,7 @@ class SupabaseService {
 
     await _client.from('promedios_sistemas').insert(data);
   }
+
   Future<void> uploadFile({
     required String bucket,
     required String path,

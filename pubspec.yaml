@@ -15,11 +15,12 @@ dependencies:
   uuid: ^4.3.1
   animated_fl_chart: ^0.0.6
   fl_chart: ^0.63.0
-  google_fonts: ^6.2.1 
+  google_fonts: ^6.2.1
   syncfusion_flutter_charts: ^29.1.38
   image_picker: ^1.1.2
   file_selector: ^1.0.3
-
+  flutter_localizations:
+    sdk: flutter
   path: ^1.8.3
   meta: ^1.16.0
   intl: ^0.20.2
@@ -31,18 +32,23 @@ dependencies:
   carousel_slider: ^5.0.0
   get_it: ^8.0.3
   flutter_riverpod: ^2.6.1
-  # Eliminada la dependencia dart_docx porque no existe en pub.dev
-  # Puedes considerar usar alternativas como docx_template o flutter_docx para manejar documentos .docx.
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  intl_utils: ^2.5.0
 
 flutter:
+  generate: true  # Habilitar generación de localizaciones
   uses-material-design: true
   assets:
     - assets/t1.json
     - assets/t2.json
     - assets/t3.json
     - assets/logo.png
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: fonts/Roboto-Regular.ttf
+        - asset: fonts/Roboto-Bold.ttf
