@@ -1,7 +1,7 @@
 import 'package:get_it/get_it.dart';
 import '../services/auth_service.dart';
 import '../services/empresa_service.dart';
-import '../services/asociado_service.dart';
+import '../services/domain/asociado_service.dart';
 import '../services/evaluacion_service.dart';
 import '../services/calificacion_service.dart';
 import '../services/storage_service.dart';
