@@ -1,4 +1,4 @@
-import 'package:applensys/services/domain/evaluation_chart.dart';
+import 'package:applensys/services/domain/evaluation_chart.dart'; // Cambiado para usar la definición del domain
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 

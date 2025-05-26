@@ -39,7 +39,7 @@ class _EvaluationCarouselState extends State<EvaluationCarousel> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final charts = [
+        final charts = <StatelessWidget>[
           DonutChart(
             data: _datosGraficas.dimensionPromedios,
             title: '',
