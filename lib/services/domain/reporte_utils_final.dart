@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -64,7 +65,7 @@ class ReporteUtils {
       }
 
       final benchmarkData = fuente.firstWhere(
-        (b) => b['BENCHMARK DE COMPORTAMIENTOS'].toString().trim() == comportamiento.trim() &&
+        (b) => b['BENCHMARK DE COMPORTAMIENTOS'].toString().trim().startsWith(comportamiento.trim()) &&
                b['NIVEL'].toString().toLowerCase().contains(nivel.toLowerCase().split(' ')[0]),
         orElse: () => {},
       );
@@ -118,7 +119,7 @@ class ReporteUtils {
     return reporte;
   }
 
-  static Future<String> exportReporteWord(
+  static Future<String> exportReporteWordUnificado(
     List<Map<String, dynamic>> tablaDatos,
     List<Map<String, dynamic>> t1,
     List<Map<String, dynamic>> t2,
@@ -126,7 +127,7 @@ class ReporteUtils {
   ) async {
     final reporte = await generarReporteDesdeTablaDatos(tablaDatos, t1, t2, t3);
     final buffer = StringBuffer();
-    buffer.writeln('<html><body><h1>Reporte de Comportamientos</h1>');
+    buffer.writeln('<html><body><h1>Resumen de Comportamientos Evaluados</h1>');
     buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
     buffer.writeln('<tr><th>Comportamiento</th><th>Definición</th><th>Nivel</th><th>Calificación</th><th>Resultado</th><th>Benchmark</th><th>Sistemas Asociados</th></tr>');
     for (var r in reporte) {
@@ -141,8 +142,7 @@ class ReporteUtils {
       buffer.writeln('</tr>');
     }
     buffer.writeln('</table>');
-    
-    // Tabla con las calificaciones detalladas de asociados, dimensión, principio, comportamiento, observaciones y sistemas asociados
+
     buffer.writeln('<h2>Detalles de Evaluación</h2>');
     buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
     buffer.writeln('<tr><th>Asociado</th><th>Dimensión</th><th>Principio</th><th>Comportamiento</th><th>Observaciones</th><th>Sistemas Asociados</th></tr>');
@@ -153,13 +153,13 @@ class ReporteUtils {
       buffer.writeln('<td>${dato['principio']}</td>');
       buffer.writeln('<td>${dato['comportamiento']}</td>');
       buffer.writeln('<td>${dato['observacion']}</td>');
-      buffer.writeln('<td>${dato['sistemas_asociados'].join(", ")}</td>');
+      buffer.writeln('<td>${(dato['sistemas_asociados'] ?? []).join(", ")}</td>');
       buffer.writeln('</tr>');
     }
     buffer.writeln('</table></body></html>');
 
     final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/reporte_completo.doc');
+    final file = File('\${dir.path}/reporte_unificado.doc');
     await file.writeAsString(buffer.toString(), encoding: Utf8Codec());
     return file.path;
   }

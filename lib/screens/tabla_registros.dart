@@ -129,6 +129,44 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
             
           }).toList(),
         ),
+        floatingActionButton: Builder(
+          builder: (BuildContext fabContext) { // Usar Builder para obtener el contexto correcto
+            return FloatingActionButton(
+              onPressed: () {
+                // Acceder al TabController usando el contexto del Builder
+                final tabController = DefaultTabController.of(fabContext);
+                final currentIndex = tabController.index;
+                final currentDimensionKey = dimensiones[currentIndex];
+                
+                // ignore: avoid_print
+                print('FAB presionado. Dimensión actual: $currentDimensionKey, Evaluación ID: ${widget.evaluacionId}');
+                
+                // Aquí iría la lógica para mostrar un diálogo o navegar
+                // a una pantalla para crear un nuevo registro.
+                // Se necesitarían todos los campos para llamar a:
+                // TablasRegistrosScreen.actualizarDato(
+                //   widget.evaluacionId,
+                //   dimension: currentDimensionKey, 
+                //   principio: "...";
+                //   comportamiento: "...";
+                //   nivel: "...";
+                //   nombreAsociado: "...";
+                //   calificacion: 0;
+                //   sistemasAsociados: [];
+                //   observacion: "...";
+                //   evidencia: "...";
+                // );
+
+                ScaffoldMessenger.of(fabContext).showSnackBar(
+                  SnackBar(content: Text('Añadir nuevo registro a: $currentDimensionKey (acción pendiente)')),
+                );
+              },
+              backgroundColor: const Color(0xFF003056),
+              tooltip: 'Añadir nuevo registro',
+              child: const Icon(Icons.add, color: Colors.white),
+            );
+          }
+        ),
       ),
     );
   }

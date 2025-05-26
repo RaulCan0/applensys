@@ -1,58 +1,37 @@
-import 'package:applensys/services/remote/supabase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:applensys/providers/text_size_provider.dart'; // Importar el provider
 
-class RecoveryScreen extends StatefulWidget {
+final recoveryControllerProvider =
+    StateNotifierProvider<RecoveryController, AsyncValue<void>>(
+  (ref) => RecoveryController(),
+);
+
+class RecoveryController extends StateNotifier<AsyncValue<void>> {
+  RecoveryController() : super(const AsyncValue.data(null));
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    state = const AsyncValue.loading();
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+class RecoveryScreen extends ConsumerStatefulWidget {
   const RecoveryScreen({super.key});
 
   @override
-  State<RecoveryScreen> createState() => _RecoveryScreenState();
+  ConsumerState<RecoveryScreen> createState() => _RecoveryScreenState();
 }
 
-class _RecoveryScreenState extends State<RecoveryScreen> {
+class _RecoveryScreenState extends ConsumerState<RecoveryScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  bool _isLoading = false;
-
-  void _showAlert(String title, String message, {bool closeOnOk = false}) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              if (closeOnOk) Navigator.pop(context); // Vuelve atrás si se solicita
-            },
-            child: const Text('Aceptar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _recover() async {
-    final email = _emailController.text.trim();
-    // Validar formato de email
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-    if (email.isEmpty || !emailRegex.hasMatch(email)) {
-      _showAlert('Error', 'Ingresa un correo electrónico válido');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    final supabaseService = SupabaseService();
-    final result = await supabaseService.resetPassword(email);
-    setState(() => _isLoading = false);
-
-    if (!mounted) return;
-
-    if (result['success'] == true) {
-      _showAlert('Éxito', 'Se ha enviado un correo para restablecer la contraseña.', closeOnOk: true);
-    } else {
-      _showAlert('Error', result['message'] ?? 'No se pudo enviar el correo de recuperación');
-    }
-  }
 
   @override
   void dispose() {
@@ -60,43 +39,86 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
     super.dispose();
   }
 
+  void _onSubmit() async {
+    if (_formKey.currentState!.validate()) {
+      await ref
+          .read(recoveryControllerProvider.notifier)
+          .sendPasswordResetEmail(_emailController.text);
+      if (!mounted) return;
+
+      final state = ref.read(recoveryControllerProvider);
+      state.whenOrNull(
+        data: (_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Correo enviado con éxito')),
+          );
+        },
+        error: (err, _) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${err.toString()}')),
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final recoveryState = ref.watch(recoveryControllerProvider);
+    final textSize = ref.watch(textSizeProvider); // Obtener el tamaño de texto
+    final double scaleFactor = textSize / 14.0; // Asumiendo 14.0 como tamaño base
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recuperar Contraseña'),
-        backgroundColor: Colors.indigo,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text('Recuperar contraseña', style: TextStyle(fontSize: 20 * scaleFactor)), // Aplicar scaleFactor
+        toolbarHeight: kToolbarHeight * scaleFactor, // Escalar altura de AppBar
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Ingresa tu Correo electrónico',
-                border: OutlineInputBorder(),
+        padding: EdgeInsets.all(16 * scaleFactor), // Aplicar scaleFactor al padding
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Text(
+                'Introduce tu correo para recibir el enlace de recuperación',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16 * scaleFactor), // Aplicar scaleFactor
               ),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: _isLoading ? null : _recover,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.indigo,
-                side: const BorderSide(color: Colors.indigo),
-                backgroundColor: Colors.white,
+              SizedBox(height: 16 * scaleFactor), // Aplicar scaleFactor
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: TextStyle(fontSize: 14 * scaleFactor), // Aplicar scaleFactor al texto de entrada
+                decoration: InputDecoration(
+                  labelText: 'Correo electrónico',
+                  labelStyle: TextStyle(fontSize: 14 * scaleFactor), // Aplicar scaleFactor al label
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      !value.contains('@')) {
+                    return 'Introduce un correo válido';
+                  }
+                  return null;
+                },
               ),
-              child: _isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Enviar'),
-            ),
-          ],
+              SizedBox(height: 16 * scaleFactor), // Aplicar scaleFactor
+              recoveryState.isLoading
+                  ? SizedBox(
+                      width: 24 * scaleFactor, // Escalar CircularProgressIndicator
+                      height: 24 * scaleFactor,
+                      child: const CircularProgressIndicator(),
+                    )
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 20 * scaleFactor, vertical: 12 * scaleFactor), // Escalar padding del botón
+                      ),
+                      onPressed: _onSubmit,
+                      child: Text('Enviar', style: TextStyle(fontSize: 16 * scaleFactor)), // Aplicar scaleFactor
+                    ),
+            ],
+          ),
         ),
       ),
     );

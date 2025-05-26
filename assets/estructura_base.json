@@ -1,0 +1,100 @@
+{
+  "dimensiones": [
+    {
+      "id": "1",
+      "nombre": "IMPULSORES CULTURALES",
+      "principios": [
+        {
+          "nombre": "Respetar a Cada Individuo",
+          "comportamientos": [
+            "Soporte",
+            "Reconocimiento",
+            "Comunidad"
+          ]
+        },
+        {
+          "nombre": "Liderar con Humildad",
+          "comportamientos": [
+            "Liderazgo de servidor",
+            "Valorar",
+            "Empoderamiento"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "nombre": "MEJORA CONTINUA",
+      "principios": [
+        {
+          "nombre": "Buscar la Perfección",
+          "comportamientos": [
+            "Mentalidad",
+            "Estructura"
+          ]
+        },
+        {
+          "nombre": "Abrazar el pensamiento Cientifico",
+          "comportamientos": [
+            "Reflexionar",
+            "Análisis",
+            "Colaborar"
+          ]
+        },
+        {
+          "nombre": "Enfocarse en el proceso",
+          "comportamientos": [
+            "Comprender",
+            "Diseño",
+            "Atribución"
+          ]
+        },
+        {
+          "nombre": "Asegurar la Calidad en la Fuente",
+          "comportamientos": [
+            "A prueba de error",
+            "Propiedad",
+            "Conectar"
+          ]
+        },
+        {
+          "nombre": "Mejorar el Flujo y Jalón de Valor",
+          "comportamientos": [
+            "Ininterrumpido",
+            "Demanda",
+            "Eliminar"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "nombre": "ALINEAMIENTO EMPRESARIAL",
+      "principios": [
+        {
+          "nombre": "Pensar Sistémicamente",
+          "comportamientos": [
+            "Optimizar",
+            "Impacto"
+          ]
+        },
+        {
+          "nombre": "Crear constancia de Propósito",
+          "comportamientos": [
+            "Alinear",
+            "Aclarar",
+            "Comunicar"
+          ]
+        },
+        {
+          "nombre": "Crear valor para el cliente",
+          "comportamientos": [
+            "Relación",
+            "Valor",
+            "Medida"
+          ]
+        }
+      ]
+    }
+  ]
+}

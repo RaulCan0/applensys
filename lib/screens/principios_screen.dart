@@ -1,14 +1,13 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:applensys/models/asociado.dart';
 import 'package:applensys/models/principio_json.dart';
 import 'package:applensys/screens/tablas_screen.dart' as tablas_screen;
+import 'package:applensys/services/domain/json_service.dart';
+import 'package:applensys/services/domain/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/empresa.dart';
-import '../services/domain/json_service.dart';
-import '../services/remote/supabase_service.dart';
+
 import 'comportamiento_evaluacion_screen.dart';
 
 class PrincipiosScreen extends StatefulWidget {
@@ -31,6 +30,20 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Map<String, List<PrincipioJson>> principiosUnicos = {};
   List<String> comportamientosEvaluados = [];
   bool cargando = true;
+
+  String nombreDimension(String id) {
+    switch (id) {
+      case '1':
+        return 'IMPULSORES CULTURALES';
+      case '2':
+        return 'MEJORA CONTINUA';
+      case '3':
+        return 'ALINEAMIENTO EMPRESARIAL';
+      default:
+        return 'DIMENSIÓN DESCONOCIDA';
+    }
+  }
+
   final SupabaseService _supabaseService = SupabaseService();
 
   @override
@@ -59,33 +72,20 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
       });
     } catch (e) {
       debugPrint('Error al cargar JSON: $e');
-      if (mounted) {
-        setState(() => cargando = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar principios: ${e.toString()}')),
-        );
-      }
     }
   }
 
   void cargarComportamientosEvaluados() async {
     try {
       final calificaciones = await _supabaseService.getCalificacionesPorAsociado(widget.asociado.id);
-      if (mounted) {
-        setState(() {
-          comportamientosEvaluados = calificaciones
-              .where((c) => c.idDimension.toString() == widget.dimensionId)
-              .map((c) => c.comportamiento)
-              .toList();
-        });
-      }
+      setState(() {
+        comportamientosEvaluados = calificaciones
+            .where((c) => c.idDimension.toString() == widget.dimensionId)
+            .map((c) => c.comportamiento.toString())
+            .toList();
+      });
     } catch (e) {
       debugPrint('Error al cargar comportamientos evaluados: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar evaluaciones previas: ${e.toString()}')),
-        );
-      }
     }
   }
 
@@ -103,9 +103,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
       appBar: AppBar(
         title: Center(
           child: Text(
-            'Dimensión ${widget.dimensionId.toUpperCase()} - ASOCIADO: ${widget.asociado.nombre.toUpperCase()}',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            overflow: TextOverflow.ellipsis,
+            ' ${nombreDimension(widget.dimensionId)}',
+            style: const TextStyle(color: Colors.white),
           ),
         ),
         backgroundColor: const Color(0xFF003056),
@@ -113,19 +112,16 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.table_chart_outlined, color: Colors.white),
-            tooltip: 'Ver Tablas de Resultados',
             onPressed: () {
-              final String evaluacionIdParaTabla = const Uuid().v4();
-
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => tablas_screen.TablasDimensionScreen(
                     empresaId: widget.empresa.id,
-                    dimension: widget.dimensionId,
+                    dimension: '',
                     empresa: widget.empresa,
-                    evaluacionId: evaluacionIdParaTabla,
-                    asociadoId: widget.asociado.id,
+                    evaluacionId: '',
+                    asociadoId: '',
                   ),
                 ),
               );
@@ -136,7 +132,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
       body: cargando
           ? const Center(child: CircularProgressIndicator())
           : principiosUnicos.isEmpty
-              ? const Center(child: Text('No hay principios para este nivel y dimensión'))
+              ? const Center(child: Text('No hay principios para este nivel'))
               : Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -147,9 +143,13 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                         margin: const EdgeInsets.symmetric(vertical: 16),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            'Nivel: ${widget.asociado.cargo.toUpperCase()}',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          child: Center(
+                            child: Text(
+                              'EVALUANDO A: ${widget.asociado.nombre}\n'
+                              'Nivel Organizacional: ${widget.asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : widget.asociado.cargo.toUpperCase()}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 15, fontFamily: 'Arial'),
+                            ),
                           ),
                         ),
                       ),
@@ -167,121 +167,66 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                 }).length;
                                 final progreso = totalComportamientos == 0 ? 0.0 : evaluados / totalComportamientos;
 
-                                return Card(
-                                  elevation: 3,
+                                return Container(
                                   margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Color.lerp(Colors.white, Colors.green[100], progreso),
+                                    boxShadow: [
+                                      // ignore: deprecated_member_use
+                                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3)),
+                                    ],
+                                  ),
                                   child: ExpansionTile(
+                                    tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    childrenPadding: const EdgeInsets.only(bottom: 10),
                                     title: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         Text(
                                           entry.key,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                         ),
-                                        const SizedBox(height: 8),
-                                        LinearProgressIndicator(
-                                          value: progreso,
-                                          backgroundColor: Colors.grey[300],
-                                          valueColor: AlwaysStoppedAnimation<Color>(progreso == 1.0 ? Colors.blueAccent : Colors.green),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          '$evaluados de $totalComportamientos comportamientos evaluados',
+                                          style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                          textAlign: TextAlign.center,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text('$evaluados de $totalComportamientos comportamientos evaluados', style: const TextStyle(fontSize: 12)),
                                       ],
                                     ),
                                     children: entry.value.map((principio) {
                                       final comportamientoNombre = principio.benchmarkComportamiento.split(":").first.trim();
-                                      final evaluado = comportamientosEvaluados.contains(comportamientoNombre);
-
                                       return ListTile(
                                         title: Text(
                                           comportamientoNombre,
                                           style: TextStyle(
-                                            color: evaluado ? Colors.green : Colors.black87,
-                                            fontWeight: evaluado ? FontWeight.bold : FontWeight.normal,
+                                            color: comportamientosEvaluados.contains(comportamientoNombre) ? Colors.green : Colors.black,
+                                            fontWeight: comportamientosEvaluados.contains(comportamientoNombre) ? FontWeight.bold : FontWeight.normal,
                                           ),
                                         ),
-                                        subtitle: Text(evaluado ? 'Evaluado (Editar)' : 'Ir a evaluación', style: const TextStyle(fontSize: 12)),
-                                        trailing: evaluado
-                                            ? IconButton(
-                                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                                tooltip: 'Editar Calificación',
-                                                onPressed: () async {
-                                                  final nuevoPuntaje = await showDialog<int>(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      int? tempScore;
-                                                      return AlertDialog(
-                                                        title: const Text('Editar Calificación'),
-                                                        content: TextField(
-                                                          keyboardType: TextInputType.number,
-                                                          decoration: const InputDecoration(labelText: 'Nuevo Puntaje (0-100)'),
-                                                          onChanged: (value) {
-                                                            tempScore = int.tryParse(value);
-                                                          },
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed: () => Navigator.pop(context),
-                                                            child: const Text('Cancelar'),
-                                                          ),
-                                                          ElevatedButton(
-                                                            onPressed: () {
-                                                              if (tempScore != null && tempScore! >= 0 && tempScore! <= 100) {
-                                                                Navigator.pop(context, tempScore);
-                                                              } else {
-                                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                                  const SnackBar(content: Text('Puntaje debe estar entre 0 y 100')),
-                                                                );
-                                                              }
-                                                            },
-                                                            child: const Text('Guardar'),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  );
-
-                                                  if (nuevoPuntaje != null) {
-                                                    await _supabaseService.actualizarPuntajeComportamiento(
-                                                      empresaId: widget.empresa.id,
-                                                      asociadoId: widget.asociado.id,
-                                                      dimensionId: widget.dimensionId,
-                                                      comportamiento: comportamientoNombre,
-                                                      nuevoPuntaje: nuevoPuntaje,
-                                                    );
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(content: Text('Calificación actualizada')),
-                                                    );
-                                                  }
-                                                },
-                                              )
-                                            : const Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                                        subtitle: const Text('Ir a evaluación'),
+                                        trailing: const Icon(Icons.arrow_forward_ios),
                                         onTap: () async {
-                                          final String evaluacionIdParaComportamiento = const Uuid().v4();
-
                                           final resultado = await Navigator.push<String>(
                                             context,
                                             MaterialPageRoute(
                                               builder: (_) => ComportamientoEvaluacionScreen(
                                                 principio: principio,
                                                 cargo: widget.asociado.cargo,
-                                                evaluacionId: evaluacionIdParaComportamiento,
+                                                evaluacionId: const Uuid().v4(),
                                                 dimensionId: widget.dimensionId,
                                                 empresaId: widget.empresa.id,
                                                 asociadoId: widget.asociado.id,
-                                                dimension: widget.dimensionId,
+                                                dimension: '',
                                               ),
                                             ),
                                           );
-                                          if (resultado != null && resultado == 'guardado' && !comportamientosEvaluados.contains(comportamientoNombre)) {
+                                          if (resultado != null && !comportamientosEvaluados.contains(resultado)) {
                                             setState(() {
-                                              comportamientosEvaluados.add(comportamientoNombre);
+                                              comportamientosEvaluados.add(resultado);
                                             });
-                                            setStateTile(() {});
-                                          } else if (resultado == 'guardado') {
                                             setStateTile(() {});
                                           }
                                         },
@@ -297,133 +242,6 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                     ],
                   ),
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          if (principiosUnicos.isEmpty || principiosUnicos.values.every((list) => list.isEmpty)) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No hay principios cargados para iniciar una nueva evaluación desde aquí.')),
-            );
-            return;
-          }
-
-          PrincipioJson? primerPrincipioParaEvaluar;
-          try {
-            primerPrincipioParaEvaluar = principiosUnicos.values.firstWhere((list) => list.isNotEmpty).first;
-          // ignore: empty_catches
-          } catch (e) {}
-
-          if (primerPrincipioParaEvaluar == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No se encontró un comportamiento válido para iniciar la evaluación.')),
-            );
-            return;
-          }
-
-          final String evaluacionIdParaNuevaEvaluacion = const Uuid().v4();
-
-          final resultado = await Navigator.push<String>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ComportamientoEvaluacionScreen(
-                principio: primerPrincipioParaEvaluar!,
-                cargo: widget.asociado.cargo,
-                evaluacionId: evaluacionIdParaNuevaEvaluacion,
-                dimensionId: widget.dimensionId,
-                empresaId: widget.empresa.id,
-                asociadoId: widget.asociado.id,
-                dimension: widget.dimensionId,
-              ),
-            ),
-          );
-
-          if (resultado != null && resultado == 'guardado') {
-            cargarComportamientosEvaluados();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Nueva evaluación iniciada/guardada.')),
-            );
-          }
-        },
-        backgroundColor: Colors.blue,
-        tooltip: 'Iniciar Nueva Evaluación (Primer Comportamiento)',
-        child: const Icon(Icons.edit, color: Colors.white),
-      ),
     );
-  }
-}
-
-class ProgresoAsociado {
-  static final Map<String, Set<String>> _map = {};
-  static void marcarComoEvaluado(String id, String comp) {
-    _map.putIfAbsent(id, () => {}).add(comp);
-  }
-
-  static bool estaEvaluado(String id, String comp) => _map[id]?.contains(comp) ?? false;
-}
-
-extension ProgresoSupabase on SupabaseService {
-  Future<void> registrarComportamientoEvaluado({
-    required String empresaId,
-    required String asociadoId,
-    required String dimensionId,
-    required String comportamiento,
-    int puntajeInicial = 0,
-  }) async {
-    final response = await Supabase.instance.client
-        .from('calificaciones')
-        .select('id')
-        .eq('id_asociado', asociadoId)
-        .eq('id_empresa', empresaId)
-        .eq('id_dimension', int.tryParse(dimensionId) ?? 0)
-        .eq('comportamiento', comportamiento)
-        .maybeSingle();
-
-    if (response == null) {
-      await Supabase.instance.client.from('calificaciones').insert({
-        'id': const Uuid().v4(),
-        'id_asociado': asociadoId,
-        'id_empresa': empresaId,
-        'id_dimension': int.tryParse(dimensionId),
-        'comportamiento': comportamiento,
-        'puntaje': puntajeInicial,
-      });
-    }
-  }
-}
-
-extension EditarCalificacionSupabase on SupabaseService {
-  Future<void> actualizarPuntajeComportamiento({
-    required String empresaId,
-    required String asociadoId,
-    required String dimensionId,
-    required String comportamiento,
-    required int nuevoPuntaje,
-  }) async {
-    final existeResponse = await Supabase.instance.client
-        .from('calificaciones')
-        .select('id')
-        .eq('id_asociado', asociadoId)
-        .eq('id_empresa', empresaId)
-        .eq('id_dimension', int.tryParse(dimensionId) ?? 0)
-        .eq('comportamiento', comportamiento)
-        .maybeSingle();
-
-    if (existeResponse == null) {
-      await Supabase.instance.client.from('calificaciones').insert({
-        'id': const Uuid().v4(),
-        'id_asociado': asociadoId,
-        'id_empresa': empresaId,
-        'id_dimension': int.tryParse(dimensionId),
-        'comportamiento': comportamiento,
-        'puntaje': nuevoPuntaje,
-      });
-    } else {
-      await Supabase.instance.client
-          .from('calificaciones')
-          .update({'puntaje': nuevoPuntaje})
-          .eq('id_asociado', asociadoId)
-          .eq('id_empresa', empresaId)
-          .eq('id_dimension', int.tryParse(dimensionId) ?? 0)
-          .eq('comportamiento', comportamiento);
-    }
   }
 }

@@ -1,28 +1,50 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:applensys/models/calificacion.dart';
 
-/// Servicio para gestión de calificaciones
 class CalificacionService {
-  final SupabaseClient _client = Supabase.instance.client;
+  final List<Calificacion> _calificaciones = [];
 
-  /// Inserta una nueva calificación
   Future<void> addCalificacion(Calificacion calificacion) async {
-    await _client.from('calificaciones').insert(calificacion.toMap());
+    _calificaciones.add(calificacion);
   }
 
-  /// Actualiza el puntaje de una calificación existente
   Future<void> updateCalificacion(String id, int puntaje) async {
-    await _client.from('calificaciones').update({'puntaje': puntaje}).eq('id', id);
+    // Implementación pendiente o ajustada según necesidades
+    throw UnimplementedError();
   }
 
-  /// Elimina una calificación
+  Future<void> updateCalificacionFull(Calificacion calificacion) async {
+    final index = _calificaciones.indexWhere((c) => c.id == calificacion.id);
+    if (index != -1) {
+      _calificaciones[index] = calificacion;
+    } else {
+      throw Exception('Calificación no encontrada');
+    }
+  }
+
   Future<void> deleteCalificacion(String id) async {
-    await _client.from('calificaciones').delete().eq('id', id);
+    // Implementación pendiente o ajustada según necesidades
+    throw UnimplementedError();
   }
 
-  /// Obtiene todas las calificaciones de un asociado
   Future<List<Calificacion>> getCalificacionesPorAsociado(String idAsociado) async {
-    final res = await _client.from('calificaciones').select().eq('id_asociado', idAsociado);
-    return (res as List).map((e) => Calificacion.fromMap(e)).toList();
+    // Implementación pendiente o ajustada según necesidades
+    throw UnimplementedError();
+  }
+
+  Future<Calificacion?> getCalificacionExistente({
+    required String idAsociado,
+    required String idEmpresa,
+    required int idDimension,
+    required String comportamiento,
+  }) async {
+    for (final calificacion in _calificaciones) {
+      if (calificacion.idAsociado == idAsociado &&
+          calificacion.idEmpresa == idEmpresa &&
+          calificacion.idDimension == idDimension &&
+          calificacion.comportamiento == comportamiento) {
+        return calificacion;
+      }
+    }
+    return null;
   }
 }

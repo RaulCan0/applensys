@@ -1,8 +1,8 @@
+import 'package:applensys/services/domain/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/screens/detalles_evaluacion.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
-import 'package:applensys/services/local/evaluacion_cache_service.dart';
 
 extension CapitalizeExtension on String {
   String capitalize() {
@@ -88,7 +88,13 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
     if (data.values.any((m) => m.isNotEmpty)) {
       setState(() => TablasDimensionScreen.tablaDatos = data);
     }
-    dimensiones = dimensionInterna.keys.toList();
+    // Asegurarse de que dimensiones se inicialice aquí si depende de datos asíncronos
+    // o si _cargarDesdeCache puede ser llamado antes de que build se ejecute la primera vez.
+    if (mounted) { // Verificar si el widget está montado antes de llamar a setState
+      setState(() {
+        dimensiones = dimensionInterna.keys.toList();
+      });
+    }
   }
 
   String _normalizeNivel(String raw) {
@@ -100,28 +106,22 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    dimensiones = dimensionInterna.keys.toList();
+    // Asegurar que dimensiones esté inicializado antes de usarlo en DefaultTabController
+    dimensiones = dimensionInterna.keys.toList(); 
     return DefaultTabController(
       length: dimensiones.length,
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
           backgroundColor: const Color(0xFF003056),
-          leading: const BackButton(color: Colors.white),
           title: const Text('Resultados', style: TextStyle(color: Colors.white)),
-          centerTitle: true,
           iconTheme: const IconThemeData(color: Colors.white),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(kTextTabBarHeight),
-            child: Center(
-              child: TabBar(
-              indicatorColor: Colors.grey.shade300,
+          bottom: TabBar(
+             indicatorColor: Colors.grey.shade300,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.grey.shade300,
-              isScrollable: true,
-              tabs: dimensiones.map((d) => Tab(text: d)).toList(),
-              ),
-            ),
+              isScrollable: false, 
+              tabs: dimensiones.map((d) => Tab(child: Text(d))).toList(),
           ),
         ),
         endDrawer: const DrawerLensys(),
@@ -137,9 +137,13 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
                     child: Text(mostrarPromedio ? 'Ver sumas' : 'Promediar'),
                   ),
                   if (mostrarPromedio)
-                    ElevatedButton(
-                      onPressed: _irADetalles,
-                      child: const Text('Ver detalles y avance'),
+                    Builder( 
+                      builder: (BuildContext buttonContext) {
+                        return ElevatedButton(
+                          onPressed: () => _irADetalles(buttonContext), 
+                          child: const Text('Ver detalles y avance'),
+                        );
+                      }
                     ),
                 ],
               ),
@@ -149,9 +153,9 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
                 children: dimensiones.map((dimension) {
                   final keyInterna = dimensionInterna[dimension] ?? dimension;
                   final filas = TablasDimensionScreen.tablaDatos[keyInterna]
-                          ?.values
-                          .expand((l) => l)
-                          .toList() ?? [];
+                      ?.values
+                      .expand((l) => l)
+                      .toList() ?? [];
                   if (filas.isEmpty) {
                     return const Center(child: Text('No hay datos para mostrar'));
                   }
@@ -164,7 +168,10 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
       ),
     );
   }
-  void _irADetalles() {
+  void _irADetalles(BuildContext tabControllerContext) { 
+    final currentIndex = DefaultTabController.of(tabControllerContext).index; 
+    final dimensionActual = dimensiones[currentIndex];
+
     final promediosPorDimension = <String, Map<String, double>>{};
     for (final dim in dimensiones) {
       final keyInterna = dimensionInterna[dim] ?? dim;
@@ -194,45 +201,51 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
         promediosNivel[nivel] = double.parse(prom.toStringAsFixed(2));
         totalProm += prom;
       });
-      promediosNivel['General'] = double.parse((totalProm / sumasNivel.length).toStringAsFixed(2));
+      promediosNivel['General'] = sumasNivel.isNotEmpty ? double.parse((totalProm / sumasNivel.length).toStringAsFixed(2)) : 0.0;
       promediosNivel['Sistemas'] = double.parse(sistemasPromedio.promedio().toStringAsFixed(2));
 
       promediosPorDimension[dim] = promediosNivel;
     }
     Navigator.push(
-      context,
+      context, 
       MaterialPageRoute(
         builder: (_) => DetallesEvaluacionScreen(
           dimensionesPromedios: promediosPorDimension,
           empresa: widget.empresa,
-          evaluacionId: widget.evaluacionId, promedios: {}, dimension: '',
+          evaluacionId: widget.evaluacionId,
+          promedios: promediosPorDimension[dimensionActual], 
+          dimension: dimensionActual, 
+          initialTabIndex: currentIndex, 
         ),
       ),
     );
   }
 
   Widget _buildDataTable(List<Map<String, dynamic>> filas) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
+    return Semantics(
+      label: 'Tabla de datos de evaluación por principios y roles',
       child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.all(8),
-        child: DataTable(
-          columnSpacing: 20,
-          headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
-          dataRowColor: WidgetStateProperty.all(Colors.white),
-          border: TableBorder.all(color: const Color(0xFF003056)),
-          columns: [
-            DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Ejecutivo', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Gerente', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Miembro', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Ejecutivo Sistemas', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
-          ],
-          rows: _buildRows(filas),
+        scrollDirection: Axis.vertical,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.all(8),
+          child: DataTable(
+            columnSpacing: 20,
+            headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
+            dataRowColor: WidgetStateProperty.all(Colors.white),
+            border: TableBorder.all(color: const Color(0xFF003056)),
+            columns: [
+              DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Ejecutivo', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Gerente', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Miembro', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Ejecutivo Sistemas', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
+            ],
+            rows: _buildRows(filas), // Esta llamada es correcta
+          ),
         ),
       ),
     );
@@ -263,8 +276,8 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
         'Miembro':   <String>{},
       });
 
-      sumas[principio]![comportamiento]![nivel] = sumas[principio]![comportamiento]![nivel]! + valor;
-      conteos[principio]![comportamiento]![nivel] = conteos[principio]![comportamiento]![nivel]! + 1;
+      sumas[principio]![comportamiento]![nivel] = (sumas[principio]![comportamiento]![nivel] ?? 0) + valor;
+      conteos[principio]![comportamiento]![nivel] = (conteos[principio]![comportamiento]![nivel] ?? 0) + 1;
       for (var s in sistemas) {
         sistemasPorNivel[principio]![comportamiento]![nivel]!.add(s);
       }
@@ -278,8 +291,9 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
 
         String valorCell(String key) {
           final cnt = cntMap[key]!;
-          if (!mostrarPromedio || cnt == 0) return sumaMap[key]!.toString();
-          return (sumaMap[key]! / cnt).toStringAsFixed(2);
+          final currentSuma = sumaMap[key]!;
+          if (!mostrarPromedio || cnt == 0) return currentSuma.toString();
+          return (currentSuma / cnt).toStringAsFixed(2);
         }
 
         String sysCell(String key) {
@@ -302,7 +316,8 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
 
     return rows;
   }
-}
+} // Fin de la clase _TablasDimensionScreenState
+
 /// Clase para almacenar y promediar los sistemas usados por nivel
 class SistemasPromedio {
   final Map<String, Set<String>> _sistemasPorNivel = {
@@ -311,7 +326,6 @@ class SistemasPromedio {
     'Miembro': <String>{},
   };
 
-  /// Agrega una lista de sistemas al nivel correspondiente
   void agregar(String nivel, List<String> sistemas) {
     final key = nivel.capitalize();
     if (_sistemasPorNivel.containsKey(key)) {
@@ -319,14 +333,16 @@ class SistemasPromedio {
     }
   }
 
-  /// Retorna el promedio de sistemas usados entre los 3 niveles
   double promedio() {
-    final total = _sistemasPorNivel.values
-        .fold<int>(0, (sum, set) => sum + set.length);
-    return total / _sistemasPorNivel.length;
+    if (_sistemasPorNivel.isEmpty) return 0.0; // Evitar división por cero
+    final totalSistemas = _sistemasPorNivel.values.fold<int>(0, (sum, set) => sum + set.length);
+    final numeroDeNivelesConSistemas = _sistemasPorNivel.values.where((set) => set.isNotEmpty).length;
+    if (numeroDeNivelesConSistemas == 0) return 0.0; // Evitar división por cero si ningún nivel tiene sistemas
+    // Considerar si el promedio debe ser sobre el total de niveles (3) o solo los que tienen sistemas.
+    // Aquí se usa _sistemasPorNivel.length que es el total de niveles definidos en el map.
+    return totalSistemas / _sistemasPorNivel.length; 
   }
 
-  /// Retorna el conteo de sistemas por nivel
   Map<String, int> conteoPorNivel() {
     return _sistemasPorNivel.map((nivel, set) => MapEntry(nivel, set.length));
   }

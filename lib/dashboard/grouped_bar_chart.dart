@@ -1,6 +1,6 @@
+import 'package:applensys/services/domain/evaluation_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import '../services/helpers/evaluation_chart.dart';
 
 class GroupedBarChart extends StatelessWidget {
   final Map<String, List<double>> data;

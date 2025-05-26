@@ -2,6 +2,7 @@
 
 import 'package:applensys/screens/dashboard_screen.dart';
 import 'package:applensys/screens/historial_screen.dart';
+import 'package:applensys/services/domain/empresa_service.dart';
 import 'package:applensys/widgets/chat_scren.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/empresa.dart';
 import 'dimensiones_screen.dart';
-import 'package:applensys/services/domain/empresa_service.dart';
 
 // Servicio para empresas
 final empresaService = EmpresaService();

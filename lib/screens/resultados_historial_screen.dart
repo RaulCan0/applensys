@@ -1,18 +1,14 @@
-import 'package:applensys/screens/tabla_registros.dart';
 import 'package:flutter/material.dart';
-import 'package:applensys/widgets/drawer_lensys.dart';
-import 'package:applensys/models/empresa.dart';
-import 'package:applensys/screens/tablas_screen.dart';
-import 'package:applensys/models/evaluacion.dart';
-import 'package:applensys/services/remote/supabase_service.dart';
-import 'package:applensys/screens/detalles_evaluacion_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ResultadosHistorialScreen extends StatefulWidget {
-  final Empresa empresa;
+  final String empresaId;
+  final String empresaNombre;
 
   const ResultadosHistorialScreen({
     super.key,
-    required this.empresa,
+    required this.empresaId,
+    required this.empresaNombre, required Map<String, dynamic> empresa,
   });
 
   @override
@@ -20,22 +16,27 @@ class ResultadosHistorialScreen extends StatefulWidget {
 }
 
 class _ResultadosHistorialScreenState extends State<ResultadosHistorialScreen> {
+  final _supabase = Supabase.instance.client;
   bool isLoading = true;
+  Map<String, dynamic>? data;
   String? error;
-  List<Evaluacion> evaluaciones = [];
 
   @override
   void initState() {
     super.initState();
-    _cargarEvaluaciones();
+    _cargarResultados();
   }
 
-  Future<void> _cargarEvaluaciones() async {
+  Future<void> _cargarResultados() async {
     try {
-      final supabaseService = SupabaseService();
-      final data = await supabaseService.getEvaluacionesPorEmpresa(widget.empresa.id);
+      final respuesta = await _supabase
+          .from('resultados')
+          .select()
+          .eq('empresa_id', widget.empresaId)
+          .single();
+
       setState(() {
-        evaluaciones = data;
+        data = respuesta;
         isLoading = false;
       });
     } catch (e) {
@@ -48,51 +49,52 @@ class _ResultadosHistorialScreenState extends State<ResultadosHistorialScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (error != null) {
-      return Scaffold(
-        body: Center(child: Text('Error: $error')),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF003056),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Historial: ${widget.empresa.nombre}', style: const TextStyle(color: Colors.white)),
+        title: Text('Resultados: ${widget.empresaNombre}'),
+                backgroundColor: const Color(0xFF003056),
         centerTitle: true,
       ),
-      body: evaluaciones.isEmpty
-          ? const Center(child: Text('No hay evaluaciones registradas.'))
-          : ListView.builder(
-              itemCount: evaluaciones.length,
-              itemBuilder: (context, index) {
-                final evaluacion = evaluaciones[index];
-                return ListTile(
-                  title: Text('Evaluación del ${evaluacion.fecha.toLocal()}'),
-                  subtitle: Text('Asociado: ${evaluacion.asociadoId}'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetallesEvaluacionScreen(
-                          empresa: widget.empresa,
-                          evaluacion: evaluacion,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : error != null
+              ? Center(child: Text('Error: $error'))
+              : _buildContenido(),
+    );
+  }
+
+  Widget _buildContenido() {
+    final evidencias = List<String>.from(data!['evidencias'] ?? []);
+    final resultadosResumen = data!['resumen'] ?? '';
+    final avancePorcentaje = data!['avance'] ?? 0;
+    final promedioDim1 = data!['promedio_dim1'] ?? 0;
+    final promedioDim2 = data!['promedio_dim2'] ?? 0;
+    final promedioDim3 = data!['promedio_dim3'] ?? 0;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Evidencias:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...evidencias.map((e) => Text('- $e')),
+          const SizedBox(height: 16),
+          const Text('Resultados:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(resultadosResumen),
+          const SizedBox(height: 16),
+          const Text('Avances:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text('$avancePorcentaje% completado'),
+          const SizedBox(height: 16),
+          const Text('Promedios:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text('Dimensión 1: $promedioDim1'),
+          Text('Dimensión 2: $promedioDim2'),
+          Text('Dimensión 3: $promedioDim3'),
+        ],
+      ),
     );
   }
 }

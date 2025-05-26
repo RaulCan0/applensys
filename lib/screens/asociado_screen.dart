@@ -2,7 +2,7 @@
 
 import 'dart:math';
 
-import 'package:applensys/services/remote/supabase_service.dart';
+import 'package:applensys/services/domain/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -202,7 +202,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
         ),
         title: Center(
           child: Text(
-            'Asociados - ${widget.empresa.nombre}',
+            ' ${widget.empresa.nombre}',
             style: const TextStyle(color: Colors.white),
           ),
         ),
@@ -265,7 +265,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
           borderRadius: BorderRadius.circular(100),
         ),
         elevation: 8,
-        child: const Icon(Icons.person_add_alt_1, size: 32, color: Colors.white),
+        child: const Icon(Icons.people, size: 32, color: Colors.white),
       ),
     );
   }

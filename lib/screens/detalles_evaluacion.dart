@@ -1,4 +1,3 @@
-
 import 'package:applensys/models/empresa.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -6,16 +5,19 @@ import 'package:applensys/screens/dashboard_screen.dart';
 import '../widgets/drawer_lensys.dart';
 
 class DetallesEvaluacionScreen extends StatefulWidget {
-  /// Mapa de dimensiones a sus promedios por nivel (Ejecutivo, Gerente, Miembro, General)
   final Map<String, Map<String, double>> dimensionesPromedios;
   final Empresa empresa;
   final String evaluacionId;
+  final String? dimension; // Hacerlo un campo de clase y opcional
+  final int? initialTabIndex;
 
   const DetallesEvaluacionScreen({
     super.key,
     required this.dimensionesPromedios,
     required this.empresa,
-    required this.evaluacionId, required String dimension, required Map promedios,
+    required this.evaluacionId,
+    this.dimension, // Asignar al campo de clase, hacerlo opcional
+    this.initialTabIndex, Map<String, double>? promedios,
   });
 
   @override
@@ -26,8 +28,6 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String? selectedDimension;
-  Map<String, dynamic>? selectedCalificaciones;
 
   @override
   void initState() {
@@ -35,6 +35,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     _tabController = TabController(
       length: widget.dimensionesPromedios.keys.length,
       vsync: this,
+      initialIndex: widget.initialTabIndex ?? 0,
     );
   }
 
@@ -69,14 +70,13 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kTextTabBarHeight),
-          child: Center(
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabs: dimensiones.map((d) => Tab(text: d)).toList(),
-              indicatorSize: TabBarIndicatorSize.label,
-              labelPadding: const EdgeInsets.symmetric(horizontal: 16),
-            ),
+          child: TabBar(
+            controller: _tabController,
+            indicatorColor: Colors.grey.shade300,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey.shade300,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: dimensiones.map((key) => Tab(text: key)).toList(),
           ),
         ),
       ),
@@ -97,29 +97,28 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     Map<String, double> promedios,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(10),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildPromedioGeneralCard(context, promedios),
           const SizedBox(height: 16),
+          _buildDropdownAssociates(dimension),
           const SizedBox(height: 16),
-          Center(
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.dashboard),
-              label: const Text('Ver Dashboard'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DashboardScreen(
-                      empresa: widget.empresa,
-                      evaluacionId: widget.evaluacionId,
-                    ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.dashboard),
+            label: const Text('Ver Dashboard'),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DashboardScreen(
+                    empresa: widget.empresa,
+                    evaluacionId: widget.evaluacionId,
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -127,18 +126,16 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
   }
 
   Widget _buildPromedioGeneralCard(BuildContext context, Map<String, double> promedios) {
-    final width = MediaQuery.of(context).size.width;
     final avgE = promedios['Ejecutivo'] ?? 0;
     final avgG = promedios['Gerente'] ?? 0;
     final avgM = promedios['Miembro'] ?? 0;
-    final general = promedios['General'] ?? ((avgE + avgG + avgM) / 3);
 
     return Card(
       elevation: 3,
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.symmetric(vertical: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -146,69 +143,116 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
               'Promedios por Nivel',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 160, // más pequeño
-              child: BarChart(
-                BarChartData(
-                  maxY: 5,
-                  minY: 0,
-                  alignment: BarChartAlignment.spaceAround,
-                  groupsSpace: 12,
-                  barGroups: [
-                    _buildBarGroup(0, avgE),
-                    _buildBarGroup(1, avgG),
-                    _buildBarGroup(2, avgM),
-                  ],
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 1,
-                        reservedSize: 20,
-                        getTitlesWidget: _leftTitleWidget,
+            const SizedBox(height: 12),
+            FractionallySizedBox(
+              widthFactor: 0.8,
+              child: SizedBox(
+                height: 200,
+                child: BarChart(
+                  BarChartData(
+                    maxY: 5,
+                    minY: 0,
+                    alignment: BarChartAlignment.spaceAround,
+                    groupsSpace: 12,
+                    barGroups: [
+                      _buildBarGroup(0, avgE, Colors.orange),
+                      _buildBarGroup(1, avgG, Colors.green),
+                      _buildBarGroup(2, avgM, Colors.blue),
+                    ],
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          interval: 1,
+                          reservedSize: 20,
+                          getTitlesWidget: _leftTitleWidget,
+                        ),
                       ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 20,
-                        getTitlesWidget: _bottomTitleWidget,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 20,
+                          getTitlesWidget: _bottomTitleWidget,
+                        ),
                       ),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    gridData: FlGridData(show: true, horizontalInterval: 1),
+                    borderData: FlBorderData(show: false),
                   ),
-                  gridData: FlGridData(show: true, horizontalInterval: 1),
-                  borderData: FlBorderData(show: false),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: _getColor(general),
-              child: Text(
-                general.toStringAsFixed(1),
-                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text('Promedio General de la Dimensión Calificada', style: TextStyle(fontSize: 14, fontFamily: 'Roboto')),
+            const SizedBox(height: 20),
+            _buildColorBar(avgE, avgG, avgM),
           ],
         ),
       ),
     );
   }
 
-  BarChartGroupData _buildBarGroup(int x, double y) {
+  Widget _buildColorBar(double ejecutivo, double gerente, double miembro) {
+    const total = 5.0;
+    final ejecutivoWidth = (ejecutivo / total).clamp(0.0, 1.0);
+    final gerenteWidth = (gerente / total).clamp(0.0, 1.0);
+    final miembroWidth = (miembro / total).clamp(0.0, 1.0);
+
+    return Container(
+      height: 28,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        children: [
+          Flexible(
+            flex: (ejecutivoWidth * 100).round(),
+            child: Container(
+              color: Colors.orange,
+              alignment: Alignment.center,
+              child: Text(
+                ejecutivo.toStringAsFixed(1),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ),
+          Flexible(
+            flex: (gerenteWidth * 100).round(),
+            child: Container(
+              color: Colors.green,
+              alignment: Alignment.center,
+              child: Text(
+                gerente.toStringAsFixed(1),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ),
+          Flexible(
+            flex: (miembroWidth * 100).round(),
+            child: Container(
+              color: Colors.blue,
+              alignment: Alignment.center,
+              child: Text(
+                miembro.toStringAsFixed(1),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  BarChartGroupData _buildBarGroup(int x, double y, Color color) {
     return BarChartGroupData(
       x: x,
       barRods: [
         BarChartRodData(
           toY: y,
           width: 14,
-          color: _getColor(y),
+          color: color,
           borderRadius: BorderRadius.circular(4),
         ),
       ],
@@ -228,25 +272,18 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
   Widget _bottomTitleWidget(double value, TitleMeta meta) {
     switch (value.toInt()) {
       case 0:
-        return const Text('Ejecutivo', style: TextStyle(fontSize: 10));
+        return const Text('Ejecutivo', style: TextStyle(fontSize: 12));
       case 1:
-        return const Text('Gerente', style: TextStyle(fontSize: 10));
+        return const Text('Gerente', style: TextStyle(fontSize: 12));
       case 2:
-        return const Text('Equipo', style: TextStyle(fontSize: 10));
+        return const Text('Miembro de Equipo', style: TextStyle(fontSize: 12));
       default:
         return const SizedBox.shrink();
     }
   }
 
-  Color _getColor(double value) {
-    if (value <= 0) return Colors.grey;
-    if (value < 3) return Colors.red;
-    if (value < 4) return Colors.amber;
-    return Colors.green;
-  }
-
-  /*Widget _buildDropdownAssociates(String dimension) {
-    final calificaciones = (dimension);
+  Widget _buildDropdownAssociates(String dimension) {
+    final calificaciones = _getCalificacionesByDimension(dimension);
 
     return Column(
       children: calificaciones.map<Widget>((calificacion) {
@@ -255,7 +292,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
             title: Text("Asociado: ${calificacion['asociado_nombre']}"),
             subtitle: Text("Nivel: ${calificacion['nivel']}"),
             trailing: IconButton(
-              icon: Icon(Icons.arrow_drop_down),
+              icon: const Icon(Icons.arrow_drop_down),
               onPressed: () {
                 _showCalificacionDetails(calificacion);
               },
@@ -266,9 +303,11 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     );
   }
 
+  List<Map<String, dynamic>> _getCalificacionesByDimension(String dimension) {
+    return [];
+  }
 
   void _showCalificacionDetails(Map<String, dynamic> calificacion) {
-    // Aquí se puede mostrar la vista detallada de la calificación
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -294,248 +333,3 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     );
   }
 }
-
-/*import 'package:applensys/models/empresa.dart';
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:applensys/screens/dashboard_screen.dart';
-import '../widgets/drawer_lensys.dart';
-
-class DetallesEvaluacionScreen extends StatefulWidget {
-  /// Mapa de dimensiones a sus promedios por nivel (Ejecutivo, Gerente, Miembro, General)
-  final Map<String, Map<String, double>> dimensionesPromedios;
-  final Empresa empresa;
-  final String evaluacionId;
-
-  const DetallesEvaluacionScreen({
-    super.key,
-    required this.dimensionesPromedios,
-    required this.empresa,
-    required this.evaluacionId, required Map promedios, required String dimension,
-  });
-
-  @override
-  State<DetallesEvaluacionScreen> createState() => _DetallesEvaluacionScreenState();
-}
-
-class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(
-      length: widget.dimensionesPromedios.keys.length,
-      vsync: this,
-    );
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final dimensiones = widget.dimensionesPromedios.keys.toList();
-
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: Colors.white,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Detalles de Evaluación', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF003056),
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            color: Colors.white,
-            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kTextTabBarHeight),
-          child: Center(
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabs: dimensiones.map((d) => Tab(text: d)).toList(),
-              indicatorSize: TabBarIndicatorSize.label,
-              labelPadding: const EdgeInsets.symmetric(horizontal: 16),
-            ),
-          ),
-        ),
-      ),
-      endDrawer: const DrawerLensys(),
-      body: TabBarView(
-        controller: _tabController,
-        children: dimensiones.map((dimension) {
-          final promedios = widget.dimensionesPromedios[dimension]!;
-          return _buildDimensionDetails(context, dimension, promedios);
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildDimensionDetails(
-    BuildContext context,
-    String dimension,
-    Map<String, double> promedios,
-  ) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPromedioGeneralCard(context, promedios),
-          const SizedBox(height: 16),
-          Center(
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.dashboard),
-              label: const Text('Ver Dashboard'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DashboardScreen(
-                      empresa: widget.empresa,
-                      evaluacionId: widget.evaluacionId,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPromedioGeneralCard(BuildContext context, Map<String, double> promedios) {
-    final width = MediaQuery.of(context).size.width;
-    final avgE = promedios['Ejecutivo'] ?? 0;
-    final avgG = promedios['Gerente'] ?? 0;
-    final avgM = promedios['Miembro'] ?? 0;
-    final general = promedios['General'] ?? ((avgE + avgG + avgM) / 3);
-
-   return Card(
-  elevation: 3,
-  margin: const EdgeInsets.all(8),
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  child: Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Text(
-          'Promedios por Nivel',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 160, // más pequeño
-          child: BarChart(
-            BarChartData(
-              maxY: 5,
-              minY: 0,
-              alignment: BarChartAlignment.spaceAround,
-              groupsSpace: 12,
-              barGroups: [
-                _buildBarGroup(0, avgE),
-                _buildBarGroup(1, avgG),
-                _buildBarGroup(2, avgM),
-              ],
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    interval: 1,
-                    reservedSize: 20,
-                    getTitlesWidget: _leftTitleWidget,
-                  ),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 20,
-                    getTitlesWidget: _bottomTitleWidget,
-                  ),
-                ),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              ),
-              gridData: FlGridData(show: true, horizontalInterval: 1),
-              borderData: FlBorderData(show: false),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        CircleAvatar(
-          radius: 18,
-          backgroundColor: _getColor(general),
-          child: Text(
-            general.toStringAsFixed(1),
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text('Promedio General de la Dimensión Calificada', style: TextStyle(fontSize: 14, fontFamily: 'Roboto')),
-
-      ],
-    ),
-  ),
-);
-  }
-
-BarChartGroupData _buildBarGroup(int x, double y) {
-  return BarChartGroupData(
-    x: x,
-    barRods: [
-      BarChartRodData(
-        toY: y,
-        width: 14,
-        color: _getColor(y),
-        borderRadius: BorderRadius.circular(4),
-      ),
-    ],
-  );
-}
-
-Widget _leftTitleWidget(double value, TitleMeta meta) {
-  if (value % 1 == 0) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
-    );
-  }
-  return const SizedBox.shrink();
-}
-
-Widget _bottomTitleWidget(double value, TitleMeta meta) {
-  switch (value.toInt()) {
-    case 0:
-      return const Text('Ejecutivo', style: TextStyle(fontSize: 10));
-    case 1:
-      return const Text('Gerente', style: TextStyle(fontSize: 10));
-    case 2:
-      return const Text('Equipo', style: TextStyle(fontSize: 10));
-    default:
-      return const SizedBox.shrink();
-  }
-}
-
-Color _getColor(double value) {
-  if (value <= 0) return Colors.grey;
-  if (value < 3) return Colors.red;
-  if (value < 4) return Colors.amber;
-  return Colors.green;
-}
-*/*/}

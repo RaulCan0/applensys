@@ -19,6 +19,11 @@ class DonutChart extends StatelessWidget {
     required this.evaluacionId,
   });
 
+  void actualizarDatos(Map<String, double> nuevosDatos) {
+    data.clear();
+    data.addAll(nuevosDatos);
+  }
+
   @override
   Widget build(BuildContext context) {
     final chartData = [

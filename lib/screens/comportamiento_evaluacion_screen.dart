@@ -2,28 +2,32 @@
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:applensys/services/domain/calificacion_service.dart';
+import 'package:applensys/services/domain/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:applensys/models/calificacion.dart';
-import 'package:applensys/services/remote/storage_service.dart';
-import 'package:applensys/services/domain/calificacion_service.dart';
+
 import '../models/principio_json.dart';
 import '../screens/tablas_screen.dart';
 import '../widgets/sistema_selector.dart';
 import '../widgets/drawer_lensys.dart';
+import '../providers/text_size_provider.dart';
 
-String obtenerNombreDimension(String dimensionId) {
+// Modificada para devolver la clave interna que TablasDimensionScreen espera.
+String obtenerNombreDimensionInterna(String dimensionId) {
   switch (dimensionId) {
     case '1': return 'Dimensión 1';
     case '2': return 'Dimensión 2';
     case '3': return 'Dimensión 3';
-    default: return 'Dimensión 1';
+    default: return 'Dimensión 1'; // Considerar un manejo de error más robusto si es necesario
   }
 }
 
-class ComportamientoEvaluacionScreen extends StatefulWidget {
+class ComportamientoEvaluacionScreen extends ConsumerStatefulWidget {
   final PrincipioJson principio;
   final String cargo;
   final String evaluacionId;
@@ -38,20 +42,23 @@ class ComportamientoEvaluacionScreen extends StatefulWidget {
     required this.evaluacionId,
     required this.dimensionId,
     required this.empresaId,
-    required this.asociadoId, required String dimension,
+    required this.asociadoId,
+    required String dimension,
   });
 
   @override
-  State<ComportamientoEvaluacionScreen> createState() => _ComportamientoEvaluacionScreenState();
+  ConsumerState<ComportamientoEvaluacionScreen> createState() =>
+      _ComportamientoEvaluacionScreenState();
 }
 
-class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacionScreen> {
+class _ComportamientoEvaluacionScreenState
+    extends ConsumerState<ComportamientoEvaluacionScreen> {
   final storageService = StorageService();
   final calificacionService = CalificacionService();
   final _picker = ImagePicker();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  int calificacion = 3;
+  int calificacion = 1;
   final observacionController = TextEditingController();
   List<String> sistemasSeleccionados = [];
   bool isSaving = false;
@@ -63,13 +70,17 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       builder: (_) => AlertDialog(
         title: Text(title),
         content: Text(message),
-        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar'))],
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'))
+        ],
       ),
     );
   }
 
   Future<void> _takePhoto() async {
-    final source = ImageSource.gallery; // Usar siempre la galería como fuente
+    final source = ImageSource.gallery;
     try {
       final XFile? photo = await _picker.pickImage(source: source);
       if (photo == null) return;
@@ -82,7 +93,8 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
         bytes: bytes,
         contentType: 'image/jpeg',
       );
-      evidenciaUrl = storageService.getPublicUrl(bucket: 'evidencias', path: fileName);
+      evidenciaUrl =
+          storageService.getPublicUrl(bucket: 'evidencias', path: fileName);
       setState(() {});
       _showAlert('Evidencia', 'Imagen subida correctamente.');
     } catch (e) {
@@ -102,12 +114,66 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
     }
     setState(() => isSaving = true);
     try {
-      final nombreComp = widget.principio.benchmarkComportamiento.split(':').first.trim();
-      final calObj = Calificacion(
-        id: Uuid().v4(),
+      final nombreComp =
+          widget.principio.benchmarkComportamiento.split(':').first.trim();
+      final dimId = int.tryParse(widget.dimensionId) ?? 1;
+      final existente = await calificacionService.getCalificacionExistente(
         idAsociado: widget.asociadoId,
         idEmpresa: widget.empresaId,
-        idDimension: int.tryParse(widget.dimensionId) ?? 1,
+        idDimension: dimId,
+        comportamiento: nombreComp,
+      );
+      if (existente != null) {
+        final editar = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Modificar calificación'),
+            content: const Text(
+                'Ya existe una calificación para este comportamiento. ¿Deseas modificarla?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('No')),
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Sí')),
+            ],
+          ),
+        );
+        if (editar == true) {
+          final calObj = Calificacion(
+            id: existente.id,
+            idAsociado: widget.asociadoId,
+            idEmpresa: widget.empresaId,
+            idDimension: dimId,
+            comportamiento: nombreComp,
+            puntaje: calificacion,
+            fechaEvaluacion: DateTime.now(),
+            observaciones: obs,
+            sistemas: sistemasSeleccionados,
+            evidenciaUrl: evidenciaUrl,
+          );
+          await calificacionService.updateCalificacionFull(calObj);
+          TablasDimensionScreen.actualizarDato(
+            widget.evaluacionId,
+            dimension: obtenerNombreDimensionInterna(widget.dimensionId), // Usar la nueva función
+            principio: widget.principio.nombre,
+            comportamiento: nombreComp,
+            cargo: widget.cargo,
+            valor: calificacion,
+            sistemas: sistemasSeleccionados,
+            dimensionId: widget.dimensionId, // Se mantiene por si es útil en otro lado, pero la clave principal es 'dimension'
+            asociadoId: widget.asociadoId,
+          );
+          if (mounted) Navigator.pop(context, nombreComp);
+        }
+        return;
+      }
+      final calObj = Calificacion(
+        id: const Uuid().v4(),
+        idAsociado: widget.asociadoId,
+        idEmpresa: widget.empresaId,
+        idDimension: dimId,
         comportamiento: nombreComp,
         puntaje: calificacion,
         fechaEvaluacion: DateTime.now(),
@@ -118,106 +184,125 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       await calificacionService.addCalificacion(calObj);
       TablasDimensionScreen.actualizarDato(
         widget.evaluacionId,
-        dimension: obtenerNombreDimension(widget.dimensionId),
+        dimension: obtenerNombreDimensionInterna(widget.dimensionId), // Usar la nueva función
         principio: widget.principio.nombre,
         comportamiento: nombreComp,
         cargo: widget.cargo,
         valor: calificacion,
         sistemas: sistemasSeleccionados,
-        dimensionId: widget.dimensionId,
+        dimensionId: widget.dimensionId, // Se mantiene por si es útil en otro lado, pero la clave principal es 'dimension'
         asociadoId: widget.asociadoId,
       );
       if (mounted) Navigator.pop(context, nombreComp);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al guardar: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Error al guardar: $e'),
+            backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
   }
 
-  DataTable _buildLentesDataTable() {
+  Semantics _buildLentesDataTable() {
+    final textSize = ref.watch(textSizeProvider);
+    final double scaleFactor = (textSize / 14.0).clamp(0.9, 1.3);
+
     DataCell wrapText(String text) => DataCell(
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 200),
-            child: Text(text, softWrap: true, maxLines: 6, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+            constraints: BoxConstraints(maxWidth: 200 * scaleFactor),
+            child: Text(text,
+                softWrap: true,
+                maxLines: 6,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 14 * scaleFactor)),
           ),
         );
 
-    return DataTable(
-      columnSpacing: 9,
-      dataRowMinHeight: 60,
-      dataRowMaxHeight: 100,
-      headingRowHeight: 50,
-      headingTextStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
-      dataTextStyle: const TextStyle(fontSize: 10, color: Colors.black87),
-      columns: const [
-        DataColumn(label: Text('Lentes / Rol')),
-        DataColumn(label: Text('Nivel 1\n0–20%')),
-        DataColumn(label: Text('Nivel 2\n21–40%')),
-        DataColumn(label: Text('Nivel 3\n41–60%')),
-        DataColumn(label: Text('Nivel 4\n61–80%')),
-        DataColumn(label: Text('Nivel 5\n81–100%')),
-      ],
-      rows: [
-        DataRow(cells: [
-          const DataCell(Text('Ejecutivos')),
-          wrapText('Se centran en la lucha contra incendios y están ausentes de los esfuerzos de mejora.'),
-          wrapText('Son conscientes de iniciativas de mejora, pero no se involucran.'),
-          wrapText('Establecen dirección para la mejora y apoyan esfuerzos.'),
-          wrapText('Participan activamente y alinean principios con sistemas.'),
-          wrapText('Aseguran arraigo de principios en la cultura y evalúan regularmente.'),
-        ]),
-        DataRow(cells: [
-          const DataCell(Text('Gerentes')),
-          wrapText('Orientados a resultados "a toda costa".'),
-          wrapText('Delegan mejoras a especialistas con guía externa.'),
-          wrapText('Ayudan a usar herramientas y desarrollan sistemas.'),
-          wrapText('Diseñan sistemas para moldear comportamientos.'),
-          wrapText('Enfocados en mejora continua para alinear sistemas con excelencia.'),
-        ]),
-        DataRow(cells: [
-          const DataCell(Text('Miembros del equipo')),
-          wrapText('Se enfocan en hacer su trabajo; tratados como gasto.'),
-          wrapText('Participan ocasionalmente en proyectos dirigidos externamente.'),
-          wrapText('Capacitados y activos en proyectos de mejora.'),
-          wrapText('Usan herramientas de mejora en su área.'),
-          wrapText('Líderes en mejora de sistemas propios y apoyo a otros.'),
-        ]),
-        DataRow(cells: [
-          const DataCell(Text('Frecuencia')),
-          wrapText('Infrecuente • Raro'),
-          wrapText('Basado en eventos • Irregular'),
-          wrapText('Frecuente • Común'),
-          wrapText('Consistente • Predominante'),
-          wrapText('Constante • Uniforme'),
-        ]),
-        DataRow(cells: [
-          const DataCell(Text('Duración')),
-          wrapText('Iniciado • Subdesarrollado'),
-          wrapText('Experimental • Formativo'),
-          wrapText('Repetible • Previsible'),
-          wrapText('Establecido • Estable'),
-          wrapText('Culturalmente Arraigado • Maduro'),
-        ]),
-        DataRow(cells: [
-          const DataCell(Text('Intensidad')),
-          wrapText('Apático • Indiferente'),
-          wrapText('Aparente • Compromiso Individual'),
-          wrapText('Moderado • Compromiso Local'),
-          wrapText('Persistente • Amplio Compromiso'),
-          wrapText('Tenaz • Compromiso Total'),
-        ]),
-        DataRow(cells: [
-          const DataCell(Text('Alcance')),
-          wrapText('Aislado • Punto de Solución'),
-          wrapText('Silos • Flujo de Valor Interno'),
-          wrapText('Predominantemente Operaciones • Flujo de Valor Funcional'),
-          wrapText('Múltiples Procesos • Flujo de Valor Integrado'),
-          wrapText('Toda la Empresa • Flujo de Valor Extendido'),
-        ]),
-      ],
+    return Semantics(
+      label: 'Tabla de niveles de madurez por rol',
+      child: DataTable(
+        columnSpacing: 8 * scaleFactor, // espacio entre columnas reducido
+        dataRowMinHeight: 40 * scaleFactor, // más compacto
+        dataRowMaxHeight: 70 * scaleFactor, // más compacto
+        headingRowHeight: 45 * scaleFactor, // altura de encabezado más pequeña
+        headingTextStyle: TextStyle(
+          fontSize: 13 * scaleFactor, // ligeramente mayor para encabezados
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+        dataTextStyle: TextStyle(
+          fontSize: 12 * scaleFactor, // mejor visibilidad
+          color: Colors.black87,
+        ),
+        columns: const [
+          DataColumn(label: Text('Lentes / Rol')),
+          DataColumn(label: Text('Nivel 1\n0–20%')),
+          DataColumn(label: Text('Nivel 2\n21–40%')),
+          DataColumn(label: Text('Nivel 3\n41–60%')),
+          DataColumn(label: Text('Nivel 4\n61–80%')),
+          DataColumn(label: Text('Nivel 5\n81–100%')),
+        ],
+        rows: [
+          DataRow(cells: [
+            const DataCell(Text('Ejecutivos')),
+            wrapText('Los ejecutivos se centran principalmente en la lucha contra incendios y en gran parte están ausentes de los esfuerzos de mejora.'),
+            wrapText('Los ejecutivos son conscientes de las iniciativas de otros para mejorar, pero en gran parte no están involucrados.'),
+            wrapText('Los ejecutivos establecen la dirección para la mejora y respaldan los esfuerzos de los demás.'),
+            wrapText('Los ejecutivos participan en los esfuerzos de mejora y respaldan el alineamiento de los principios de excelencia operacional con los sistemas.'),
+            wrapText('Los ejecutivos se centran en garantizar que los principios de excelencia operativa se arraiguen profundamente en la cultura y se evalúen regularmente para mejorar.'),
+          ]),
+          DataRow(cells: [
+            const DataCell(Text('Gerentes')),
+            wrapText('Los gerentes están orientados a obtener resultados "a toda costa".'),
+            wrapText('Los gerentes generalmente buscan especialistas para crear mejoras a través de la orientación del proyecto.'),
+            wrapText('Los gerentes participan en el desarrollo de sistemas y ayudan a otros a usar herramientas de manera efectiva.'),
+            wrapText('Los gerentes se enfocan en conductas de manejo a través del diseño de sistemas.'),
+            wrapText('Los gerentes están "principalmente enfocados" en la mejora continua de los sistemas para impulsar un comportamiento más alineado con los principios de excelencia operativa.'),
+          ]),
+          DataRow(cells: [
+            const DataCell(Text('Miembros del equipo')),
+            wrapText('Los miembros del equipo se enfocan en hacer su trabajo y son tratados en gran medida como un gasto.'),
+            wrapText('A veces se solicita a los asociados que participen en un equipo de mejora usualmente dirigido por alguien externo a su equipo de trabajo natural.'),
+            wrapText('Están capacitados y participan en proyectos de mejora.'),
+            wrapText('Están involucrados todos los días en el uso de herramientas para la mejora continua en sus propias áreas de responsabilidad.'),
+            wrapText('Entienden los principios "el por qué" detrás de las herramientas y son líderes para mejorar sus propios sistemas y ayudar a otros.'),
+          ]),
+          DataRow(cells: [
+            const DataCell(Text('Frecuencia')),
+            wrapText('Infrecuente • Raro'),
+            wrapText('Basado en eventos • Irregular'),
+            wrapText('Frecuente • Común'),
+            wrapText('Consistente • Predominante'),
+            wrapText('Constante • Uniforme'),
+          ]),
+          DataRow(cells: [
+            const DataCell(Text('Duración')),
+            wrapText('Iniciado • Subdesarrollado'),
+            wrapText('Experimental • Formativo'),
+            wrapText('Repetible • Previsible'),
+            wrapText('Establecido • Estable'),
+            wrapText('Culturalmente Arraigado • Maduro'),
+          ]),
+          DataRow(cells: [
+            const DataCell(Text('Intensidad')),
+            wrapText('Apático • Indiferente'),
+            wrapText('Aparente • Compromiso Individual'),
+            wrapText('Moderado • Compromiso Local'),
+            wrapText('Persistente • Amplio Compromiso'),
+            wrapText('Tenaz • Compromiso Total'),
+          ]),
+          DataRow(cells: [
+            const DataCell(Text('Alcance')),
+            wrapText('Aislado • Punto de Solución'),
+            wrapText('Silos • Flujo de Valor Interno'),
+            wrapText('Predominantemente Operaciones • Flujo de Valor Funcional'),
+            wrapText('Múltiples Procesos de Negocios • Flujo de Valor Integrado'),
+            wrapText('En Toda la Empresa • Flujo de Valor Extendido'),
+          ]),
+        ],
+      ),
     );
   }
 
@@ -226,7 +311,8 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
       context: context,
       barrierDismissible: true,
       builder: (_) => AlertDialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 150, vertical: 130),
+        insetPadding:
+            const EdgeInsets.symmetric(horizontal: 150, vertical: 130),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         backgroundColor: Colors.white,
         content: ConstrainedBox(
@@ -236,7 +322,11 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           ),
           child: ScrollConfiguration(
             behavior: MaterialScrollBehavior().copyWith(
-              dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse, PointerDeviceKind.trackpad},
+              dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+                PointerDeviceKind.trackpad
+              },
             ),
             child: SingleChildScrollView(
               child: SingleChildScrollView(
@@ -247,78 +337,120 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           ),
         ),
         actionsAlignment: MainAxisAlignment.end,
-        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar'))],
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'))
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final desc = widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible';
+    final textSize = ref.watch(textSizeProvider);
+    final double scaleFactor = textSize / 14.0;
+
+    final desc =
+        widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible';
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: const DrawerLensys(),
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 35, 47, 112),
         centerTitle: true,
-        title: Text('El principio: ${widget.principio.nombre}', style: const TextStyle(color: Colors.white)),
+        title: Column(
+          children: [
+            Text('El principio: ${widget.principio.nombre}',
+                style: TextStyle(color: Colors.white, fontSize: 20 * scaleFactor)),
+            Text('Comportamiento: ${widget.principio.benchmarkComportamiento.split(":").first.trim()}',
+                style: TextStyle(color: Colors.white, fontSize: 14 * scaleFactor)),
+          ],
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [IconButton(icon: const Icon(Icons.menu), onPressed: () => _scaffoldKey.currentState?.openEndDrawer())],
+        actions: [
+          IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer())
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12.0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.info_outline, size: 18),
-              label: const Text('Benchmark Nivel', style: TextStyle(fontSize: 12)),
-              onPressed: () => _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
+            Semantics(
+              label: 'Botón para ver el benchmark del nivel',
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.info_outline, size: 18),
+                label: Text('Benchmark Nivel',
+                    style: TextStyle(fontSize: 12 * scaleFactor)),
+                onPressed: () =>
+                    _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
+              ),
             ),
             const SizedBox(width: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.help_outline, size: 18),
-              label: const Text('Guía', style: TextStyle(fontSize: 12)),
-              onPressed: () => _showAlert('Guía', widget.principio.preguntas),
+            Semantics(
+              label: 'Botón para ver la guía de preguntas',
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.help_outline, size: 18),
+                label: Text('Guía', style: TextStyle(fontSize: 12 * scaleFactor)),
+                onPressed: () => _showAlert('Guía', widget.principio.preguntas),
+              ),
             ),
             const SizedBox(width: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.settings, size: 18),
-              label: const Text('Sistemas', style: TextStyle(fontSize: 12)),
-              onPressed: isSaving
-                  ? null
-                  : () async {
-                      final sel = await showModalBottomSheet<List<String>>(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (_) => SistemasScreen(
-                          onSeleccionar: (s) {
-                            Navigator.pop(context, s.map((e) => e['nombre'].toString()).toList());
-                          },
-                        ),
-                      );
-                      if (sel != null) setState(() => sistemasSeleccionados = sel);
-                    },
+            Semantics(
+              label: 'Botón para seleccionar sistemas asociados',
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.settings, size: 18),
+                label: Text('Sistemas',
+                    style: TextStyle(fontSize: 12 * scaleFactor)),
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        final sel = await showModalBottomSheet<List<String>>(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => SistemasScreen(
+                            onSeleccionar: (s) {
+                              Navigator.pop(
+                                  context,
+                                  s.map((e) => e['nombre'].toString())
+                                      .toList());
+                            },
+                          ),
+                        );
+                        if (sel != null) setState(() => sistemasSeleccionados = sel);
+                      },
+              ),
             ),
           ]),
           const SizedBox(height: 20),
           if (evidenciaUrl != null)
-            Image.network(evidenciaUrl!, height: 200),
+            Semantics(
+              label: 'Imagen de evidencia subida',
+              child: Image.network(evidenciaUrl!, height: 200 * scaleFactor),
+            ),
           const SizedBox(height: 16),
-          const Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('Calificación:',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
           Slider(
             value: calificacion.toDouble(),
-            min: 1,
+            min: 0,
             max: 5,
-            divisions: 4,
+            divisions: 5,
             label: calificacion.toString(),
             onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round()),
           ),
-          Text('Descripción ($calificacion):', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(desc),
+          Text('Descripción ($calificacion):',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
+          Text(desc, style: TextStyle(fontSize: 14 * scaleFactor)),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             icon: const Icon(Icons.remove_red_eye),
-            label: const Text('Ver lentes de madurez'),
+            label: Text('Ver lentes de madurez',
+                style: TextStyle(fontSize: 14 * scaleFactor)),
             onPressed: _mostrarLentesRolDialog,
           ),
           const SizedBox(height: 16),
@@ -328,23 +460,30 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
                 controller: observacionController,
                 maxLines: 2,
                 enabled: !isSaving,
-                decoration: const InputDecoration(hintText: 'Observaciones...', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    hintText: 'Observaciones...', border: OutlineInputBorder()),
               ),
             ),
             const SizedBox(width: 8),
-            IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: isSaving ? null : _takePhoto),
+            IconButton(
+                icon: const Icon(Icons.camera_alt, size: 28),
+                onPressed: isSaving ? null : _takePhoto),
           ]),
           if (sistemasSeleccionados.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Text('Sistemas Asociados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text('Sistemas Asociados:',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
             const SizedBox(height: 4),
             Wrap(
               spacing: 8.0,
               runSpacing: 4.0,
               children: sistemasSeleccionados.map((sistema) {
                 return Chip(
-                  label: Text(sistema),
-                  onDeleted: () => setState(() => sistemasSeleccionados.remove(sistema)),
+                  label: Text(sistema,
+                      style: TextStyle(fontSize: 12 * scaleFactor)),
+                  onDeleted: () =>
+                      setState(() => sistemasSeleccionados.remove(sistema)),
                   deleteIcon: const Icon(Icons.close, size: 18),
                 );
               }).toList(),
@@ -352,16 +491,24 @@ class _ComportamientoEvaluacionScreenState extends State<ComportamientoEvaluacio
           ],
           if (evidenciaUrl != null) ...[
             const SizedBox(height: 16),
-            Image.network(evidenciaUrl!, height: MediaQuery.of(context).size.height * 0.2),
+            Image.network(evidenciaUrl!,
+                height: MediaQuery.of(context).size.height * 0.2 * scaleFactor),
           ],
           const SizedBox(height: 24),
           ElevatedButton.icon(
             icon: isSaving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? SizedBox(
+                    width: 20 * scaleFactor,
+                    height: 20 * scaleFactor,
+                    child: const CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.save, color: Colors.white),
-            label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación', style: const TextStyle(color: Colors.white)),
+            label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación',
+                style: TextStyle(color: Colors.white, fontSize: 16 * scaleFactor)),
             onPressed: isSaving ? null : _guardarEvaluacion,
-            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: const Color.fromARGB(255, 35, 47, 112)),
+            style: ElevatedButton.styleFrom(
+                minimumSize: Size.fromHeight(50 * scaleFactor),
+                backgroundColor: const Color.fromARGB(255, 35, 47, 112)),
           ),
         ]),
       ),

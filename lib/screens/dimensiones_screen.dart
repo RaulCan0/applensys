@@ -1,10 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:applensys/services/domain/evaluacion_service.dart';
 import 'package:applensys/services/local/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/empresa.dart';
-import '../services/domain/evaluacion_service.dart';
 import '../widgets/drawer_lensys.dart';
 import 'asociado_screen.dart';
 import 'empresas_screen.dart';
