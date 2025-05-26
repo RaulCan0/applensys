@@ -1,7 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:applensys/models/empresa.dart';
 import 'package:applensys/models/level_averages.dart'; // Necesario para LevelAverages
@@ -164,8 +163,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: _isLoading ? null : _loadInitialData,
             tooltip: 'Recargar datos',
           ),
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+              tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+            ),
+          ),
         ],
       ),
+      endDrawer: const DrawerLensys(), // Añadir el DrawerLensys aquí
       body: _isLoading
           ? const Center(
               child: Column(
@@ -208,16 +215,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       setState(() {
                                         _currentPage--;
                                       });
-                                    }
-                                  }
+                                   }
+                                 }
                                 : null,
                           ),
-                          Text(
-                            _allData.isEmpty
-                                ? 'Página 0 de 0'
-                                : 'Página ${_currentPage + 1} de ${(_allData.length / _itemsPerPage).ceil()}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
+                          Text('Página ${_currentPage + 1} de ${(_allData.length / _itemsPerPage).ceil()}'),
                           IconButton(
                             icon: const Icon(Icons.arrow_forward),
                             onPressed: (_currentPage + 1) * _itemsPerPage <
@@ -237,7 +239,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center, // Centrar el botón
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           ElevatedButton.icon(
                             icon: const Icon(Icons.file_download),

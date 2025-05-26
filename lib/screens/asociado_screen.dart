@@ -217,7 +217,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: asociados.isEmpty
-            ? const Center(child: Text('No hay asociados registrados'))
+            ? const Center(child: Text('AÚN NO HAY ASOCIADOS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)))
             : ListView.builder(
                 itemCount: asociados.length,
                 itemBuilder: (context, index) {
@@ -265,7 +265,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> {
           borderRadius: BorderRadius.circular(100),
         ),
         elevation: 8,
-        child: const Icon(Icons.people, size: 32, color: Colors.white),
+        child: const Icon(Icons.people, size: 25, color: Colors.white),
       ),
     );
   }

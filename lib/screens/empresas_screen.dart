@@ -203,7 +203,7 @@ onTap: () {
           borderRadius: BorderRadius.circular(100),
         ),
         elevation: 8,
-        child: const Icon(Icons.add, size: 32, color: Colors.white),
+        child: const Icon(Icons.assignment_add, size: 25, color: Colors.white),
       ),
     );
   }

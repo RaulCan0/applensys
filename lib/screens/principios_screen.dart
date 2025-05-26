@@ -111,7 +111,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.table_chart_outlined, color: Colors.white),
+            icon: const Icon(Icons.table_chart, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,

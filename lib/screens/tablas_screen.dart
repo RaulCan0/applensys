@@ -114,8 +114,17 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
         key: _scaffoldKey,
         appBar: AppBar(
           backgroundColor: const Color(0xFF003056),
-          title: const Text('Resultados', style: TextStyle(color: Colors.white)),
-          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Resultados en tiempo real', style: TextStyle(color: Colors.white)),
+          iconTheme: const IconThemeData(color: Colors.white), // Asegura que el ícono del drawer sea blanco
+          actions: [ // Añadir actions para el botón del drawer si no hay leading
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openEndDrawer(),
+                tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+              ),
+            ),
+          ],
           bottom: TabBar(
              indicatorColor: Colors.grey.shade300,
               labelColor: Colors.white,

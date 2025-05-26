@@ -106,7 +106,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
           _buildDropdownAssociates(dimension),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            icon: const Icon(Icons.dashboard),
+            icon: const Icon(Icons.leaderboard),
             label: const Text('Ver Dashboard'),
             onPressed: () {
               Navigator.push(
