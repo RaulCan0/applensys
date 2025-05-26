@@ -55,11 +55,11 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   }
 
   void _bajarAlFinal() {
-    Future.delayed(const Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 10), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.minScrollExtent,
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 20),
           curve: Curves.easeOut,
         );
       }
@@ -68,7 +68,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final drawerWidth = MediaQuery.of(context).size.width.clamp(280, 500).toDouble();
+    final drawerWidth = MediaQuery.of(context).size.width.clamp(280, 380).toDouble();
 
     return Drawer(
       width: drawerWidth,

@@ -151,13 +151,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), // Añadido drawer para el chat
+      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), 
       appBar: AppBar(
         title: Text(
           widget.empresa.nombre,
           style: const TextStyle(color: Colors.white),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true, // Centrar el título
+        iconTheme: const IconThemeData(color: Colors.white), // Asegura que la flecha de retroceso (si aplica) sea blanca
         backgroundColor: const Color(0xFF003056),
         actions: [
           IconButton(
@@ -165,16 +166,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: _isLoading ? null : _loadInitialData,
             tooltip: 'Recargar datos',
           ),
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
-              tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
-            ),
+          IconButton( // Botón de exportar movido al AppBar
+            icon: const Icon(Icons.note_add_outlined), // Nuevo icono para exportar
+            onPressed: _isLoading ? null : _exportCombinedReport,
+            tooltip: 'Exportar Reporte',
           ),
+          // Se elimina el Builder que contenía el IconButton para abrir el endDrawer.
         ],
       ),
-      endDrawer: const DrawerLensys(), // Añadir el DrawerLensys aquí
+      endDrawer: const DrawerLensys(), 
       body: _isLoading
           ? const Center(
               child: Column(
@@ -234,25 +234,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     }
                                   }
                                 : null,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.file_download),
-                            label: const Text('Exportar Reporte'),
-                            onPressed: _isLoading ? null : _exportCombinedReport,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF003056),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                            ),
                           ),
                         ],
                       ),

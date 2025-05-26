@@ -245,7 +245,7 @@ class _ComportamientoEvaluacionScreenState
             constraints: BoxConstraints(maxWidth: 200 * scaleFactor),
             child: Text(text,
                 softWrap: true,
-                maxLines: 6,
+                maxLines: 7,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 14 * scaleFactor)),
           ),
@@ -255,13 +255,14 @@ class _ComportamientoEvaluacionScreenState
       label: 'Tabla de niveles de madurez por rol',
       child: DataTable(
         columnSpacing: 6.0 * scaleFactor, // espacio entre columnas reducido
-        dataRowMinHeight: 40 * scaleFactor, // más compacto
-        dataRowMaxHeight: 70 * scaleFactor, // más compacto
-        headingRowHeight: 45 * scaleFactor, // altura de encabezado más pequeña
+        dataRowMinHeight: 30 * scaleFactor, // más compacto
+        dataRowMaxHeight: 80 * scaleFactor, // más compacto
+        headingRowHeight: 38 * scaleFactor, // altura de encabezado más pequeña
         headingTextStyle: TextStyle(
           fontSize: 13 * scaleFactor, // ligeramente mayor para encabezados
-          fontWeight: FontWeight.bold,
-          color: Colors.black,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF003056),
+
         ),
         dataTextStyle: TextStyle(
           fontSize: 12 * scaleFactor, // mejor visibilidad
@@ -269,11 +270,11 @@ class _ComportamientoEvaluacionScreenState
         ),
         columns: const [
           DataColumn(label: Text('Lentes / Rol')),
-          DataColumn(label: Text('Nivel 1\\n0–20%', textAlign: TextAlign.center)),
-          DataColumn(label: Text('Nivel 2\\n21–40%', textAlign: TextAlign.center)),
-          DataColumn(label: Text('Nivel 3\\n41–60%', textAlign: TextAlign.center)),
-          DataColumn(label: Text('Nivel 4\\n61–80%')),
-          DataColumn(label: Text('Nivel 5\\n81–100%')),
+          DataColumn(label: Text('Nivel 1\n0–20%', textAlign: TextAlign.center)),
+          DataColumn(label: Text('Nivel 2\n21–40%', textAlign: TextAlign.center)),
+          DataColumn(label: Text('Nivel 3\n41–60%', textAlign: TextAlign.center)),
+          DataColumn(label: Text('Nivel 4\n61–80%', textAlign: TextAlign.center)),
+          DataColumn(label: Text('Nivel 5\n81–100%', textAlign: TextAlign.center)),
         ],
         rows: [
           DataRow(cells: [
@@ -393,9 +394,9 @@ class _ComportamientoEvaluacionScreenState
         centerTitle: true,
         title: Column(
           children: [
-            Text('El principio: ${widget.principio.nombre}',
+            Text(' ${widget.principio.nombre}',
                 style: TextStyle(color: Colors.white, fontSize: 20 * scaleFactor)),
-            Text('Comportamiento: ${widget.principio.benchmarkComportamiento.split(":").first.trim()}',
+            Text(' ${widget.principio.benchmarkComportamiento.split(":").first.trim()}',
                 style: TextStyle(color: Colors.white, fontSize: 14 * scaleFactor)),
           ],
         ),
@@ -410,35 +411,56 @@ class _ComportamientoEvaluacionScreenState
         padding: const EdgeInsets.all(12.0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Semantics(
-              label: 'Botón para ver el benchmark del nivel',
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.info_outline, size: 18),
-                label: Text('Benchmark Nivel',
-                    style: TextStyle(fontSize: 12 * scaleFactor)),
-                onPressed: () =>
-                    _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
+            Expanded(
+              child: Semantics(
+                label: 'Botón para ver el benchmark del nivel',
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  label: Text('Benchmark Nivel',
+                      style: TextStyle(fontSize: 12 * scaleFactor, fontFamily: 'Roboto')),
+                  onPressed: () =>
+                      _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003056),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 10 * scaleFactor, horizontal: 8 * scaleFactor),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 8),
-            Semantics(
-              label: 'Botón para ver la guía de preguntas',
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.help_outline, size: 18),
-                label: Text('Guía', style: TextStyle(fontSize: 12 * scaleFactor)),
-                onPressed: () => _showAlert('Guía', widget.principio.preguntas),
+            Expanded(
+              child: Semantics(
+                label: 'Botón para ver la guía de preguntas',
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.help_outline, size: 18),
+                  label: Text('Guía', style: TextStyle(fontSize: 12 * scaleFactor, fontFamily: 'Roboto')),
+                  onPressed: () => _showAlert('Guía', widget.principio.preguntas),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003056),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 10 * scaleFactor, horizontal: 8 * scaleFactor),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 8),
-            Semantics(
-              label: 'Botón para seleccionar sistemas asociados',
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.settings, size: 18),
-                label: Text('Sistemas',
-                    style: TextStyle(fontSize: 12 * scaleFactor)),
-                onPressed: isSaving
-                    ? null
-                    : () async {
+            Expanded(
+              child: Semantics(
+                label: 'Botón para seleccionar sistemas asociados',
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.settings, size: 18),
+                  label: Text('Sistemas',
+                      style: TextStyle(fontSize: 12 * scaleFactor, fontFamily: 'Roboto')),
+                  onPressed: isSaving
+                      ? null
+                      : () async {
                         final sel = await showModalBottomSheet<List<String>>(
                           context: context,
                           isScrollControlled: true,
@@ -453,6 +475,15 @@ class _ComportamientoEvaluacionScreenState
                         );
                         if (sel != null) setState(() => sistemasSeleccionados = sel);
                       },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003056),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 10 * scaleFactor, horizontal: 8 * scaleFactor),
+                  ),
+                ),
               ),
             ),
           ]),
@@ -472,18 +503,29 @@ class _ComportamientoEvaluacionScreenState
             max: 5,
             divisions: 5,
             label: calificacion.toString(),
+            activeColor: const Color(0xFF003056), // Color activo del Slider
+            // ignore: deprecated_member_use
+            inactiveColor: const Color(0xFF003056).withOpacity(0.3), // Color inactivo del Slider (opcional)
             onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round()),
           ),
-          Text('Descripción ($calificacion):',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
+          ////Text('Descripción ($calificacion):',
+             // style: TextStyle(
+               //   fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
           Text(desc, style: TextStyle(fontSize: 14 * scaleFactor)),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             icon: const Icon(Icons.remove_red_eye),
             label: Text('Ver lentes de madurez',
-                style: TextStyle(fontSize: 14 * scaleFactor)),
+                style: TextStyle(fontSize: 14 * scaleFactor, fontFamily: 'Roboto')),
             onPressed: _mostrarLentesRolDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF003056),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12 * scaleFactor, horizontal: 16 * scaleFactor),
+            ),
           ),
           const SizedBox(height: 16),
           Row(children: [
@@ -538,19 +580,19 @@ class _ComportamientoEvaluacionScreenState
                   : const Icon(Icons.save, color: Colors.white),
               label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16 * scaleFactor,
+                    color: Colors.white, // Ya estaba blanco
+                    fontSize: 14 * scaleFactor,
                     fontFamily: 'Roboto', // Fuente Roboto
                   )),
               onPressed: isSaving ? null : _guardarEvaluacion,
               style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003056),
-         
-                  padding: EdgeInsets.symmetric(horizontal: 30 * scaleFactor, vertical: 15 * scaleFactor), // Ajustar padding para tamaño
-                  side: const BorderSide(color: Color(0xFF003056), width: 2), // Borde azul
-                  shape: RoundedRectangleBorder( // Mantener bordes redondeados si se desea
-                    borderRadius: BorderRadius.circular(8.0),
-                  )
+                    backgroundColor: const Color(0xFF003056), // Ya estaba azul
+                    foregroundColor: Colors.white, // Asegurar foreground para el icono
+                    padding: EdgeInsets.symmetric(horizontal: 30 * scaleFactor, vertical: 15 * scaleFactor), 
+                    side: const BorderSide(color: Color(0xFF003056), width: 2), 
+                    shape: RoundedRectangleBorder( 
+                      borderRadius: BorderRadius.circular(8.0), // Menos redondeado
+                    )
               ),
             ),
           ),

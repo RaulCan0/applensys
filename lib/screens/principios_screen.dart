@@ -222,7 +222,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                             fontWeight: comportamientosEvaluados.contains(comportamientoNombre) ? FontWeight.bold : FontWeight.normal,
                                           ),
                                         ),
-                                        subtitle: const Text('Ir a evaluación'),
+                                        subtitle: Text(principio.benchmarkComportamiento.split(":").last.trim()),
                                         trailing: const Icon(Icons.arrow_forward_ios),
                                         onTap: () async {
                                           // El evaluacionId podría ser el ID de la calificación existente si se está editando,

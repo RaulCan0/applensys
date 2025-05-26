@@ -1,25 +1,23 @@
 import 'dart:io';
+import 'package:applensys/providers/theme_provider.dart';
 import 'package:applensys/services/domain/supabase_service.dart';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:applensys/screens/empresas_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
-class PerfilScreen extends StatefulWidget {
+class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
 
   @override
-  State<PerfilScreen> createState() => _PerfilScreenState();
+  ConsumerState<PerfilScreen> createState() => _PerfilScreenState();
 }
 
-class _PerfilScreenState extends State<PerfilScreen> {
-  final SupabaseService supabaseService = SupabaseService();
+class _PerfilScreenState extends ConsumerState<PerfilScreen> {
+  final SupabaseService _supabaseService = SupabaseService();
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _telefonoController = TextEditingController();
-  final TextEditingController _contrasenaController = TextEditingController();
-  final TextEditingController _confirmarController = TextEditingController();
 
   String? _fotoUrl;
   bool _loading = false;
@@ -32,60 +30,48 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Future<void> _cargarPerfil() async {
     setState(() => _loading = true);
-    final data = await supabaseService.getPerfil();
-    if (data != null) {
-      _nombreController.text = data['nombre'] ?? '';
-      _emailController.text = data['email'] ?? '';
-      _telefonoController.text = data['telefono'] ?? '';
-      _fotoUrl = data['foto_url'];
+    try {
+      final data = await _supabaseService.getPerfil();
+      if (data != null) {
+        _nombreController.text = data['nombre'] ?? '';
+        _emailController.text = data['email'] ?? '';
+        _telefonoController.text = data['telefono'] ?? '';
+        _fotoUrl = data['foto_url'];
+      }
+    } catch (e) {
+      _showError('Error al cargar perfil: $e');
+    } finally {
+      setState(() => _loading = false);
     }
-    setState(() => _loading = false);
   }
 
   Future<void> _actualizarPerfil() async {
+    setState(() => _loading = true);
     try {
-      await supabaseService.actualizarPerfil({
-        'nombre': _nombreController.text,
-        'email': _emailController.text,
-        'telefono': _telefonoController.text,
+      await _supabaseService.actualizarPerfil({
+        'nombre': _nombreController.text.trim(),
+        'email': _emailController.text.trim(),
+        'telefono': _telefonoController.text.trim(),
         'foto_url': _fotoUrl,
       });
-
-      final nueva = _contrasenaController.text.trim();
-      final confirmar = _confirmarController.text.trim();
-
-      if (nueva.isNotEmpty || confirmar.isNotEmpty) {
-        if (nueva != confirmar) {
-          _mostrarError("Las contraseñas no coinciden");
-          return;
-        }
-        await Supabase.instance.client.auth.updateUser(
-          UserAttributes(password: nueva),
-        );
-        _mostrarMensaje("Contraseña actualizada");
-      }
-
-      _mostrarMensaje("Perfil actualizado correctamente");
-      
-      // Simplemente regresamos a la pantalla anterior
+      _showMessage('Perfil actualizado correctamente');
       if (!mounted) return;
       Navigator.pop(context);
-      
     } catch (e) {
-      _mostrarError("Error al actualizar: $e");
+      _showError('Error al actualizar perfil: $e');
+    } finally {
+      setState(() => _loading = false);
     }
   }
 
   Future<void> _seleccionarFoto() async {
     String? path;
-
     if (Platform.isAndroid || Platform.isIOS) {
-      final ImagePicker picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile == null) return;
-      path = pickedFile.path;
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
+      path = picked.path;
     } else {
-      final XFile? file = await openFile(
+      final file = await openFile(
         acceptedTypeGroups: [
           XTypeGroup(label: 'images', extensions: ['jpg', 'jpeg', 'png']),
         ],
@@ -93,116 +79,140 @@ class _PerfilScreenState extends State<PerfilScreen> {
       if (file == null) return;
       path = file.path;
     }
-
     try {
-      // Sube el archivo y obtiene su ruta/nombre en el bucket de almacenamiento.
-      final String filePathInBucket = await supabaseService.subirFotoPerfil(path);
-
-      // Obtiene la URL pública del archivo subido.
-      // Asegúrate de que el bucket (ej. 'profile_photos') esté configurado 
-      // para acceso público en tu panel de Supabase.
-      final String publicUrl = supabaseService.getPublicUrl(bucket: 'profile_photos', path: filePathInBucket);
-      
-      setState(() => _fotoUrl = publicUrl);
-      _mostrarMensaje("Foto actualizada");
+      final fileInBucket = await _supabaseService.subirFotoPerfil(path);
+      final url = _supabaseService.getPublicUrl(
+        bucket: 'profile_photos',
+        path: fileInBucket,
+      );
+      setState(() => _fotoUrl = url);
+      _showMessage('Foto actualizada');
     } catch (e) {
-      _mostrarError("Error al subir foto: $e");
+      _showError('Error al subir foto: $e');
     }
   }
 
-  void _mostrarMensaje(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
   }
 
-  void _mostrarError(String error) {
+  void _showError(String err) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error), backgroundColor: Colors.red),
+      SnackBar(content: Text(err), backgroundColor: Colors.red),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final current = ref.watch(themeModeProvider);
+    final themeNotifier = ref.read(themeModeProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mi Perfil"),
-        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+        title: const Text('Mi Perfil'),
+        backgroundColor: const Color(0xFF003056),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage:
-                            _fotoUrl != null ? NetworkImage(_fotoUrl!) : null,
-                        child: _fotoUrl == null
-                            ? const Icon(Icons.person, size: 50)
-                            : null,
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: GestureDetector(
-                          onTap: _seleccionarFoto,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.grey.shade800,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            padding: const EdgeInsets.all(6),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 90.0, vertical: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          CircleAvatar(
+                            radius: 60,
+                            backgroundImage: _fotoUrl != null ? NetworkImage(_fotoUrl!) : null,
+                            child: _fotoUrl == null ? const Icon(Icons.person, size: 60) : null,
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: GestureDetector(
+                              onTap: _seleccionarFoto,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey.shade800,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                padding: const EdgeInsets.all(6),
+                                child: const Icon(Icons.camera_alt, color: Colors.white),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _nombreController,
-                    decoration: const InputDecoration(labelText: "Nombre"),
-                  ),
-                  TextField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: "Correo"),
-                  ),
-                  TextField(
-                    controller: _telefonoController,
-                    decoration: const InputDecoration(labelText: "Teléfono"),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 32),
-                  const Text(
-                    "Cambiar Contraseña",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _contrasenaController,
-                    decoration: const InputDecoration(labelText: "Nueva contraseña"),
-                    obscureText: true,
-                  ),
-                  TextField(
-                    controller: _confirmarController,
-                    decoration: const InputDecoration(labelText: "Confirmar contraseña"),
-                    obscureText: true,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.save),
-                    label: const Text("Actualizar Perfil"),
-                    onPressed: _actualizarPerfil,
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _nombreController,
+                      decoration: const InputDecoration(labelText: 'Nombre'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(labelText: 'Correo'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _telefonoController,
+                      decoration: const InputDecoration(labelText: 'Teléfono'),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 32),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Tema de la app', style: TextStyle(fontSize: 16)),
+                        const SizedBox(height: 8),
+                        DropdownButton<ThemeMode>(
+                          value: current,
+                          onChanged: (mode) {
+                            if (mode != null) {
+                              themeNotifier.setTheme(mode); // persistente
+                            }
+                          },
+                          items: const [
+                            DropdownMenuItem(
+                              value: ThemeMode.system,
+                              child: Text('Automático (según sistema)'),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.light,
+                              child: Text('Claro'),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.dark,
+                              child: Text('Oscuro'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: _actualizarPerfil,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003056),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text(
+                        'Actualizar Perfil',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
     );
