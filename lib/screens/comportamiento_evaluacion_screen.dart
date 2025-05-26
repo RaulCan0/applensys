@@ -34,6 +34,7 @@ class ComportamientoEvaluacionScreen extends ConsumerStatefulWidget {
   final String dimensionId;
   final String empresaId;
   final String asociadoId;
+  final Calificacion? calificacionExistente; // Nuevo parámetro opcional
 
   const ComportamientoEvaluacionScreen({
     super.key,
@@ -44,6 +45,7 @@ class ComportamientoEvaluacionScreen extends ConsumerStatefulWidget {
     required this.empresaId,
     required this.asociadoId,
     required String dimension,
+    this.calificacionExistente, // Añadir al constructor
   });
 
   @override
@@ -58,11 +60,25 @@ class _ComportamientoEvaluacionScreenState
   final _picker = ImagePicker();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  int calificacion = 1;
+  late int calificacion; // Modificado para inicializar en initState
   final observacionController = TextEditingController();
   List<String> sistemasSeleccionados = [];
   bool isSaving = false;
   String? evidenciaUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.calificacionExistente != null) {
+      // Si hay una calificación existente, aqui se proceden a cargar sus datos
+      calificacion = widget.calificacionExistente!.puntaje;
+      observacionController.text = widget.calificacionExistente!.observaciones ?? ''; // Corregido: Manejar posible nulo
+      sistemasSeleccionados = List<String>.from(widget.calificacionExistente!.sistemas);
+      evidenciaUrl = widget.calificacionExistente!.evidenciaUrl;
+    } else {
+      calificacion = 0;//aqui se inicia en el numero 0 siempre y cuando no haya evaluación existente
+    }
+  }
 
   void _showAlert(String title, String message) {
     showDialog<void>(
@@ -117,38 +133,48 @@ class _ComportamientoEvaluacionScreenState
       final nombreComp =
           widget.principio.benchmarkComportamiento.split(':').first.trim();
       final dimId = int.tryParse(widget.dimensionId) ?? 1;
-      final existente = await calificacionService.getCalificacionExistente(
-        idAsociado: widget.asociadoId,
-        idEmpresa: widget.empresaId,
-        idDimension: dimId,
-        comportamiento: nombreComp,
-      );
-      if (existente != null) {
-        final editar = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Modificar calificación'),
-            content: const Text(
-                'Ya existe una calificación para este comportamiento. ¿Deseas modificarla?'),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('No')),
-              ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Sí')),
-            ],
-          ),
-        );
-        if (editar == true) {
+
+      // Usar la calificación existente si se pasó al widget, de lo contrario, buscarla.
+      final Calificacion? calificacionParaActualizar = widget.calificacionExistente ??
+          await calificacionService.getCalificacionExistente(
+            idAsociado: widget.asociadoId,
+            idEmpresa: widget.empresaId,
+            idDimension: dimId,
+            comportamiento: nombreComp,
+          );
+
+      if (calificacionParaActualizar != null) {
+        bool debeEditar = true;
+        // Solo mostrar el diálogo de confirmación si la calificación no se pasó directamente (es decir, el usuario no hizo clic explícitamente para editar)
+        if (widget.calificacionExistente == null) {
+          final editar = await showDialog<bool>(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Modificar calificación'),
+              content: const Text(
+                  'Ya existe una calificación para este comportamiento. ¿Deseas modificarla?'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('No')),
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Sí')),
+              ],
+            ),
+          );
+          debeEditar = editar ?? false;
+        }
+
+        if (debeEditar) {
           final calObj = Calificacion(
-            id: existente.id,
+            id: calificacionParaActualizar.id, // Usar el ID existente
             idAsociado: widget.asociadoId,
             idEmpresa: widget.empresaId,
             idDimension: dimId,
             comportamiento: nombreComp,
             puntaje: calificacion,
-            fechaEvaluacion: DateTime.now(),
+            fechaEvaluacion: DateTime.now(), // Considera si quieres actualizar la fecha o mantener la original
             observaciones: obs,
             sistemas: sistemasSeleccionados,
             evidenciaUrl: evidenciaUrl,
@@ -156,19 +182,24 @@ class _ComportamientoEvaluacionScreenState
           await calificacionService.updateCalificacionFull(calObj);
           TablasDimensionScreen.actualizarDato(
             widget.evaluacionId,
-            dimension: obtenerNombreDimensionInterna(widget.dimensionId), // Usar la nueva función
+            dimension: obtenerNombreDimensionInterna(widget.dimensionId),
             principio: widget.principio.nombre,
             comportamiento: nombreComp,
             cargo: widget.cargo,
             valor: calificacion,
             sistemas: sistemasSeleccionados,
-            dimensionId: widget.dimensionId, // Se mantiene por si es útil en otro lado, pero la clave principal es 'dimension'
+            dimensionId: widget.dimensionId,
             asociadoId: widget.asociadoId,
           );
-          if (mounted) Navigator.pop(context, nombreComp);
+          if (mounted) Navigator.pop(context, nombreComp); // Devolver el nombre del comportamiento para actualizar la pantalla anterior
+        } else {
+           if (mounted) setState(() => isSaving = false); // Si el usuario decide no editar, detener el indicador de carga
+           return; // Salir si el usuario elige no editar
         }
-        return;
+        return; // Salir después de intentar la edición
       }
+
+      // Crear nueva calificación si no existe una para actualizar
       final calObj = Calificacion(
         id: const Uuid().v4(),
         idAsociado: widget.asociadoId,
@@ -223,7 +254,7 @@ class _ComportamientoEvaluacionScreenState
     return Semantics(
       label: 'Tabla de niveles de madurez por rol',
       child: DataTable(
-        columnSpacing: 8 * scaleFactor, // espacio entre columnas reducido
+        columnSpacing: 6.0 * scaleFactor, // espacio entre columnas reducido
         dataRowMinHeight: 40 * scaleFactor, // más compacto
         dataRowMaxHeight: 70 * scaleFactor, // más compacto
         headingRowHeight: 45 * scaleFactor, // altura de encabezado más pequeña
@@ -238,11 +269,11 @@ class _ComportamientoEvaluacionScreenState
         ),
         columns: const [
           DataColumn(label: Text('Lentes / Rol')),
-          DataColumn(label: Text('Nivel 1\n0–20%')),
-          DataColumn(label: Text('Nivel 2\n21–40%')),
-          DataColumn(label: Text('Nivel 3\n41–60%')),
-          DataColumn(label: Text('Nivel 4\n61–80%')),
-          DataColumn(label: Text('Nivel 5\n81–100%')),
+          DataColumn(label: Text('Nivel 1\\n0–20%', textAlign: TextAlign.center)),
+          DataColumn(label: Text('Nivel 2\\n21–40%', textAlign: TextAlign.center)),
+          DataColumn(label: Text('Nivel 3\\n41–60%', textAlign: TextAlign.center)),
+          DataColumn(label: Text('Nivel 4\\n61–80%')),
+          DataColumn(label: Text('Nivel 5\\n81–100%')),
         ],
         rows: [
           DataRow(cells: [
@@ -352,12 +383,13 @@ class _ComportamientoEvaluacionScreenState
     final double scaleFactor = textSize / 14.0;
 
     final desc =
-        widget.principio.calificaciones['C$calificacion'] ?? 'Sin descripción disponible';
+        widget.principio.calificaciones['C$calificacion'] ?? 'Desliza para agregar una calificación';
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: const DrawerLensys(),
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 35, 47, 112),
+        backgroundColor: const Color(0xFF003056),
+
         centerTitle: true,
         title: Column(
           children: [
@@ -495,20 +527,32 @@ class _ComportamientoEvaluacionScreenState
                 height: MediaQuery.of(context).size.height * 0.2 * scaleFactor),
           ],
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: isSaving
-                ? SizedBox(
-                    width: 20 * scaleFactor,
-                    height: 20 * scaleFactor,
-                    child: const CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.save, color: Colors.white),
-            label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación',
-                style: TextStyle(color: Colors.white, fontSize: 16 * scaleFactor)),
-            onPressed: isSaving ? null : _guardarEvaluacion,
-            style: ElevatedButton.styleFrom(
-                minimumSize: Size.fromHeight(50 * scaleFactor),
-                backgroundColor: const Color.fromARGB(255, 35, 47, 112)),
+          Center( // Centrar el botón
+            child: ElevatedButton.icon(
+              icon: isSaving
+                  ? SizedBox(
+                      width: 20 * scaleFactor,
+                      height: 20 * scaleFactor,
+                      child: const CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.save, color: Colors.white),
+              label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16 * scaleFactor,
+                    fontFamily: 'Roboto', // Fuente Roboto
+                  )),
+              onPressed: isSaving ? null : _guardarEvaluacion,
+              style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003056),
+         
+                  padding: EdgeInsets.symmetric(horizontal: 30 * scaleFactor, vertical: 15 * scaleFactor), // Ajustar padding para tamaño
+                  side: const BorderSide(color: Color(0xFF003056), width: 2), // Borde azul
+                  shape: RoundedRectangleBorder( // Mantener bordes redondeados si se desea
+                    borderRadius: BorderRadius.circular(8.0),
+                  )
+              ),
+            ),
           ),
         ]),
       ),

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:applensys/services/domain/anotaciones_service.dart';
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -237,7 +238,7 @@ class _AnotacionesScreenState extends ConsumerState<AnotacionesScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28* scaleFactor),
         ),
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(FluentIcons.note_add_20_regular, color: Colors.white),
       ),
     );
   }

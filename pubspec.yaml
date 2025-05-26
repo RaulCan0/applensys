@@ -33,6 +33,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
   flutter_localizations:
     sdk: flutter
+  fluentui_system_icons: ^1.1.273
  
 
 dev_dependencies:

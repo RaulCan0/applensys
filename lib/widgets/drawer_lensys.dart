@@ -147,8 +147,8 @@ class DrawerLensys extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.settings, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Configuración", style: TextStyle(fontSize: 14 * scaleFactor)),
+                leading: Icon(Icons.manage_accounts, color: Colors.black, size: 24 * scaleFactor),
+              title: Text("Ajustes y Perfil", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -186,11 +186,10 @@ class DrawerLensys extends ConsumerWidget {
               leading: Icon(Icons.chat, color: Colors.black, size: 24 * scaleFactor),
               title: Text("Chat", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ChatWidgetDrawer()),
-                );
+                Navigator.of(context).pop(); // Cierra el endDrawer (DrawerLensys)
+                // Intenta abrir el drawer principal del Scaffold.
+                // Esto asume que el Scaffold tiene un 'drawer' asignado (que debería ser ChatWidgetDrawer).
+                Scaffold.of(context).openDrawer();
               },
             ),
             const Divider(),

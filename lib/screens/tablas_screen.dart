@@ -2,6 +2,7 @@ import 'package:applensys/services/domain/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/screens/detalles_evaluacion.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
+import 'package:applensys/widgets/chat_scren.dart'; // Nueva importación
 import 'package:applensys/models/empresa.dart';
 
 extension CapitalizeExtension on String {

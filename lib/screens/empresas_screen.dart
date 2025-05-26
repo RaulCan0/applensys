@@ -203,7 +203,7 @@ onTap: () {
           borderRadius: BorderRadius.circular(100),
         ),
         elevation: 8,
-        child: const Icon(Icons.assignment_add, size: 25, color: Colors.white),
+        child: const Icon(Icons.add, size: 25, color: Colors.white),
       ),
     );
   }
@@ -222,10 +222,10 @@ onTap: () {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const SizedBox(width: 20),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003056))),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)), // Color cambiado a Colors.black
             const Padding(
               padding: EdgeInsets.only(right: 20),
-              child: Icon(Icons.chevron_right, color: Colors.indigo),
+              child: Icon(Icons.chevron_right, color: Color(0xFF003056)),
             ),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:applensys/models/asociado.dart';
+import 'package:applensys/models/calificacion.dart';
 import 'package:applensys/models/principio_json.dart';
 import 'package:applensys/screens/tablas_screen.dart' as tablas_screen;
 import 'package:applensys/services/domain/json_service.dart';
@@ -29,6 +30,7 @@ class PrincipiosScreen extends StatefulWidget {
 class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Map<String, List<PrincipioJson>> principiosUnicos = {};
   List<String> comportamientosEvaluados = [];
+  Map<String, Calificacion> calificacionesExistentes = {}; // Mapa para almacenar las calificaciones completas
   bool cargando = true;
 
   String nombreDimension(String id) {
@@ -49,50 +51,62 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
   @override
   void initState() {
     super.initState();
-    cargarPrincipios();
-    cargarComportamientosEvaluados();
+    cargarDatos(); // Llama a una nueva función que carga todo
   }
 
-  Future<void> cargarPrincipios() async {
+  Future<void> cargarDatos() async {
+    setState(() => cargando = true);
     try {
-      final List<dynamic> datos = await JsonService.cargarJson('t${widget.dimensionId}.json');
-      if (datos.isEmpty) throw Exception('El archivo JSON está vacío.');
+      // Cargar principios
+      final List<dynamic> datosJson = await JsonService.cargarJson('t${widget.dimensionId}.json');
+      if (datosJson.isEmpty) throw Exception('El archivo JSON de principios está vacío.');
 
-      final todos = datos.map((e) => PrincipioJson.fromJson(e)).toList();
-      final filtrados = todos.where((p) => p.nivel.toLowerCase().contains(widget.asociado.cargo.toLowerCase())).toList();
+      final todosLosPrincipios = datosJson.map((e) => PrincipioJson.fromJson(e)).toList();
+      final principiosFiltrados = todosLosPrincipios
+          .where((p) => p.nivel.toLowerCase().contains(widget.asociado.cargo.toLowerCase()))
+          .toList();
 
       final agrupados = <String, List<PrincipioJson>>{};
-      for (var p in filtrados) {
+      for (var p in principiosFiltrados) {
         agrupados.putIfAbsent(p.nombre, () => []).add(p);
+      }
+
+      // Cargar calificaciones existentes usando el método disponible y filtrando
+      final todasLasCalificacionesDelAsociado = await _supabaseService.getCalificacionesPorAsociado(widget.asociado.id);
+
+      final tempComportamientosEvaluados = <String>[];
+      final tempCalificacionesExistentes = <String, Calificacion>{};
+      final int dimensionIdActual = int.tryParse(widget.dimensionId) ?? 1;
+
+      for (var cal in todasLasCalificacionesDelAsociado) {
+        if (cal.idDimension == dimensionIdActual) { // Filtrar por la dimensión actual
+          tempComportamientosEvaluados.add(cal.comportamiento);
+          tempCalificacionesExistentes[cal.comportamiento] = cal;
+        }
       }
 
       setState(() {
         principiosUnicos = agrupados;
+        comportamientosEvaluados = tempComportamientosEvaluados;
+        calificacionesExistentes = tempCalificacionesExistentes;
         cargando = false;
       });
     } catch (e) {
-      debugPrint('Error al cargar JSON: $e');
+      debugPrint('Error al cargar datos: $e');
+      if (mounted) {
+        setState(() => cargando = false); // Asegúrate de detener la carga en caso de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar datos: $e')),
+        );
+      }
     }
   }
 
-  void cargarComportamientosEvaluados() async {
-    try {
-      final calificaciones = await _supabaseService.getCalificacionesPorAsociado(widget.asociado.id);
-      setState(() {
-        comportamientosEvaluados = calificaciones
-            .where((c) => c.idDimension.toString() == widget.dimensionId)
-            .map((c) => c.comportamiento.toString())
-            .toList();
-      });
-    } catch (e) {
-      debugPrint('Error al cargar comportamientos evaluados: $e');
-    }
-  }
-
-  void agregarComportamientoEvaluado(String comportamiento) {
+  void agregarComportamientoEvaluado(String comportamiento, Calificacion calificacion) {
     if (!comportamientosEvaluados.contains(comportamiento)) {
       setState(() {
         comportamientosEvaluados.add(comportamiento);
+        calificacionesExistentes[comportamiento] = calificacion; // Guardar la calificación completa
       });
     }
   }
@@ -198,6 +212,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                     ),
                                     children: entry.value.map((principio) {
                                       final comportamientoNombre = principio.benchmarkComportamiento.split(":").first.trim();
+                                      final calificacionActual = calificacionesExistentes[comportamientoNombre]; // Obtener la calificación completa
+
                                       return ListTile(
                                         title: Text(
                                           comportamientoNombre,
@@ -209,25 +225,29 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         subtitle: const Text('Ir a evaluación'),
                                         trailing: const Icon(Icons.arrow_forward_ios),
                                         onTap: () async {
+                                          // El evaluacionId podría ser el ID de la calificación existente si se está editando,
+                                          // o uno nuevo si se está creando.
+                                          // Por simplicidad, si existe una calificación, usamos su ID, sino uno nuevo.
+                                          final String evaluacionIdParaNavegacion = calificacionActual?.id ?? const Uuid().v4();
+
                                           final resultado = await Navigator.push<String>(
                                             context,
                                             MaterialPageRoute(
                                               builder: (_) => ComportamientoEvaluacionScreen(
                                                 principio: principio,
                                                 cargo: widget.asociado.cargo,
-                                                evaluacionId: const Uuid().v4(),
+                                                evaluacionId: evaluacionIdParaNavegacion, // Usar el ID correspondiente
                                                 dimensionId: widget.dimensionId,
                                                 empresaId: widget.empresa.id,
                                                 asociadoId: widget.asociado.id,
-                                                dimension: '',
+                                                dimension: widget.dimensionId, // Asegúrate que esto es lo que esperas
+                                                calificacionExistente: calificacionActual, // Pasar la calificación completa
                                               ),
                                             ),
                                           );
-                                          if (resultado != null && !comportamientosEvaluados.contains(resultado)) {
-                                            setState(() {
-                                              comportamientosEvaluados.add(resultado);
-                                            });
-                                            setStateTile(() {});
+                                          // Después de volver, recargar los datos para reflejar cualquier cambio.
+                                          if (resultado != null) {
+                                            cargarDatos(); // Recargar todos los datos para asegurar consistencia
                                           }
                                         },
                                       );

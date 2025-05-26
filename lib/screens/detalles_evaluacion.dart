@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:applensys/screens/dashboard_screen.dart';
 import '../widgets/drawer_lensys.dart';
+import 'package:applensys/widgets/chat_scren.dart'; // Nueva importación
 
 class DetallesEvaluacionScreen extends StatefulWidget {
   final Map<String, Map<String, double>> dimensionesPromedios;
@@ -26,12 +27,13 @@ class DetallesEvaluacionScreen extends StatefulWidget {
 
 class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+  late TabController _tabController; // Asegúrate que _tabController esté definido como late final o inicializado en initState
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
+    // Mantén la inicialización original de _tabController
     _tabController = TabController(
       length: widget.dimensionesPromedios.keys.length,
       vsync: this,
@@ -39,18 +41,21 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     );
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  // Asegúrate que el método _calcularPromedios exista si es necesario, o remueve su uso si no.
+  // Para este ejemplo, asumiré que no es necesario para la lógica del drawer y lo comentaré si causa problemas.
+  // Map<String, Map<String, double>> _calcularPromedios() {
+  // return widget.dimensionesPromedios;
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final dimensiones = widget.dimensionesPromedios.keys.toList();
+    // final promediosCalculados = _calcularPromedios(); // Si _calcularPromedios no existe o no es necesario, comentar o eliminar
+    // final dimensionesConDatos = promediosCalculados.keys.toList();
+    // Si _tabController se inicializa en initState, no es necesario re-inicializarlo aquí.
 
     return Scaffold(
       key: _scaffoldKey,
+      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), // Añadido drawer para el chat
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -76,14 +81,14 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
             labelColor: Colors.white,
             unselectedLabelColor: Colors.grey.shade300,
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: dimensiones.map((key) => Tab(text: key)).toList(),
+            tabs: widget.dimensionesPromedios.keys.map((key) => Tab(text: key)).toList(), // Usar widget.dimensionesPromedios directamente
           ),
         ),
       ),
       endDrawer: const DrawerLensys(),
       body: TabBarView(
         controller: _tabController,
-        children: dimensiones.map((dimension) {
+        children: widget.dimensionesPromedios.keys.map((dimension) { // Usar widget.dimensionesPromedios directamente
           final promedios = widget.dimensionesPromedios[dimension]!;
           return _buildDimensionDetails(context, dimension, promedios);
         }).toList(),

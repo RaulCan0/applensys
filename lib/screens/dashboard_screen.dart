@@ -8,6 +8,7 @@ import 'package:applensys/services/domain/excel_exporter.dart'; // Asegúrate qu
 import 'package:applensys/services/domain/reporte_utils_final.dart';
 import 'package:applensys/services/helpers/evaluation_carrousel.dart';
 import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:applensys/widgets/chat_scren.dart'; // Nueva importación
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -150,6 +151,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), // Añadido drawer para el chat
       appBar: AppBar(
         title: Text(
           widget.empresa.nombre,

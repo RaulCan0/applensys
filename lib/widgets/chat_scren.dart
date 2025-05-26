@@ -17,12 +17,12 @@ class ChatWidgetDrawer extends StatefulWidget {
 class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   final _chatService = ChatService();
   final _textController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  final _scrollController = ScrollController();
   late final String _myUserId;
   List<Message> _previousMessages = [];
 
   final Color chatColor = Colors.teal;
-  final Color receivedColor = Colors.grey.shade300;
+  final Color receivedColor = Colors.grey.shade200;
 
   @override
   void initState() {
@@ -55,11 +55,11 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   }
 
   void _bajarAlFinal() {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.minScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
         );
       }
@@ -68,33 +68,31 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final drawerWidth = MediaQuery.of(context).size.width.clamp(300, 600).toDouble();
+    final drawerWidth = MediaQuery.of(context).size.width.clamp(280, 500).toDouble();
 
     return Drawer(
       width: drawerWidth,
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             color: chatColor,
             child: Row(
-                children: [
+              children: [
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
-                const SizedBox(width: 12),
                 const Text(
-                  'Chat General',
+                  'Chat',
                   style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.chat, color: Colors.white),
+                const Icon(Icons.chat_bubble_outline, color: Colors.white),
               ],
             ),
           ),
@@ -102,12 +100,8 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
             child: StreamBuilder<List<Message>>(
               stream: _chatService.messageStream(),
               builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(fontFamily: 'Roboto')));
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
                 final messages = snapshot.data!;
                 final latestMessage = messages.isNotEmpty ? messages.last : null;
@@ -129,7 +123,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[messages.length - 1 - index];
@@ -139,34 +133,33 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.symmetric(vertical: 3),
+                        padding: const EdgeInsets.all(10),
                         constraints: BoxConstraints(maxWidth: drawerWidth * 0.75),
                         decoration: BoxDecoration(
                           color: isMe ? chatColor : receivedColor,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             isImage
                                 ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                     child: Image.network(
                                       msg.content,
                                       fit: BoxFit.cover,
-                                      width: drawerWidth * 0.7,
+                                      width: drawerWidth * 0.65,
                                     ),
                                   )
                                 : Text(
                                     msg.content,
                                     style: TextStyle(
-                                      fontFamily: 'Roboto',
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       color: isMe ? Colors.white : Colors.black87,
                                     ),
                                   ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               DateFormat('HH:mm').format(
                                 msg.createdAt is String
@@ -174,9 +167,8 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                                     : msg.createdAt,
                               ),
                               style: TextStyle(
-                                fontFamily: 'Roboto',
-                                fontSize: 10,
-                                color: isMe ? Colors.white70 : Colors.black54,
+                                fontSize: 9,
+                                color: isMe ? Colors.white70 : Colors.black45,
                               ),
                             ),
                           ],
@@ -190,7 +182,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
           ),
           const Divider(height: 1),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
               children: [
                 IconButton(
@@ -200,20 +192,18 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                 Expanded(
                   child: TextField(
                     controller: _textController,
-                    style: const TextStyle(fontFamily: 'Roboto', fontSize: 14),
+                    style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: 'Escribe un mensaje...',
-                      hintStyle: TextStyle(color: Colors.grey.shade500, fontFamily: 'Roboto'),
+                      hintText: 'Mensaje...',
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
                       fillColor: Colors.grey.shade100,
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      // ignore: deprecated_member_use
-                      suffixIcon: Icon(Icons.emoji_emotions_outlined, color: chatColor.withOpacity(0.7)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     ),
                     onSubmitted: (text) async {
                       final trimmed = text.trim();

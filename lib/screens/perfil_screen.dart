@@ -95,8 +95,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
 
     try {
-      final url = await supabaseService.subirFotoPerfil(path);
-      setState(() => _fotoUrl = url);
+      // Sube el archivo y obtiene su ruta/nombre en el bucket de almacenamiento.
+      final String filePathInBucket = await supabaseService.subirFotoPerfil(path);
+
+      // Obtiene la URL pública del archivo subido.
+      // Asegúrate de que el bucket (ej. 'profile_photos') esté configurado 
+      // para acceso público en tu panel de Supabase.
+      final String publicUrl = supabaseService.getPublicUrl(bucket: 'profile_photos', path: filePathInBucket);
+      
+      setState(() => _fotoUrl = publicUrl);
       _mostrarMensaje("Foto actualizada");
     } catch (e) {
       _mostrarError("Error al subir foto: $e");

@@ -5,6 +5,7 @@ import 'package:applensys/services/local/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/empresa.dart';
+import '../widgets/chat_scren.dart'; // Nueva importación
 import '../widgets/drawer_lensys.dart';
 import 'asociado_screen.dart';
 import 'empresas_screen.dart';
@@ -73,6 +74,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
 
     return Scaffold(
       key: scaffoldKey,
+      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), // Añadido drawer para el chat
       appBar: AppBar(
                 backgroundColor: const Color(0xFF003056),
         centerTitle: true,
