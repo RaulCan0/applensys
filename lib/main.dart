@@ -65,7 +65,7 @@ class MyApp extends ConsumerWidget {
           foregroundColor: Colors.white,
         ),
         textTheme: GoogleFonts.robotoTextTheme(
-          Theme.of(context).textTheme,
+          ThemeData.light().textTheme, // Cambiado de Theme.of(context).textTheme
         ).apply(fontSizeFactor: textSize / 14.0), // 👈 Aplicar tamaño relativo
       ),
       darkTheme: ThemeData(
