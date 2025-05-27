@@ -1,4 +1,4 @@
-import 'package:applensys/services/domain/evaluacion_cache_service.dart';
+import 'package:applensys/services/local/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/screens/detalles_evaluacion.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
@@ -94,8 +94,6 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
     if (data.values.any((m) => m.isNotEmpty)) {
       setState(() => TablasDimensionScreen.tablaDatos = data);
     }
-    // Asegurarse de que dimensiones se inicialice aquí si depende de datos asíncronos
-    // o si _cargarDesdeCache puede ser llamado antes de que build se ejecute la primera vez.
     if (mounted) { // Verificar si el widget está montado antes de llamar a setState
       setState(() {
         dimensiones = dimensionInterna.keys.toList();
