@@ -3,7 +3,7 @@ import 'package:applensys/dashboard/grouped_bar_chart.dart';
 import 'package:applensys/dashboard/horizontal_bar_systems_chart.dart';
 import 'package:applensys/dashboard/line_chart_sample.dart';
 import 'package:applensys/dashboard/scatter_bubble_chart.dart';
-import 'package:applensys/services/domain/evaluation_chart.dart';
+import 'package:applensys/services/domain/evaluation_chart.dart'; // Se usará dimensionesFijas de aquí si es necesario
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -47,12 +47,12 @@ class _EvaluationCarouselState extends State<EvaluationCarousel> {
             max: 5,
             evaluacionId: widget.evaluacionId,
           ),
-          ...List.generate(3, (i) => LineChartSample(
+          // Asegurarse que dimensionesFijas (importada de evaluation_chart.dart) 
+          // tenga la longitud adecuada o ajustar List.generate
+          ...List.generate(dimensionesFijas.length, (i) => LineChartSample(
             data: _datosGraficas.lineChartData,
             title: dimensionesFijas[i],
             evaluacionId: widget.evaluacionId,
-            minY: 0,
-            maxY: 5,
           )),
           ScatterBubbleChart(
             data: _datosGraficas.scatterData,

@@ -187,8 +187,7 @@ class DrawerLensys extends ConsumerWidget {
               title: Text("Chat", style: TextStyle(fontSize: 14 * scaleFactor)),
               onTap: () {
                 Navigator.of(context).pop(); // Cierra el endDrawer (DrawerLensys)
-                // Intenta abrir el drawer principal del Scaffold.
-                // Esto asume que el Scaffold tiene un 'drawer' asignado (que debería ser ChatWidgetDrawer).
+                // Intenta abrir el drawer principal del .
                 Scaffold.of(context).openDrawer();
               },
             ),

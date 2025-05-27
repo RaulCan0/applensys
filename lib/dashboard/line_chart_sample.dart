@@ -1,19 +1,20 @@
+import 'package:applensys/services/domain/evaluation_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../models/level_averages.dart';
 
 class LineChartSample extends StatelessWidget {
-  final List<LevelAverages> data;
+  final List<LevelAverages> data; // Cambiado de LineChartSerie a LevelAverages
   final String title;
-  final double minY;
-  final double maxY;
-
+  final String evaluacionId;
+  // Eliminados minY y maxY del constructor si no se usan directamente aquí
   const LineChartSample({
     super.key,
     required this.data,
     required this.title,
-    this.minY = 0,
-    this.maxY = 5, required String evaluacionId,
+    required this.evaluacionId,
+    // int minY, // Eliminado
+    // int maxY, // Eliminado
   });
 
   @override
@@ -21,6 +22,11 @@ class LineChartSample extends StatelessWidget {
     if (data.isEmpty) {
       return const Center(child: Text('Sin datos'));
     }
+
+    // Determinar minY y maxY dinámicamente si es necesario, o usar valores fijos
+    // Por ejemplo, podrías calcularlos a partir de 'data' o usar constantes
+    const double minYValue = 0; // Valor de ejemplo
+    const double maxYValue = 5; // Valor de ejemplo
 
     return Card(
       elevation: 5,
@@ -34,12 +40,12 @@ class LineChartSample extends StatelessWidget {
             Expanded(
               child: LineChart(
                 LineChartData(
-                  minY: minY,
-                  maxY: maxY,
+                  minY: minYValue, // Usar el valor determinado o fijo
+                  maxY: maxYValue, // Usar el valor determinado o fijo
                   gridData: FlGridData(show: true),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
+                      sideTitles: SideTitles(showTitles: true, reservedSize: 40), // Ajusta reservedSize según sea necesario
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -47,10 +53,12 @@ class LineChartSample extends StatelessWidget {
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx >= 0 && idx < data.length) {
+                            // Asumiendo que LevelAverages tiene un campo 'nombre' para las etiquetas del eje X
                             return Text(data[idx].nombre, style: const TextStyle(fontSize: 8));
                           }
                           return const SizedBox.shrink();
                         },
+                        reservedSize: 22, // Ajusta reservedSize según sea necesario
                       ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -58,6 +66,7 @@ class LineChartSample extends StatelessWidget {
                   ),
                   lineBarsData: [
                     LineChartBarData(
+                      // Acceder a los campos correctos de LevelAverages
                       spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.ejecutivo)).toList(),
                       isCurved: true,
                       color: Colors.blue,
@@ -66,6 +75,7 @@ class LineChartSample extends StatelessWidget {
                       belowBarData: BarAreaData(show: false),
                     ),
                     LineChartBarData(
+                      // Acceder a los campos correctos de LevelAverages
                       spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.gerente)).toList(),
                       isCurved: true,
                       color: Colors.green,
@@ -74,6 +84,7 @@ class LineChartSample extends StatelessWidget {
                       belowBarData: BarAreaData(show: false),
                     ),
                     LineChartBarData(
+                      // Acceder a los campos correctos de LevelAverages
                       spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.miembro)).toList(),
                       isCurved: true,
                       color: Colors.orange,

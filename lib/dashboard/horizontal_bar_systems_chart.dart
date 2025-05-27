@@ -2,10 +2,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class HorizontalBarSystemsChart extends StatelessWidget {
-  final Map<String, Map<String, int>> data;
+  final Map<String, Map<String, double>> data;
   final String title;
   final double minY;
   final double maxY;
+
 
   const HorizontalBarSystemsChart({
     super.key,

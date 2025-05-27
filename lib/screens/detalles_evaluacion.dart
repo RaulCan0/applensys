@@ -40,19 +40,8 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
       initialIndex: widget.initialTabIndex ?? 0,
     );
   }
-
-  // Asegúrate que el método _calcularPromedios exista si es necesario, o remueve su uso si no.
-  // Para este ejemplo, asumiré que no es necesario para la lógica del drawer y lo comentaré si causa problemas.
-  // Map<String, Map<String, double>> _calcularPromedios() {
-  // return widget.dimensionesPromedios;
-  // }
-
   @override
   Widget build(BuildContext context) {
-    // final promediosCalculados = _calcularPromedios(); // Si _calcularPromedios no existe o no es necesario, comentar o eliminar
-    // final dimensionesConDatos = promediosCalculados.keys.toList();
-    // Si _tabController se inicializa en initState, no es necesario re-inicializarlo aquí.
-
     return Scaffold(
       key: _scaffoldKey,
       drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), // Añadido drawer para el chat
@@ -62,7 +51,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
           color: Colors.white,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Detalles de Evaluación', style: TextStyle(color: Colors.white)),
+        title: const Text('Graficos por Dimensión', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: const Color(0xFF003056),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -102,15 +91,24 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     Map<String, double> promedios,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 150),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildPromedioGeneralCard(context, promedios),
+          _buildPromedioGeneralCard(
+            context,
+            promedios,
+            chartHeight: 300,
+            sidePadding: 24,
+          ),
           const SizedBox(height: 16),
           _buildDropdownAssociates(dimension),
           const SizedBox(height: 16),
           ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF003056),
+              foregroundColor: Colors.white,
+            ),
             icon: const Icon(Icons.leaderboard),
             label: const Text('Ver Dashboard'),
             onPressed: () {
@@ -130,7 +128,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     );
   }
 
-  Widget _buildPromedioGeneralCard(BuildContext context, Map<String, double> promedios) {
+  Widget _buildPromedioGeneralCard(BuildContext context, Map<String, double> promedios, {double chartHeight = 150, double sidePadding = 90}) {
     final avgE = promedios['Ejecutivo'] ?? 0;
     final avgG = promedios['Gerente'] ?? 0;
     final avgM = promedios['Miembro'] ?? 0;
@@ -140,25 +138,25 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
       margin: const EdgeInsets.symmetric(vertical: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: sidePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Text(
-              'Promedios por Nivel',
+              'Promedios por Cargo',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             FractionallySizedBox(
-              widthFactor: 0.8,
+              widthFactor: 1.0,
               child: SizedBox(
-                height: 200,
+                height: chartHeight,
                 child: BarChart(
                   BarChartData(
                     maxY: 5,
                     minY: 0,
                     alignment: BarChartAlignment.spaceAround,
-                    groupsSpace: 12,
+                    groupsSpace: 8,
                     barGroups: [
                       _buildBarGroup(0, avgE, Colors.orange),
                       _buildBarGroup(1, avgG, Colors.green),
@@ -256,9 +254,9 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
       barRods: [
         BarChartRodData(
           toY: y,
-          width: 14,
+          width: 40,
           color: color,
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(8),
         ),
       ],
     );
@@ -268,7 +266,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     if (value % 1 == 0) {
       return Padding(
         padding: const EdgeInsets.only(right: 4),
-        child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+        child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 12)),
       );
     }
     return const SizedBox.shrink();

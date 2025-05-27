@@ -59,6 +59,9 @@ class TablasDimensionScreen extends StatefulWidget {
 }
 
 class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
+  final _verticalController = ScrollController();
+  final _horizontalController = ScrollController();
+
   late List<String> dimensiones;
   bool mostrarPromedio = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -79,6 +82,8 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   @override
   void dispose() {
     TablasDimensionScreen.dataChanged.removeListener(_onDataChanged);
+    _verticalController.dispose();
+    _horizontalController.dispose();
     super.dispose();
   }
 
@@ -143,13 +148,21 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF003056),
+                      foregroundColor: Colors.white,
+                    ),
                     onPressed: () => setState(() => mostrarPromedio = !mostrarPromedio),
                     child: Text(mostrarPromedio ? 'Ver sumas' : 'Promediar'),
                   ),
                   if (mostrarPromedio)
-                    Builder( 
+                    Builder(
                       builder: (BuildContext buttonContext) {
                         return ElevatedButton(
+                         style: ElevatedButton.styleFrom(
+                           backgroundColor: const Color(0xFF003056),
+                           foregroundColor: Colors.white,
+                         ),
                           onPressed: () => _irADetalles(buttonContext), 
                           child: const Text('Ver detalles y avance'),
                         );
@@ -231,30 +244,43 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
     );
   }
 
+  @override
+  // ignore: override_on_non_overriding_member
   Widget _buildDataTable(List<Map<String, dynamic>> filas) {
     return Semantics(
       label: 'Tabla de datos de evaluación por principios y roles',
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
+      child: Scrollbar(
+        controller: _verticalController,
+        thumbVisibility: true,
         child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.all(8),
-          child: DataTable(
-            columnSpacing: 20,
-            headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
-            dataRowColor: WidgetStateProperty.all(Colors.white),
-            border: TableBorder.all(color: const Color(0xFF003056)),
-            columns: [
-              DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Ejecutivo', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Gerente', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Miembro', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Ejecutivo Sistemas', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
-            ],
-            rows: _buildRows(filas), // Esta llamada es correcta
+          controller: _verticalController,
+          scrollDirection: Axis.vertical,
+          child: Scrollbar(
+            controller: _horizontalController,
+            thumbVisibility: true,
+            notificationPredicate: (n) => n.metrics.axis == Axis.horizontal,
+            child: SingleChildScrollView(
+              controller: _horizontalController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.all(8),
+              child: DataTable(
+                columnSpacing: 20,
+                headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
+                dataRowColor: WidgetStateProperty.all(Colors.white),
+                border: TableBorder.all(color: const Color(0xFF003056)),
+                columns: [
+                  DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
+                  DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
+                  DataColumn(label: Text('Ejecutivo', style: TextStyle(color: Colors.white))),
+                  DataColumn(label: Text('Gerente', style: TextStyle(color: Colors.white))),
+                  DataColumn(label: Text('Miembro', style: TextStyle(color: Colors.white))),
+                  DataColumn(label: Text('Ejecutivo Sistemas', style: TextStyle(color: Colors.white))),
+                  DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
+                  DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
+                ],
+                rows: _buildRows(filas),
+              ),
+            ),
           ),
         ),
       ),

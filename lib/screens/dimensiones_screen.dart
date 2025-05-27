@@ -193,7 +193,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
               children: [
                 ElevatedButton.icon(
                   icon: const Icon(Icons.save),
-                  label: const Text('Salvar'),
+                  label: const Text('Continuar más tarde'),
                   style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF003056),
                     foregroundColor: Colors.white,
@@ -209,7 +209,10 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.check_circle, color: Colors.white),
-                  label: const Text('Finalizar evaluación'),
+                  label: const Text(
+                    'Finalizar evaluación',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                   onPressed: () async {
                     try {

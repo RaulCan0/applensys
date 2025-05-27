@@ -80,6 +80,13 @@ class _ComportamientoEvaluacionScreenState
     }
   }
 
+  /// Guarda la lista de sistemas seleccionados y refresca la UI
+  Future<void> _saveSelectedSystems(List<String> selected) async {
+    setState(() {
+      sistemasSeleccionados = List.from(selected);
+    });
+  }
+
   void _showAlert(String title, String message) {
     showDialog<void>(
       context: context,
@@ -241,101 +248,103 @@ class _ComportamientoEvaluacionScreenState
     final double scaleFactor = (textSize / 14.0).clamp(0.9, 1.3);
 
     DataCell wrapText(String text) => DataCell(
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 200 * scaleFactor),
-            child: Text(text,
-                softWrap: true,
-                maxLines: 7,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 14 * scaleFactor)),
+          Text(
+            text,
+            softWrap: true,
+            style: TextStyle(fontSize: 14 * scaleFactor),
           ),
         );
 
     return Semantics(
       label: 'Tabla de niveles de madurez por rol',
-      child: DataTable(
-        columnSpacing: 6.0 * scaleFactor, // espacio entre columnas reducido
-        dataRowMinHeight: 30 * scaleFactor, // más compacto
-        dataRowMaxHeight: 80 * scaleFactor, // más compacto
-        headingRowHeight: 38 * scaleFactor, // altura de encabezado más pequeña
-        headingTextStyle: TextStyle(
-          fontSize: 13 * scaleFactor, // ligeramente mayor para encabezados
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF003056),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columnSpacing: 16.0 * scaleFactor, // espacio entre columnas reducido
+            dataRowMinHeight: 05 * scaleFactor, // más compacto
+            dataRowMaxHeight: 100 * scaleFactor, // más compacto
+            headingRowHeight: 38* scaleFactor, // altura de encabezado más pequeña
+            headingTextStyle: TextStyle(
+              fontSize: 12 * scaleFactor, // ligeramente mayor para encabezados
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF003056),
 
+            ),
+            dataTextStyle: TextStyle(
+              fontSize: 12 * scaleFactor, // mejor visibilidad
+              color: Colors.black87,
+            ),
+            columns: const [
+              DataColumn(label: Text('Lentes / Rol')),
+              DataColumn(label: Text('Nivel 1\n0–20%', textAlign: TextAlign.center)),
+              DataColumn(label: Text('Nivel 2\n21–40%', textAlign: TextAlign.center)),
+              DataColumn(label: Text('Nivel 3\n41–60%', textAlign: TextAlign.center)),
+              DataColumn(label: Text('Nivel 4\n61–80%', textAlign: TextAlign.center)),
+              DataColumn(label: Text('Nivel 5\n81–100%', textAlign: TextAlign.center)),
+            ],
+            rows: [
+              DataRow(cells: [
+                const DataCell(Text('Ejecutivos')),
+                wrapText('Los ejecutivos se centran principalmente en la lucha contra incendios y en gran parte están ausentes de los esfuerzos de mejora.'),
+                wrapText('Los ejecutivos son conscientes de las iniciativas de otros para mejorar, pero en gran parte no están involucrados.'),
+                wrapText('Los ejecutivos establecen la dirección para la mejora y respaldan los esfuerzos de los demás.'),
+                wrapText('Los ejecutivos participan en los esfuerzos de mejora y respaldan el alineamiento de los principios de excelencia operacional con los sistemas.'),
+                wrapText('Los ejecutivos se centran en garantizar que los principios de excelencia operativa se arraiguen profundamente en la cultura y se evalúen regularmente para mejorar.'),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text('Gerentes')),
+                wrapText('Los gerentes están orientados a obtener resultados "a toda costa".'),
+                wrapText('Los gerentes generalmente buscan especialistas para crear mejoras a través de la orientación del proyecto.'),
+                wrapText('Los gerentes participan en el desarrollo de sistemas y ayudan a otros a usar herramientas de manera efectiva.'),
+                wrapText('Los gerentes se enfocan en conductas de manejo a través del diseño de sistemas.'),
+                wrapText('Los gerentes están "principalmente enfocados" en la mejora continua de los sistemas para impulsar un comportamiento más alineado con los principios de excelencia operativa.'),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text('Miembros del equipo')),
+                wrapText('Los miembros del equipo se enfocan en hacer su trabajo y son tratados en gran medida como un gasto.'),
+                wrapText('A veces se solicita a los asociados que participen en un equipo de mejora usualmente dirigido por alguien externo a su equipo de trabajo natural.'),
+                wrapText('Están capacitados y participan en proyectos de mejora.'),
+                wrapText('Están involucrados todos los días en el uso de herramientas para la mejora continua en sus propias áreas de responsabilidad.'),
+                wrapText('Entienden los principios "el por qué" detrás de las herramientas y son líderes para mejorar sus propios sistemas y ayudar a otros.'),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text('Frecuencia')),
+                wrapText('Infrecuente • Raro'),
+                wrapText('Basado en eventos • Irregular'),
+                wrapText('Frecuente • Común'),
+                wrapText('Consistente • Predominante'),
+                wrapText('Constante • Uniforme'),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text('Duración')),
+                wrapText('Iniciado • Subdesarrollado'),
+                wrapText('Experimental • Formativo'),
+                wrapText('Repetible • Previsible'),
+                wrapText('Establecido • Estable'),
+                wrapText('Culturalmente Arraigado • Maduro'),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text('Intensidad')),
+                wrapText('Apático • Indiferente'),
+                wrapText('Aparente • Compromiso Individual'),
+                wrapText('Moderado • Compromiso Local'),
+                wrapText('Persistente • Amplio Compromiso'),
+                wrapText('Tenaz • Compromiso Total'),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text('Alcance')),
+                wrapText('Aislado • Punto de Solución'),
+                wrapText('Silos • Flujo de Valor Interno'),
+                wrapText('Predominantemente Operaciones • Flujo de Valor Funcional'),
+                wrapText('Múltiples Procesos de Negocios • Flujo de Valor Integrado'),
+                wrapText('En Toda la Empresa • Flujo de Valor Extendido'),
+              ]),
+            ],
+          ),
         ),
-        dataTextStyle: TextStyle(
-          fontSize: 12 * scaleFactor, // mejor visibilidad
-          color: Colors.black87,
-        ),
-        columns: const [
-          DataColumn(label: Text('Lentes / Rol')),
-          DataColumn(label: Text('Nivel 1\n0–20%', textAlign: TextAlign.center)),
-          DataColumn(label: Text('Nivel 2\n21–40%', textAlign: TextAlign.center)),
-          DataColumn(label: Text('Nivel 3\n41–60%', textAlign: TextAlign.center)),
-          DataColumn(label: Text('Nivel 4\n61–80%', textAlign: TextAlign.center)),
-          DataColumn(label: Text('Nivel 5\n81–100%', textAlign: TextAlign.center)),
-        ],
-        rows: [
-          DataRow(cells: [
-            const DataCell(Text('Ejecutivos')),
-            wrapText('Los ejecutivos se centran principalmente en la lucha contra incendios y en gran parte están ausentes de los esfuerzos de mejora.'),
-            wrapText('Los ejecutivos son conscientes de las iniciativas de otros para mejorar, pero en gran parte no están involucrados.'),
-            wrapText('Los ejecutivos establecen la dirección para la mejora y respaldan los esfuerzos de los demás.'),
-            wrapText('Los ejecutivos participan en los esfuerzos de mejora y respaldan el alineamiento de los principios de excelencia operacional con los sistemas.'),
-            wrapText('Los ejecutivos se centran en garantizar que los principios de excelencia operativa se arraiguen profundamente en la cultura y se evalúen regularmente para mejorar.'),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Gerentes')),
-            wrapText('Los gerentes están orientados a obtener resultados "a toda costa".'),
-            wrapText('Los gerentes generalmente buscan especialistas para crear mejoras a través de la orientación del proyecto.'),
-            wrapText('Los gerentes participan en el desarrollo de sistemas y ayudan a otros a usar herramientas de manera efectiva.'),
-            wrapText('Los gerentes se enfocan en conductas de manejo a través del diseño de sistemas.'),
-            wrapText('Los gerentes están "principalmente enfocados" en la mejora continua de los sistemas para impulsar un comportamiento más alineado con los principios de excelencia operativa.'),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Miembros del equipo')),
-            wrapText('Los miembros del equipo se enfocan en hacer su trabajo y son tratados en gran medida como un gasto.'),
-            wrapText('A veces se solicita a los asociados que participen en un equipo de mejora usualmente dirigido por alguien externo a su equipo de trabajo natural.'),
-            wrapText('Están capacitados y participan en proyectos de mejora.'),
-            wrapText('Están involucrados todos los días en el uso de herramientas para la mejora continua en sus propias áreas de responsabilidad.'),
-            wrapText('Entienden los principios "el por qué" detrás de las herramientas y son líderes para mejorar sus propios sistemas y ayudar a otros.'),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Frecuencia')),
-            wrapText('Infrecuente • Raro'),
-            wrapText('Basado en eventos • Irregular'),
-            wrapText('Frecuente • Común'),
-            wrapText('Consistente • Predominante'),
-            wrapText('Constante • Uniforme'),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Duración')),
-            wrapText('Iniciado • Subdesarrollado'),
-            wrapText('Experimental • Formativo'),
-            wrapText('Repetible • Previsible'),
-            wrapText('Establecido • Estable'),
-            wrapText('Culturalmente Arraigado • Maduro'),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Intensidad')),
-            wrapText('Apático • Indiferente'),
-            wrapText('Aparente • Compromiso Individual'),
-            wrapText('Moderado • Compromiso Local'),
-            wrapText('Persistente • Amplio Compromiso'),
-            wrapText('Tenaz • Compromiso Total'),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Alcance')),
-            wrapText('Aislado • Punto de Solución'),
-            wrapText('Silos • Flujo de Valor Interno'),
-            wrapText('Predominantemente Operaciones • Flujo de Valor Funcional'),
-            wrapText('Múltiples Procesos de Negocios • Flujo de Valor Integrado'),
-            wrapText('En Toda la Empresa • Flujo de Valor Extendido'),
-          ]),
-        ],
-      ),
-    );
+      ),);
   }
 
   void _mostrarLentesRolDialog() {
@@ -377,156 +386,115 @@ class _ComportamientoEvaluacionScreenState
       ),
     );
   }
-
-  @override
+@override
   Widget build(BuildContext context) {
     final textSize = ref.watch(textSizeProvider);
     final double scaleFactor = textSize / 14.0;
 
-    final desc =
-        widget.principio.calificaciones['C$calificacion'] ?? 'Desliza para agregar una calificación';
+    final desc = widget.principio.calificaciones['C$calificacion']
+        ?? 'Desliza para agregar una calificación';
+
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: const DrawerLensys(),
       appBar: AppBar(
         backgroundColor: const Color(0xFF003056),
-
         centerTitle: true,
         title: Column(
           children: [
-            Text(' ${widget.principio.nombre}',
-                style: TextStyle(color: Colors.white, fontSize: 20 * scaleFactor)),
-            Text(' ${widget.principio.benchmarkComportamiento.split(":").first.trim()}',
+            Text(widget.principio.nombre, style: TextStyle(color: Colors.white, fontSize: 20 * scaleFactor)),
+            Text(widget.principio.benchmarkComportamiento.split(':').first.trim(),
                 style: TextStyle(color: Colors.white, fontSize: 14 * scaleFactor)),
           ],
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => _scaffoldKey.currentState?.openEndDrawer())
-        ],
+        actions: [IconButton(icon: const Icon(Icons.menu), onPressed: () => _scaffoldKey.currentState?.openEndDrawer())],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12.0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(
-              child: Semantics(
-                label: 'Botón para ver el benchmark del nivel',
+          // Benchmark text
+          Text(
+            'Benchmark: ${widget.principio.benchmarkPorNivel}',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor),
+          ),
+          const SizedBox(height: 8),
+          // Guía y Sistemas asociados como botones estilizados
+          Row(
+            children: [
+              Expanded(
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.info_outline, size: 18),
-                  label: Text('Benchmark Nivel',
-                      style: TextStyle(fontSize: 12 * scaleFactor, fontFamily: 'Roboto')),
-                  onPressed: () =>
-                      _showAlert('Benchmark', widget.principio.benchmarkPorNivel),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003056),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 10 * scaleFactor, horizontal: 8 * scaleFactor),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Semantics(
-                label: 'Botón para ver la guía de preguntas',
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.help_outline, size: 18),
-                  label: Text('Guía', style: TextStyle(fontSize: 12 * scaleFactor, fontFamily: 'Roboto')),
+                  icon: const Icon(Icons.help_outline),
+                  label: Text('Guía', style: TextStyle(fontSize: 14 * scaleFactor)),
                   onPressed: () => _showAlert('Guía', widget.principio.preguntas),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF003056),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 10 * scaleFactor, horizontal: 8 * scaleFactor),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                    padding: EdgeInsets.symmetric(vertical: 12 * scaleFactor, horizontal: 16 * scaleFactor),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Semantics(
-                label: 'Botón para seleccionar sistemas asociados',
+              const SizedBox(width: 8),
+              Expanded(
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.settings, size: 18),
-                  label: Text('Sistemas',
-                      style: TextStyle(fontSize: 12 * scaleFactor, fontFamily: 'Roboto')),
+                  icon: const Icon(Icons.settings),
+                  label: Text('Sistemas asociados', style: TextStyle(fontSize: 14 * scaleFactor)),
                   onPressed: isSaving
                       ? null
                       : () async {
-                        final sel = await showModalBottomSheet<List<String>>(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (_) => SistemasScreen(
-                            onSeleccionar: (s) {
-                              Navigator.pop(
-                                  context,
-                                  s.map((e) => e['nombre'].toString())
-                                      .toList());
-                            },
-                          ),
-                        );
-                        if (sel != null) setState(() => sistemasSeleccionados = sel);
-                      },
+                          final seleccion = await showModalBottomSheet<List<String>>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => SistemasScreen(
+                              onSeleccionar: (s) => Navigator.pop(context, s.map((e) => e['nombre'].toString()).toList()),
+                            ),
+                          );
+                          if (seleccion != null) await _saveSelectedSystems(seleccion);
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF003056),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 10 * scaleFactor, horizontal: 8 * scaleFactor),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                    padding: EdgeInsets.symmetric(vertical: 12 * scaleFactor, horizontal: 16 * scaleFactor),
                   ),
                 ),
               ),
-            ),
-          ]),
+            ],
+          ),
+
           const SizedBox(height: 20),
-          if (evidenciaUrl != null)
-            Semantics(
-              label: 'Imagen de evidencia subida',
-              child: Image.network(evidenciaUrl!, height: 200 * scaleFactor),
-            ),
-          const SizedBox(height: 16),
-          Text('Calificación:',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
+          if (evidenciaUrl != null) ...[
+            Image.network(evidenciaUrl!, height: 200 * scaleFactor),
+            const SizedBox(height: 16),
+          ],
+
+          Text('Calificación:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
           Slider(
             value: calificacion.toDouble(),
             min: 0,
             max: 5,
             divisions: 5,
             label: calificacion.toString(),
-            activeColor: const Color(0xFF003056), // Color activo del Slider
-            // ignore: deprecated_member_use
-            inactiveColor: const Color(0xFF003056).withOpacity(0.3), // Color inactivo del Slider (opcional)
+            activeColor: const Color(0xFF003056),
+            inactiveColor: const Color(0xFF003056).withAlpha(77),
             onChanged: isSaving ? null : (v) => setState(() => calificacion = v.round()),
           ),
-          ////Text('Descripción ($calificacion):',
-             // style: TextStyle(
-               //   fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
           Text(desc, style: TextStyle(fontSize: 14 * scaleFactor)),
+
           const SizedBox(height: 16),
           ElevatedButton.icon(
             icon: const Icon(Icons.remove_red_eye),
-            label: Text('Ver lentes de madurez',
-                style: TextStyle(fontSize: 14 * scaleFactor, fontFamily: 'Roboto')),
+            label: Text('Ver lentes de madurez', style: TextStyle(fontSize: 14 * scaleFactor)),
             onPressed: _mostrarLentesRolDialog,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF003056),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
               padding: EdgeInsets.symmetric(vertical: 12 * scaleFactor, horizontal: 16 * scaleFactor),
             ),
           ),
+
           const SizedBox(height: 16),
           Row(children: [
             Expanded(
@@ -534,65 +502,41 @@ class _ComportamientoEvaluacionScreenState
                 controller: observacionController,
                 maxLines: 2,
                 enabled: !isSaving,
-                decoration: const InputDecoration(
-                    hintText: 'Observaciones...', border: OutlineInputBorder()),
+                decoration: const InputDecoration(hintText: 'Observaciones...', border: OutlineInputBorder()),
               ),
             ),
             const SizedBox(width: 8),
-            IconButton(
-                icon: const Icon(Icons.camera_alt, size: 28),
-                onPressed: isSaving ? null : _takePhoto),
+            IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: isSaving ? null : _takePhoto),
           ]),
+
           if (sistemasSeleccionados.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Sistemas Asociados:',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
+            Text('Sistemas Asociados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor)),
             const SizedBox(height: 4),
             Wrap(
               spacing: 8.0,
               runSpacing: 4.0,
-              children: sistemasSeleccionados.map((sistema) {
-                return Chip(
-                  label: Text(sistema,
-                      style: TextStyle(fontSize: 12 * scaleFactor)),
-                  onDeleted: () =>
-                      setState(() => sistemasSeleccionados.remove(sistema)),
-                  deleteIcon: const Icon(Icons.close, size: 18),
-                );
-              }).toList(),
+              children: sistemasSeleccionados.map((s) => Chip(
+                label: Text(s, style: TextStyle(fontSize: 12 * scaleFactor)),
+                onDeleted: () => _saveSelectedSystems(sistemasSeleccionados..remove(s)),
+              )).toList(),
             ),
           ],
-          if (evidenciaUrl != null) ...[
-            const SizedBox(height: 16),
-            Image.network(evidenciaUrl!,
-                height: MediaQuery.of(context).size.height * 0.2 * scaleFactor),
-          ],
+
           const SizedBox(height: 24),
-          Center( // Centrar el botón
+          Center(
             child: ElevatedButton.icon(
               icon: isSaving
-                  ? SizedBox(
-                      width: 20 * scaleFactor,
-                      height: 20 * scaleFactor,
-                      child: const CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.save, color: Colors.white),
-              label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación',
-                  style: TextStyle(
-                    color: Colors.white, // Ya estaba blanco
-                    fontSize: 14 * scaleFactor,
-                    fontFamily: 'Roboto', // Fuente Roboto
-                  )),
+                ? SizedBox(width: 20 * scaleFactor, height: 20 * scaleFactor, child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.save, color: Colors.white),
+              label: Text(isSaving ? 'Guardando...' : 'Guardar Evaluación', style: TextStyle(fontSize: 14 * scaleFactor)),
               onPressed: isSaving ? null : _guardarEvaluacion,
               style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003056), // Ya estaba azul
-                    foregroundColor: Colors.white, // Asegurar foreground para el icono
-                    padding: EdgeInsets.symmetric(horizontal: 30 * scaleFactor, vertical: 15 * scaleFactor), 
-                    side: const BorderSide(color: Color(0xFF003056), width: 2), 
-                    shape: RoundedRectangleBorder( 
-                      borderRadius: BorderRadius.circular(8.0), // Menos redondeado
-                    )
+                backgroundColor: const Color(0xFF003056),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 30 * scaleFactor, vertical: 15 * scaleFactor),
+                side: const BorderSide(color: Color(0xFF003056), width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
               ),
             ),
           ),

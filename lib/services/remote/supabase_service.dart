@@ -657,4 +657,12 @@ class SupabaseService {
   Future<void> limpiarDatosEvaluacion() async {
     // Implementar lógica para limpiar datos de evaluaciones en Supabase
   }
+
+  Future<void> updateCalificacionFull(Calificacion calificacion) async {
+    // Actualiza puntaje, observaciones, sistemas y evidencia
+    await _client
+      .from('calificaciones')
+      .update(calificacion.toMap())
+      .eq('id', calificacion.id);
+  }
 }

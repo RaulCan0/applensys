@@ -30,7 +30,7 @@ class PrincipiosScreen extends StatefulWidget {
 class _PrincipiosScreenState extends State<PrincipiosScreen> {
   Map<String, List<PrincipioJson>> principiosUnicos = {};
   List<String> comportamientosEvaluados = [];
-  Map<String, Calificacion> calificacionesExistentes = {}; // Mapa para almacenar las calificaciones completas
+  Map<String, Calificacion> calificacionesExistentes = {}; 
   bool cargando = true;
 
   String nombreDimension(String id) {
@@ -125,7 +125,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.table_chart, color: Colors.white),
+            icon: const Icon(Icons.assessment, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
@@ -162,7 +162,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                               'EVALUANDO A: ${widget.asociado.nombre}\n'
                               'Nivel Organizacional: ${widget.asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : widget.asociado.cargo.toUpperCase()}',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 15, fontFamily: 'Arial'),
+                              style: const TextStyle(fontSize: 15, fontFamily: 'Roboto', fontWeight: FontWeight.bold, color: Colors.black87),
                             ),
                           ),
                         ),
@@ -185,7 +185,10 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    color: Color.lerp(Colors.white, Colors.green[100], progreso),
+                                    color: Color.lerp(const Color.fromARGB(255, 255, 255, 255), Colors.green[100], progreso),
+                                     border: Border.all(
+    color: const Color.fromARGB(255, 0, 0, 0), // color del contorno
+    width: 2,),
                                     boxShadow: [
                                       // ignore: deprecated_member_use
                                       BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3)),
@@ -225,9 +228,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         subtitle: Text(principio.benchmarkComportamiento.split(":").last.trim()),
                                         trailing: const Icon(Icons.arrow_forward_ios),
                                         onTap: () async {
-                                          // El evaluacionId podría ser el ID de la calificación existente si se está editando,
-                                          // o uno nuevo si se está creando.
-                                          // Por simplicidad, si existe una calificación, usamos su ID, sino uno nuevo.
+                                         
                                           final String evaluacionIdParaNavegacion = calificacionActual?.id ?? const Uuid().v4();
 
                                           final resultado = await Navigator.push<String>(
@@ -236,7 +237,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                               builder: (_) => ComportamientoEvaluacionScreen(
                                                 principio: principio,
                                                 cargo: widget.asociado.cargo,
-                                                evaluacionId: evaluacionIdParaNavegacion, // Usar el ID correspondiente
+                                                evaluacionId: evaluacionIdParaNavegacion, 
                                                 dimensionId: widget.dimensionId,
                                                 empresaId: widget.empresa.id,
                                                 asociadoId: widget.asociado.id,
