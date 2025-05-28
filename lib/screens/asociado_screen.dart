@@ -52,26 +52,36 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
       gerentes.clear();
       miembros.clear();
 
-      for (final asociado in asociadosCargados) {
-        final progreso = await _supabaseService.obtenerProgresoAsociado(
-          evaluacionId: widget.empresa.id,
-          asociadoId: asociado.id,
-          dimensionId: widget.dimensionId,
-        );
-        progresoAsociado[asociado.id] = progreso;
+      // Crear una lista de Futures para obtener el progreso de cada asociado
+      List<Future<void>> futures = [];
 
-        switch (asociado.cargo.toLowerCase()) {
-          case 'ejecutivo':
-            ejecutivos.add(asociado);
-            break;
-          case 'gerente':
-            gerentes.add(asociado);
-            break;
-          case 'miembro':
-            miembros.add(asociado);
-            break;
-        }
+      for (final asociado in asociadosCargados) {
+        futures.add(
+          _supabaseService.obtenerProgresoAsociado(
+            evaluacionId: widget.evaluacionId, // Corregido: usar widget.evaluacionId
+            asociadoId: asociado.id,
+            dimensionId: widget.dimensionId,
+          ).then((progreso) {
+            progresoAsociado[asociado.id] = progreso;
+            // Clasificar al asociado en la lista correspondiente
+            switch (asociado.cargo.toLowerCase()) {
+              case 'ejecutivo':
+                ejecutivos.add(asociado);
+                break;
+              case 'gerente':
+                gerentes.add(asociado);
+                break;
+              case 'miembro':
+                miembros.add(asociado);
+                break;
+            }
+          })
+        );
       }
+
+      // Esperar a que todos los progresos se carguen en paralelo
+      await Future.wait(futures);
+
       if (mounted) setState(() {});
     } catch (e) {
       if (!mounted) return;
