@@ -18,14 +18,28 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _telefonoController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   String? _fotoUrl;
   bool _loading = false;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void initState() {
     super.initState();
     _cargarPerfil();
+  }
+
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    _emailController.dispose();
+    _telefonoController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
   Future<void> _cargarPerfil() async {
@@ -50,15 +64,32 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
     try {
       await _supabaseService.actualizarPerfil({
         'nombre': _nombreController.text.trim(),
-        'email': _emailController.text.trim(),
+        'email': _emailController.text.trim(), // Considerar si el email se puede actualizar o es fijo
         'telefono': _telefonoController.text.trim(),
         'foto_url': _fotoUrl,
       });
-      _showMessage('Perfil actualizado correctamente');
+
+      // Lógica para cambiar contraseña si se proporcionó una nueva
+      if (_newPasswordController.text.isNotEmpty) {
+        if (_newPasswordController.text != _confirmPasswordController.text) {
+          _showError('Las nuevas contraseñas no coinciden.');
+          // No continuar si las contraseñas no coinciden, pero el perfil ya se actualizó.
+          // Considerar si se debe revertir la actualización del perfil o manejar de otra forma.
+          setState(() => _loading = false);
+          return;
+        }
+        await _supabaseService.actualizarContrasena(newPassword: _newPasswordController.text.trim());
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+        _showMessage('Perfil y contraseña actualizados correctamente.');
+      } else {
+        _showMessage('Perfil actualizado correctamente.');
+      }
+
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context); // Opcional: decidir si se navega hacia atrás después de actualizar
     } catch (e) {
-      _showError('Error al actualizar perfil: $e');
+      _showError('Error al actualizar: $e');
     } finally {
       setState(() => _loading = false);
     }
@@ -111,8 +142,10 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
-        backgroundColor: const Color(0xFF003056),
+      title: const Text('Mi Perfil'),
+      backgroundColor: const Color(0xFF003056),
+      foregroundColor: const Color.fromARGB(255, 255, 255, 255), // Text and icon color
+      elevation: 2, // Subtle shadow for definition
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -159,6 +192,8 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(labelText: 'Correo'),
+                      // Considerar si el email debe ser editable o no
+                      // readOnly: true, 
                     ),
                     const SizedBox(height: 12),
                     TextField(
@@ -166,37 +201,56 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       decoration: const InputDecoration(labelText: 'Teléfono'),
                       keyboardType: TextInputType.phone,
                     ),
-                    const SizedBox(height: 32),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Tema de la app', style: TextStyle(fontSize: 16)),
-                        const SizedBox(height: 8),
-                        DropdownButton<ThemeMode>(
-                          value: current,
-                          onChanged: (mode) {
-                            if (mode != null) {
-                              themeNotifier.setTheme(mode); // persistente
-                            }
+                    const SizedBox(height: 24),
+                    const Text('Cambiar Contraseña (opcional)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _newPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'Nueva Contraseña (dejar en blanco para no cambiar)',
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () {
+                            setState(() {
+                              _obscureNewPassword = !_obscureNewPassword;
+                            });
                           },
-                          items: const [
-                            DropdownMenuItem(
-                              value: ThemeMode.system,
-                              child: Text('Automático (según sistema)'),
-                            ),
-                            DropdownMenuItem(
-                              value: ThemeMode.light,
-                              child: Text('Claro'),
-                            ),
-                            DropdownMenuItem(
-                              value: ThemeMode.dark,
-                              child: Text('Oscuro'),
-                            ),
-                          ],
                         ),
-                      ],
+                      ),
+                      obscureText: _obscureNewPassword,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _confirmPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'Confirmar Nueva Contraseña',
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                      ),
+                      obscureText: _obscureConfirmPassword,
                     ),
                     const SizedBox(height: 24),
+
+                    // Sección para el Tema de la app
+                    const Text('Tema de la app', style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      title: const Text('Modo Oscuro'),
+                      value: current == ThemeMode.dark,
+                      onChanged: (bool isDarkMode) {
+                        themeNotifier.setTheme(isDarkMode ? ThemeMode.dark : ThemeMode.light);
+                      },
+                      activeColor: const Color(0xFF003056),
+                    ),
+                    const SizedBox(height: 24),
+                    // Fin Sección para el Tema de la app
+
                     ElevatedButton(
                       onPressed: _actualizarPerfil,
                       style: ElevatedButton.styleFrom(

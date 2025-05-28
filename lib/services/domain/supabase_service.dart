@@ -261,6 +261,14 @@ class SupabaseService {
     await _client.from('usuarios').update(valores).eq('id', userId);
   }
 
+  Future<void> actualizarContrasena({required String newPassword}) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception('Usuario no autenticado');
+    }
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
   Future<String> subirFotoPerfil(String rutaLocal) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw Exception("Usuario no autenticado");
@@ -288,7 +296,7 @@ class SupabaseService {
   // NUEVO: Buscar evaluacion existente
   Future<Evaluacion?> buscarEvaluacionExistente(String empresaId, String asociadoId) async {
     final response = await _client
-        .from('evaluaciones')
+        .from('evaluaciones') // Nombre correcto de la tabla
         .select()
         .eq('empresa_id', empresaId)
         .eq('asociado_id', asociadoId)
@@ -309,7 +317,7 @@ class SupabaseService {
       asociadoId: asociadoId,
       fecha: DateTime.now(),
     );
-    await _client.from('evaluaciones').insert(nuevaEvaluacion.toMap());
+    await _client.from('evaluaciones').insert(nuevaEvaluacion.toMap()); // Nombre correcto de la tabla
     return nuevaEvaluacion;
   }
 
@@ -324,6 +332,7 @@ class SupabaseService {
   }) async {
     final sumas = <String, Map<String, Map<String, int>>>{};
     final conteos = <String, Map<String, Map<String, int>>>{};
+    // Corregir la estructura de sistemasPorNivel para que el valor final sea int
     final sistemasPorNivel = <String, Map<String, Map<String, int>>>{};
 
     for (var f in filas) {
@@ -339,18 +348,16 @@ class SupabaseService {
       conteos[principio]!.putIfAbsent(comportamiento, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
 
       sumas[principio]![comportamiento]![nivel] =
-        sumas[principio]![comportamiento]![nivel]! + valor;
+        (sumas[principio]![comportamiento]![nivel] ?? 0) + valor;
       conteos[principio]![comportamiento]![nivel] =
         (conteos[principio]![comportamiento]![nivel] ?? 0) + 1;
 
       for (final sistema in sistemas) {
-        sistemasPorNivel.putIfAbsent(sistema, () => {
-          'Ejecutivo': {},
-          'Gerente': {},
-          'Miembro': {},
-        });
-        sistemasPorNivel[sistema]![nivel]![dimension] =
-          (sistemasPorNivel[sistema]![nivel]![dimension] ?? 0) + 1;
+        sistemasPorNivel.putIfAbsent(sistema, () => {});
+        sistemasPorNivel[sistema]!.putIfAbsent(nivel, () => {});
+        // Asegurarse de que el valor sea un entero antes de sumar
+        final currentValue = (sistemasPorNivel[sistema]![nivel]![dimension] ?? 0);
+        sistemasPorNivel[sistema]![nivel]![dimension] = currentValue + 1;
       }
     }
 
@@ -359,7 +366,7 @@ class SupabaseService {
         for (final nivel in ['Ejecutivo', 'Gerente', 'Miembro']) {
           final suma = sumas[p]![c]![nivel]!;
           final count = conteos[p]![c]![nivel]!;
-          final promedio = count == 0 ? 0 : suma / count;
+          final promedio = count == 0 ? 0.0 : suma / count;
           await insertar('promedios_comportamientos', {
             'evaluacion_id': evaluacionId,
             'dimension': dimension,
@@ -374,23 +381,27 @@ class SupabaseService {
 
     for (final sistema in sistemasPorNivel.keys) {
       for (final nivel in ['Ejecutivo', 'Gerente', 'Miembro']) {
-        final conteo = sistemasPorNivel[sistema]![nivel]?[dimension] ?? 0;
-        await insertar('promedios_sistemas', {
-          'evaluacion_id': evaluacionId,
-          'dimension': dimension,
-          'sistema': sistema,
-          'nivel': nivel,
-          'conteo': conteo,
-        });
+        // Acceder directamente al conteo, que ahora es un int
+        final conteo = (sistemasPorNivel[sistema]?[nivel]?[dimension] ?? 0);
+        // Asegurarse de que conteo sea un entero antes de comparar
+        if (conteo > 0) { 
+          await insertar('promedios_sistemas', {
+            'evaluacion_id': evaluacionId,
+            'dimension': dimension,
+            'sistema': sistema,
+            'nivel': nivel,
+            'conteo': conteo,
+          });
+        }
       }
     }
   }
 
-  Future<List<LevelAverages>> getDimensionAverages(dynamic empresaId) async {
+  Future<List<LevelAverages>> getDimensionAverages(String empresaId) async { // Especificar tipo de empresaId
     final res = await _client
-        .from('detalle_evaluacion')
+        .from('detalle_evaluacion') // Nombre correcto de la tabla
         .select('dimension_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-        .eq('empresa_id', empresaId.toString());
+        .eq('empresa_id', empresaId);
 
     return (res as List).map((m) => LevelAverages(
       id: m['dimension_id'] as int,
@@ -406,14 +417,14 @@ class SupabaseService {
     )).toList();
   }
 
-  Future<List<LevelAverages>> getLevelLineData(dynamic empresaId) async {
+  Future<List<LevelAverages>> getLevelLineData(String empresaId) async { // Especificar tipo de empresaId
     final res = await _client
-        .from('detalle_evaluacion')
-        .select('nivel, avg(calificacion) as promedio')
-        .eq('empresa_id', empresaId.toString());
+        .from('detalle_evaluacion') // Nombre correcto de la tabla
+        .select('nivel, avg(calificacion) as promedio') // Asumiendo que 'calificacion' es el campo correcto
+        .eq('empresa_id', empresaId);
 
     return (res as List).map((m) {
-      final nivel = (m['nivel'] as String).trim();
+      final nivel = (m['nivel'] as String? ?? '').trim(); // Manejar nulos
       final promedio = (m['promedio'] as num?)?.toDouble() ?? 0.0;
 
       double ejecutivo = 0.0;
@@ -433,23 +444,23 @@ class SupabaseService {
       }
 
       return LevelAverages(
-        id: 0,
+        id: 0, // Considerar si se necesita un ID único aquí
         nombre: nivel,
         ejecutivo: ejecutivo,
         gerente: gerente,
         miembro: miembro,
-        dimensionId: 0,
+        dimensionId: 0, // Considerar si se necesita un dimensionId aquí
         general: promedio,
         nivel: nivel,
       );
     }).toList();
   }
 
-  Future<List<LevelAverages>> getPrinciplesAverages(dynamic empresaId) async {
+  Future<List<LevelAverages>> getPrinciplesAverages(String empresaId) async { // Especificar tipo de empresaId
     final res = await _client
-        .from('detalle_evaluacion')
+        .from('detalle_evaluacion') // Nombre correcto de la tabla
         .select('principio_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-        .eq('empresa_id', empresaId.toString());
+        .eq('empresa_id', empresaId);
 
     return (res as List).map((m) => LevelAverages(
       id: m['principio_id'] as int,
@@ -457,7 +468,7 @@ class SupabaseService {
       ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
       gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
       miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
-      dimensionId: 0,
+      dimensionId: 0, // Considerar si se necesita un dimensionId aquí
       general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
                 ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
                 ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
@@ -465,11 +476,11 @@ class SupabaseService {
     )).toList();
   }
 
-  Future<List<LevelAverages>> getBehaviorAverages(dynamic empresaId) async {
+  Future<List<LevelAverages>> getBehaviorAverages(String empresaId) async { // Especificar tipo de empresaId
     final res = await _client
-        .from('detalle_evaluacion')
+        .from('detalle_evaluacion') // Nombre correcto de la tabla
         .select('comportamiento_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-        .eq('empresa_id', empresaId.toString());
+        .eq('empresa_id', empresaId);
 
     return (res as List).map((m) => LevelAverages(
       id: m['comportamiento_id'] as int,
@@ -477,7 +488,7 @@ class SupabaseService {
       ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
       gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
       miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
-      dimensionId: 0,
+      dimensionId: 0, // Considerar si se necesita un dimensionId aquí
       general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
                 ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
                 ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
@@ -485,11 +496,11 @@ class SupabaseService {
     )).toList();
   }
 
-  Future<List<LevelAverages>> getSystemAverages(dynamic empresaId) async {
+  Future<List<LevelAverages>> getSystemAverages(String empresaId) async { // Especificar tipo de empresaId
     final res = await _client
-        .from('detalle_sistema')
+        .from('detalle_sistema') // Nombre correcto de la tabla
         .select('sistema_id, avg(ejecutivo) as ejecutivo, avg(gerente) as gerente, avg(miembro) as miembro')
-        .eq('empresa_id', empresaId.toString());
+        .eq('empresa_id', empresaId);
 
     return (res as List).map((m) => LevelAverages(
       id: m['sistema_id'] as int,
@@ -497,7 +508,7 @@ class SupabaseService {
       ejecutivo: (m['ejecutivo'] as num?)?.toDouble() ?? 0.0,
       gerente: (m['gerente'] as num?)?.toDouble() ?? 0.0,
       miembro: (m['miembro'] as num?)?.toDouble() ?? 0.0,
-      dimensionId: 0,
+      dimensionId: 0, // Considerar si se necesita un dimensionId aquí
       general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
                 ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
                 ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,

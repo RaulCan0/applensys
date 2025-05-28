@@ -55,15 +55,13 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   }
 
   void _bajarAlFinal() {
-    Future.delayed(const Duration(milliseconds: 10), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.minScrollExtent,
-          duration: const Duration(milliseconds: 20),
+          duration: const Duration(milliseconds: 20), // Duración corta para eficiencia
           curve: Curves.easeOut,
         );
       }
-    });
   }
 
   @override

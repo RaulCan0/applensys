@@ -43,7 +43,7 @@ class DrawerLensys extends ConsumerWidget {
 
     return Drawer(
       child: Container(
-        color: Colors.white,
+        color: Theme.of(context).scaffoldBackgroundColor, // Cambiado para usar el color del tema
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -52,25 +52,45 @@ class DrawerLensys extends ConsumerWidget {
               builder: (context, snapshot) {
                 final nombre = snapshot.data?['nombre'] ?? 'Usuario';
                 final fotoUrl = snapshot.data?['foto_url'];
+                final theme = Theme.of(context); // Obtener el tema actual
+                final colorScheme = theme.colorScheme; // Obtener el esquema de colores
+
                 return UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(
-                    color: Color.fromARGB(255, 35, 47, 112),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary, // Usar color primario del tema
                   ),
-                  accountName: Text(nombre, style: TextStyle(fontSize: 18 * scaleFactor)),
-                  accountEmail: Text(userEmail, style: TextStyle(fontSize: 14 * scaleFactor)),
+                  accountName: Text(
+                    nombre,
+                    style: TextStyle(
+                      fontSize: 18 * scaleFactor,
+                      color: colorScheme.onPrimary, // Usar color de texto sobre primario
+                    ),
+                  ),
+                  accountEmail: Text(
+                    userEmail,
+                    style: TextStyle(
+                      fontSize: 14 * scaleFactor,
+                      // ignore: deprecated_member_use
+                      color: colorScheme.onPrimary.withOpacity(0.8), // Usar color de texto sobre primario con opacidad
+                    ),
+                  ),
                   currentAccountPicture: (fotoUrl != null && fotoUrl != '')
                       ? CircleAvatar(backgroundImage: NetworkImage(fotoUrl), radius: 30 * scaleFactor)
                       : CircleAvatar(
-                          backgroundColor: Colors.white,
+                          backgroundColor: colorScheme.onPrimary, // Usar color de fondo contrastante
                           radius: 30 * scaleFactor,
-                          child: Icon(Icons.person, size: 40 * scaleFactor, color: const Color.fromARGB(255, 35, 47, 112)),
+                          child: Icon(
+                            Icons.person,
+                            size: 40 * scaleFactor,
+                            color: colorScheme.primary, // Usar color primario para el ícono
+                          ),
                         ),
                 );
               },
             ),
             ListTile(
-              leading: Icon(Icons.home, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Inicio", style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.home, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text("Inicio", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.pushAndRemoveUntil(
                   context,
@@ -80,8 +100,8 @@ class DrawerLensys extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.table_chart, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Resultados", style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.table_chart, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text("Resultados", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -105,8 +125,8 @@ class DrawerLensys extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.insert_chart, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Detalle Evaluación", style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.insert_chart, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text("Detalle Evaluación", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -132,8 +152,8 @@ class DrawerLensys extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.history, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Historial", style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.history, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text("Historial", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -147,8 +167,8 @@ class DrawerLensys extends ConsumerWidget {
               },
             ),
             ListTile(
-                leading: Icon(Icons.manage_accounts, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Ajustes y Perfil", style: TextStyle(fontSize: 14 * scaleFactor)),
+                leading: Icon(Icons.manage_accounts, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text("Ajustes y Perfil", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -157,8 +177,8 @@ class DrawerLensys extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.dashboard, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Dashboard", style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.dashboard, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text("Dashboard", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -183,8 +203,8 @@ class DrawerLensys extends ConsumerWidget {
             ),
             const Divider(),
             ListTile(
-              leading: Icon(Icons.chat, color: Colors.black, size: 24 * scaleFactor),
-              title: Text("Chat", style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.chat, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text("Chat", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.of(context).pop(); // Cierra el endDrawer (DrawerLensys)
                 // Intenta abrir el drawer principal del .
@@ -193,8 +213,8 @@ class DrawerLensys extends ConsumerWidget {
             ),
             const Divider(),
             ListTile(
-              leading: Icon(Icons.note_add, size: 24 * scaleFactor),
-              title: Text('Mis Anotaciones', style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.note_add, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text('Mis Anotaciones', style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -206,8 +226,8 @@ class DrawerLensys extends ConsumerWidget {
             const Divider(),
             // Selector de tamaño de letra
             ListTile(
-              leading: Icon(Icons.text_fields, color: Colors.black, size: 24 * scaleFactor),
-              title: Text('Letra', style: TextStyle(fontSize: 14 * scaleFactor)),
+              leading: Icon(Icons.text_fields, color: Theme.of(context).iconTheme.color, size: 24 * scaleFactor),
+              title: Text('Letra', style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               trailing: DropdownButton<double>(
                 value: ref.watch(textSizeProvider),
                 iconSize: 24 * scaleFactor,
@@ -226,7 +246,7 @@ class DrawerLensys extends ConsumerWidget {
             const Divider(),
             ListTile(
                 leading: Icon(Icons.logout, color: Colors.red, size: 24 * scaleFactor),
-                title: Text("Cerrar sesión", style: TextStyle(fontSize: 14 * scaleFactor)),
+                title: Text("Cerrar sesión", style: TextStyle(fontSize: 14 * scaleFactor, color: Theme.of(context).textTheme.bodyLarge?.color)),
               onTap: () async {
                 await Supabase.instance.client.auth.signOut();
                 Navigator.pushAndRemoveUntil(

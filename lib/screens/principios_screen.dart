@@ -159,10 +159,14 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                           padding: const EdgeInsets.all(16.0),
                           child: Center(
                             child: Text(
-                              'EVALUANDO A: ${widget.asociado.nombre}\n'
-                              'Nivel Organizacional: ${widget.asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : widget.asociado.cargo.toUpperCase()}',
+                                'EVALUANDO A: ${widget.asociado.nombre}\nNivel Organizacional: ${widget.asociado.cargo.toLowerCase() == 'miembro' ? 'MIEMBRO DE EQUIPO' : widget.asociado.cargo.toUpperCase()}',
+                                style: TextStyle(
+                                fontSize: 15, 
+                                fontFamily: 'Roboto', 
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                                ),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 15, fontFamily: 'Roboto', fontWeight: FontWeight.bold, color: Colors.black87),
                             ),
                           ),
                         ),
@@ -185,7 +189,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    color: Color.lerp(const Color.fromARGB(255, 255, 255, 255), Colors.green[100], progreso),
+                                    color: Color.lerp(const Color.fromARGB(255, 0, 0, 0), Colors.green[100], progreso),
                                      border: Border.all(
     color: const Color.fromARGB(255, 0, 0, 0), // color del contorno
     width: 2,),

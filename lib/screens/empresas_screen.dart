@@ -111,6 +111,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
   @override
   Widget build(BuildContext context) {
     final empresaCreada = empresas.isNotEmpty ? empresas.last : null;
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -147,10 +148,10 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                 children: [
                   Text(
                     'Bienvenido: $correoUsuario',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black54,
+                      color: isDarkMode ? Colors.white : Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -209,6 +210,7 @@ onTap: () {
   }
 
   Widget _buildButton(BuildContext context, {required String label, required VoidCallback onTap}) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -217,12 +219,13 @@ onTap: () {
         decoration: BoxDecoration(
             border: Border.all(color: const Color(0xFF003056)),
           borderRadius: BorderRadius.circular(12),
+          color: isDarkMode ? Colors.grey[700] : Colors.grey[200], // Color de fondo del contenedor
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const SizedBox(width: 20),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)), // Color cambiado a Colors.black
+            Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black)), // Color de texto del botón
             const Padding(
               padding: EdgeInsets.only(right: 20),
               child: Icon(Icons.chevron_right, color: Color(0xFF003056)),

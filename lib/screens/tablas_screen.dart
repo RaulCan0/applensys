@@ -33,18 +33,40 @@ class TablasDimensionScreen extends StatefulWidget {
     required String comportamiento,
     required String cargo,
     required int valor,
-    required List<String> sistemas, required String dimensionId, required String asociadoId,
+    required List<String> sistemas, 
+    required String dimensionId, // Parámetro añadido
+    required String asociadoId,  // Parámetro añadido
   }) async {
     final tablaDim = tablaDatos.putIfAbsent(dimension, () => {});
     final lista = tablaDim.putIfAbsent(evaluacionId, () => []);
-    lista.add({
-      'principio': principio,
-      'comportamiento': comportamiento,
-      'cargo': cargo.trim().capitalize(),
-      'cargo_raw': cargo,
-      'valor': valor,
-      'sistemas': sistemas,
-    });
+
+    // Buscar si ya existe una entrada para esta combinación
+    final indiceExistente = lista.indexWhere((item) =>
+        item['principio'] == principio &&
+        item['comportamiento'] == comportamiento &&
+        item['cargo_raw'] == cargo && // Usar cargo_raw para la comparación precisa
+        item['dimension_id'] == dimensionId && // Asegurar que la dimensión también coincida
+        item['asociado_id'] == asociadoId // Y el asociado
+    );
+
+    if (indiceExistente != -1) {
+      // Si existe, actualizar el valor y los sistemas
+      lista[indiceExistente]['valor'] = valor;
+      lista[indiceExistente]['sistemas'] = sistemas;
+    } else {
+      // Si no existe, añadir una nueva entrada
+      lista.add({
+        'principio': principio,
+        'comportamiento': comportamiento,
+        'cargo': cargo.trim().capitalize(),
+        'cargo_raw': cargo,
+        'valor': valor,
+        'sistemas': sistemas,
+        'dimension_id': dimensionId, // Guardar dimensionId
+        'asociado_id': asociadoId,   // Guardar asociadoId
+      });
+    }
+
     await EvaluacionCacheService().guardarTablas(tablaDatos);
     dataChanged.value = !dataChanged.value;
   }
@@ -112,6 +134,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   Widget build(BuildContext context) {
     // Asegurar que dimensiones esté inicializado antes de usarlo en DefaultTabController
     dimensiones = dimensionInterna.keys.toList(); 
+    final textColor = Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
     return DefaultTabController(
       length: dimensiones.length,
       child: Scaffold(
@@ -180,7 +203,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
                   if (filas.isEmpty) {
                     return const Center(child: Text('No hay datos para mostrar'));
                   }
-                  return _buildDataTable(filas);
+                  return _buildDataTable(filas, textColor);
                 }).toList(),
               ),
             ),
@@ -244,7 +267,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
 
   @override
   // ignore: override_on_non_overriding_member
-  Widget _buildDataTable(List<Map<String, dynamic>> filas) {
+  Widget _buildDataTable(List<Map<String, dynamic>> filas, Color textColor) {
     return Semantics(
       label: 'Tabla de datos de evaluación por principios y roles',
       child: Scrollbar(
@@ -264,7 +287,11 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
               child: DataTable(
                 columnSpacing: 20,
                 headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
-                dataRowColor: WidgetStateProperty.all(Colors.white),
+                dataRowColor: WidgetStateProperty.all(
+                  Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.grey.shade200 
+                      : Colors.white
+                ),
                 border: TableBorder.all(color: const Color(0xFF003056)),
                 columns: [
                   DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
@@ -276,7 +303,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
                   DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
                   DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
                 ],
-                rows: _buildRows(filas),
+                rows: _buildRows(filas, textColor),
               ),
             ),
           ),
@@ -285,7 +312,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
     );
   }
 
-  List<DataRow> _buildRows(List<Map<String, dynamic>> filas) {
+  List<DataRow> _buildRows(List<Map<String, dynamic>> filas, Color textColor) {
     final sumas = <String, Map<String, Map<String, int>>>{};
     final conteos = <String, Map<String, Map<String, int>>>{};
     final sistemasPorNivel = <String, Map<String, Map<String, Set<String>>>>{};
@@ -336,14 +363,14 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
         }
 
         rows.add(DataRow(cells: [
-          DataCell(Text(p)),
-          DataCell(Text(c)),
-          DataCell(Text(valorCell('Ejecutivo'))),
-          DataCell(Text(valorCell('Gerente'))),
-          DataCell(Text(valorCell('Miembro'))),
-          DataCell(Text(sysCell('Ejecutivo'))),
-          DataCell(Text(sysCell('Gerente'))),
-          DataCell(Text(sysCell('Miembro'))),
+          DataCell(Text(p, style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
+          DataCell(Text(c, style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
+          DataCell(Text(valorCell('Ejecutivo'), style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
+          DataCell(Text(valorCell('Gerente'), style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
+          DataCell(Text(valorCell('Miembro'), style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
+          DataCell(Text(sysCell('Ejecutivo'), style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
+          DataCell(Text(sysCell('Gerente'), style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
+          DataCell(Text(sysCell('Miembro'), style: TextStyle(color: Color(0xFF003056)))), // Texto de celda azul específico
         ]));
       });
     });
