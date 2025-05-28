@@ -51,7 +51,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
               children: [
                 const SizedBox(height: 34),
                 Text(
-                  'LEAN TRAINING CENTER',
+                  'LEANSYS TRAINING CENTER',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,

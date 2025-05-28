@@ -245,13 +245,16 @@ class _ComportamientoEvaluacionScreenState
 
   Semantics _buildLentesDataTable() {
     final textSize = ref.watch(textSizeProvider);
-    final double scaleFactor = (textSize / 14.0).clamp(0.9, 1.3);
+    final double scaleFactor = (textSize / 13.0).clamp(0.9, 1.0);
 
     DataCell wrapText(String text) => DataCell(
-          Text(
-            text,
-            softWrap: true,
-            style: TextStyle(fontSize: 14 * scaleFactor),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 280 * scaleFactor),
+            child: Text(text,
+                softWrap: true,
+                maxLines: 7,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 13 * scaleFactor)),
           ),
         );
 
@@ -262,9 +265,9 @@ class _ComportamientoEvaluacionScreenState
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            columnSpacing: 16.0 * scaleFactor, // espacio entre columnas reducido
+            columnSpacing: 10.0 * scaleFactor, // espacio entre columnas reducido
             dataRowMinHeight: 05 * scaleFactor, // más compacto
-            dataRowMaxHeight: 100 * scaleFactor, // más compacto
+            dataRowMaxHeight: 160 * scaleFactor, // más compacto
             headingRowHeight: 38* scaleFactor, // altura de encabezado más pequeña
             headingTextStyle: TextStyle(
               fontSize: 12 * scaleFactor, // ligeramente mayor para encabezados

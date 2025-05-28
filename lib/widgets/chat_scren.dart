@@ -1,5 +1,6 @@
+import 'package:applensys/services/domain/chat_service.dart';
 import 'package:applensys/services/domain/notification_service.dart';
-import 'package:applensys/services/helpers/chat_service.dart';
+import 'package:applensys/services/helpers/chat_service.dart' hide ChatService;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/message.dart';

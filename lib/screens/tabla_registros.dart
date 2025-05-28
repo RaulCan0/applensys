@@ -51,7 +51,7 @@ class TablasRegistrosScreen extends StatefulWidget {
       'evidencia': evidencia,
     });
     // Guarda en caché
-    await EvaluacionCacheService().guardarRegistros(registrosDatos);
+    await EvaluacionCacheService().guardarTablas(registrosDatos); // MODIFICADO: guardarRegistros -> guardarTablas
     // Dispara la actualización de la UI
     dataChanged.value = !dataChanged.value;
   }
@@ -60,7 +60,7 @@ class TablasRegistrosScreen extends StatefulWidget {
   static Future<void> limpiarDatos() async {
     registrosDatos.clear();
     dataChanged.value = false;
-    await EvaluacionCacheService().limpiarRegistros();
+    await EvaluacionCacheService().limpiarCacheTablaDatos(); // MODIFICADO: Llamar a limpiarCacheTablaDatos
   }
 
   @override
@@ -91,7 +91,7 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
   void _onDataChanged() => setState(() {});
 
   Future<void> _cargarDesdeCache() async {
-    final data = await EvaluacionCacheService().cargarRegistros();
+    final data = await EvaluacionCacheService().cargarTablas(); // MODIFICADO: cargarRegistros -> cargarTablas
     if (data.isNotEmpty) {
       setState(() => TablasRegistrosScreen.registrosDatos = data);
     }
@@ -172,37 +172,40 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
   }
 
   Widget _buildDataTable(List<Map<String, dynamic>> filas) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
+    return Semantics(
+      label: 'Tabla de registros de evaluación',
       child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.all(8),
-        child: DataTable(
-          columnSpacing: 16,
-          headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
-          border: TableBorder.all(color: const Color(0xFF003056)),
-          columns: const [
-            DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Nivel', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Nombre Asociado', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Calificación', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Sistemas Asociados', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Observación', style: TextStyle(color: Colors.white))),
-            DataColumn(label: Text('Evidencia', style: TextStyle(color: Colors.white))),
-          ],
-          rows: filas.map((f) {
-            return DataRow(cells: [
-              DataCell(Text(f['principio'] ?? '')),
-              DataCell(Text(f['comportamiento'] ?? '')),
-              DataCell(Text(f['nivel'] ?? '')),
-              DataCell(Text(f['nombreAsociado'] ?? '')),
-              DataCell(Text('${f['calificacion'] ?? ''}')),
-              DataCell(Text((f['sistemasAsociados'] as List<String>).join(', '))),
-              DataCell(Text(f['observacion'] ?? '')),
-              DataCell(Text(f['evidencia'] ?? '')),
-            ]);
-          }).toList(),
+        scrollDirection: Axis.vertical,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.all(8),
+          child: DataTable(
+            columnSpacing: 16,
+            headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
+            border: TableBorder.all(color: const Color(0xFF003056)),
+            columns: const [
+              DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Nivel', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Nombre Asociado', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Calificación', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Sistemas Asociados', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Observación', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Evidencia', style: TextStyle(color: Colors.white))),
+            ],
+            rows: filas.map((f) {
+              return DataRow(cells: [
+                DataCell(Text(f['principio'] ?? '')),
+                DataCell(Text(f['comportamiento'] ?? '')),
+                DataCell(Text(f['nivel'] ?? '')),
+                DataCell(Text(f['nombreAsociado'] ?? '')),
+                DataCell(Text('${f['calificacion'] ?? ''}')),
+                DataCell(Text((f['sistemasAsociados'] as List<String>).join(', '))),
+                DataCell(Text(f['observacion'] ?? '')),
+                DataCell(Text(f['evidencia'] ?? '')),
+              ]);
+            }).toList(),
+          ),
         ),
       ),
     );

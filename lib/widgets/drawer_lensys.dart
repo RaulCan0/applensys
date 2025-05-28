@@ -52,18 +52,16 @@ class DrawerLensys extends ConsumerWidget {
               builder: (context, snapshot) {
                 final nombre = snapshot.data?['nombre'] ?? 'Usuario';
                 final fotoUrl = snapshot.data?['foto_url'];
-                final theme = Theme.of(context); // Obtener el tema actual
-                final colorScheme = theme.colorScheme; // Obtener el esquema de colores
 
                 return UserAccountsDrawerHeader(
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary, // Usar color primario del tema
+                  decoration: const BoxDecoration( 
+                    color: Color(0xFF003056),
                   ),
                   accountName: Text(
                     nombre,
                     style: TextStyle(
                       fontSize: 18 * scaleFactor,
-                      color: colorScheme.onPrimary, // Usar color de texto sobre primario
+                      color: Colors.white, 
                     ),
                   ),
                   accountEmail: Text(
@@ -71,18 +69,18 @@ class DrawerLensys extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 14 * scaleFactor,
                       // ignore: deprecated_member_use
-                      color: colorScheme.onPrimary.withOpacity(0.8), // Usar color de texto sobre primario con opacidad
+                      color: Colors.white.withOpacity(0.8), 
                     ),
                   ),
-                  currentAccountPicture: (fotoUrl != null && fotoUrl != '')
+                  currentAccountPicture: (fotoUrl != null && fotoUrl.isNotEmpty) // Asegúrate que fotoUrl no sea un string vacío
                       ? CircleAvatar(backgroundImage: NetworkImage(fotoUrl), radius: 30 * scaleFactor)
                       : CircleAvatar(
-                          backgroundColor: colorScheme.onPrimary, // Usar color de fondo contrastante
+                          backgroundColor: Colors.white, 
                           radius: 30 * scaleFactor,
                           child: Icon(
                             Icons.person,
                             size: 40 * scaleFactor,
-                            color: colorScheme.primary, // Usar color primario para el ícono
+                            color: const Color(0xFF003056), 
                           ),
                         ),
                 );
@@ -260,5 +258,30 @@ class DrawerLensys extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+// AÑADIDO: Servicio singleton que notifica cambios en tablaDatos
+class DetallesEvaluacionService extends ChangeNotifier {
+  static final DetallesEvaluacionService _instance = DetallesEvaluacionService._();
+  factory DetallesEvaluacionService() => _instance;
+  DetallesEvaluacionService._() {
+    // inicializa con los datos actuales
+    _tabla = TablasDimensionScreen.tablaDatos;
+    // se suscribe a futuros cambios
+    TablasDimensionScreen.dataChanged.addListener(_onDataChanged);
+  }
+
+  late Map<String, Map<String, List<Map<String, dynamic>>>> _tabla;
+  Map<String, Map<String, List<Map<String, dynamic>>>> get tablaDatos => _tabla;
+
+  void _onDataChanged() {
+    _tabla = TablasDimensionScreen.tablaDatos;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    TablasDimensionScreen.dataChanged.removeListener(_onDataChanged);
+    super.dispose();
   }
 }
