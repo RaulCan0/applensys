@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:applensys/services/domain/chat_service.dart';
 import 'package:applensys/services/domain/notification_service.dart';
 import 'package:applensys/services/helpers/chat_service.dart' hide ChatService;
@@ -29,6 +31,12 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   void initState() {
     super.initState();
     _myUserId = Supabase.instance.client.auth.currentUser!.id;
+    // Escuchar cambios en el stream y hacer scroll solo cuando hay nuevos mensajes
+    _chatService.messageStream().listen((messages) {
+      if (mounted && messages.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    });
   }
 
   Future<void> _tomarYSubirFoto() async {
@@ -37,10 +45,16 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
     if (foto != null) {
       final file = File(foto.path);
       final fileName = 'chat_${DateTime.now().millisecondsSinceEpoch}_$_myUserId.jpg';
+      // Mostrar feedback de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
       final res = await Supabase.instance.client.storage
           .from('chats')
           .upload(fileName, file);
-
+      Navigator.of(context).pop(); // Cerrar el dialogo de carga
       if (res.isNotEmpty) {
         final url = Supabase.instance.client.storage
             .from('chats')
@@ -55,14 +69,14 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
     }
   }
 
-  void _bajarAlFinal() {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.minScrollExtent,
-          duration: const Duration(milliseconds: 20), // Duración corta para eficiencia
-          curve: Curves.easeOut,
-        );
-      }
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
@@ -99,12 +113,13 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
             child: StreamBuilder<List<Message>>(
               stream: _chatService.messageStream(),
               builder: (context, snapshot) {
-                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                if (snapshot.hasError) return Center(child: Text('Error: [${snapshot.error}'));
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
                 final messages = snapshot.data!;
                 final latestMessage = messages.isNotEmpty ? messages.last : null;
 
+                // Notificación solo si el último mensaje es de otro usuario y es nuevo
                 if (_previousMessages.length < messages.length &&
                     latestMessage != null &&
                     latestMessage.userId != _myUserId) {
@@ -115,17 +130,15 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                         : latestMessage.content,
                   );
                 }
-
                 _previousMessages = List.from(messages);
-                _bajarAlFinal();
 
                 return ListView.builder(
                   controller: _scrollController,
-                  reverse: true,
+                  reverse: false, // Mostrar mensajes en orden natural
                   padding: const EdgeInsets.all(6),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final msg = messages[messages.length - 1 - index];
+                    final msg = messages[index];
                     final isMe = msg.userId == _myUserId;
                     final isImage = msg.content.startsWith('http');
 
@@ -209,7 +222,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                       if (trimmed.isNotEmpty) {
                         await _chatService.sendMessage(_myUserId, trimmed);
                         _textController.clear();
-                        _bajarAlFinal();
+                        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
                       }
                     },
                   ),
@@ -221,7 +234,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                     if (text.isNotEmpty) {
                       await _chatService.sendMessage(_myUserId, text);
                       _textController.clear();
-                      _bajarAlFinal();
+                      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
                     }
                   },
                 ),
