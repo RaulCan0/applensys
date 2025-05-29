@@ -87,10 +87,9 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   late List<String> dimensiones;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // AÑADIDO: controladores de scroll
-  final _verticalController = ScrollController();
-  final _horizontalController = ScrollController();
-  // ELIMINADO: variable mostrarPromedio
+  // MODIFICADO: Mapas para almacenar controladores por clave de dimensión interna
+  final Map<String, ScrollController> _verticalControllers = {};
+  final Map<String, ScrollController> _horizontalControllers = {};
 
   final Map<String, String> dimensionInterna = {
     'IMPULSORES CULTURALES': 'Dimensión 1',
@@ -102,15 +101,34 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
   void initState() {
     super.initState();
     TablasDimensionScreen.dataChanged.addListener(_onDataChanged);
+    _initializeScrollControllers(); // Inicializar controladores
     _cargarDesdeCache();
+  }
+
+  // NUEVO: Método para inicializar los controladores de scroll
+  void _initializeScrollControllers() {
+    for (var keyInterna in dimensionInterna.values) {
+      if (!_verticalControllers.containsKey(keyInterna)) {
+        _verticalControllers[keyInterna] = ScrollController();
+      }
+      if (!_horizontalControllers.containsKey(keyInterna)) {
+        _horizontalControllers[keyInterna] = ScrollController();
+      }
+    }
   }
 
   @override
   void dispose() {
     TablasDimensionScreen.dataChanged.removeListener(_onDataChanged);
-    // AÑADIDO: dispose de los controladores
-    _verticalController.dispose();
-    _horizontalController.dispose();
+    // MODIFICADO: Dispose de todos los controladores en los mapas
+    for (var controller in _verticalControllers.values) {
+      controller.dispose();
+    }
+    for (var controller in _horizontalControllers.values) {
+      controller.dispose();
+    }
+    _verticalControllers.clear();
+    _horizontalControllers.clear();
     super.dispose();
   }
 
@@ -193,17 +211,23 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
               child: TabBarView(
                 children: dimensiones.map((dimension) {
                   final keyInterna = dimensionInterna[dimension] ?? dimension;
-                  
-                  // NOTA: La siguiente línea fue modificada manualmente por el usuario.
-                  // Si los datos no se muestran como se espera para la evaluación actual,
-                  // esta lógica de extracción de 'filas' podría necesitar revisión
-                  // para filtrar por widget.evaluacionId.
                   final filas = TablasDimensionScreen.tablaDatos[keyInterna]?.values.expand((l) => l).toList() ?? [];
                   
                   if (filas.isEmpty) {
                     return const Center(child: Text('No hay datos para mostrar para esta evaluación'));
                   }
-                  return _buildDataTable(filas, textColor);
+                  // MODIFICADO: Obtener y pasar los controladores correctos
+                  final verticalCtrl = _verticalControllers[keyInterna];
+                  final horizontalCtrl = _horizontalControllers[keyInterna];
+
+                  // Asegurarse de que los controladores no sean nulos (deberían estar inicializados)
+                  if (verticalCtrl == null || horizontalCtrl == null) {
+                    // Esto no debería suceder si _initializeScrollControllers se llama correctamente.
+                    // Como fallback, podrías crearlos aquí, pero es mejor asegurar la inicialización.
+                    // Por ahora, asumimos que no son nulos.
+                    return const Center(child: Text("Error: Scroll controllers not initialized"));
+                  }
+                  return _buildDataTable(filas, textColor, verticalCtrl, horizontalCtrl);
                 }).toList(),
               ),
             ),
@@ -213,7 +237,6 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
     );
   }
 
-  // AÑADIDO: Método _irADetalles
   void _irADetalles(BuildContext tabControllerContext) { 
     final currentIndex = DefaultTabController.of(tabControllerContext).index; 
     final dimensionActual = dimensiones[currentIndex];
@@ -267,27 +290,26 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
     );
   }
 
-  Widget _buildDataTable(List<Map<String, dynamic>> filas, Color textColor) {
+  // MODIFICADO: _buildDataTable ahora acepta controladores como parámetros
+  Widget _buildDataTable(List<Map<String, dynamic>> filas, Color textColor, ScrollController verticalController, ScrollController horizontalController) {
     return Semantics(
       label: 'Tabla de datos de evaluación por principios y roles',
-      // AÑADIDO: Uso de ScrollControllers en Scrollbar y SingleChildScrollView
       child: Scrollbar(
-        controller: _verticalController,
+        controller: verticalController, // Usar controlador pasado
         thumbVisibility: true,
         child: SingleChildScrollView(
-          controller: _verticalController,
+          controller: verticalController, // Usar controlador pasado
           scrollDirection: Axis.vertical,
           child: Scrollbar(
-            controller: _horizontalController,
+            controller: horizontalController, // Usar controlador pasado
             thumbVisibility: true,
             notificationPredicate: (n) => n.metrics.axis == Axis.horizontal,
             child: SingleChildScrollView(
-              controller: _horizontalController,
+              controller: horizontalController, // Usar controlador pasado
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.all(8),
               child: DataTable(
                 columnSpacing: 36,
-                // Elimina dataRowMaxHeight para permitir altura dinámica
                 headingRowColor: WidgetStateProperty.resolveWith((states) {
                   return Theme.of(context).brightness == Brightness.dark
                       ? Colors.grey.shade800
@@ -305,7 +327,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
                   DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
                   DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
                 ],
-                rows: _buildRows(filas),
+                rows: _buildRows(filas), // Asegúrate que _buildRows está correctamente definido y devuelve List<DataRow>
               ),
             ),
           ),
@@ -324,7 +346,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> {
       final comportamiento = (f['comportamiento'] as String?) ?? '';
       final rawCargo = (f['cargo_raw'] as String?) ?? '';
       final nivel = _normalizeNivel(rawCargo);
-      final valor = (f['valor'] as int?) ?? 0;
+      final valor = (f['valor'] as int?) ?? 0; // Asegúrate que el tipo es correcto o convierte de forma segura
       final sistemas = (f['sistemas'] as List<dynamic>?)?.whereType<String>().toList() ?? [];
 
       sumas.putIfAbsent(principio, () => {});

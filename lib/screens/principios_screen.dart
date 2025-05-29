@@ -164,7 +164,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                 fontSize: 15, 
                                 fontFamily: 'Roboto', 
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, // Esto se mantiene dinámico según el tema
                                 ),
                               textAlign: TextAlign.center,
                             ),
@@ -189,7 +189,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    color: Color.lerp(const Color.fromARGB(255, 0, 0, 0), Colors.green[100], progreso),
+                                    color: Color.lerp(const Color.fromARGB(255, 0, 0, 0), const Color.fromARGB(255, 154, 218, 156), progreso),
                                      border: Border.all(
     color: const Color.fromARGB(255, 0, 0, 0), // color del contorno
     width: 2,),
@@ -202,35 +202,46 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                     tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                     childrenPadding: const EdgeInsets.only(bottom: 10),
                                     title: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center, // Centra el contenido de la columna
                                       children: [
                                         Text(
                                           entry.key,
                                           textAlign: TextAlign.center,
-                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,  // Siempre negro
+                                          ),
                                         ),
                                         const SizedBox(height: 6),
                                         Text(
                                           '$evaluados de $totalComportamientos comportamientos evaluados',
-                                          style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                          style: const TextStyle(fontSize: 14, color: Colors.black87), // Siempre gris oscuro
                                           textAlign: TextAlign.center,
                                         ),
                                       ],
                                     ),
                                     children: entry.value.map((principio) {
                                       final comportamientoNombre = principio.benchmarkComportamiento.split(":").first.trim();
-                                      final calificacionActual = calificacionesExistentes[comportamientoNombre]; // Obtener la calificación completa
+                                      final calificacionActual = calificacionesExistentes[comportamientoNombre];
 
                                       return ListTile(
                                         title: Text(
                                           comportamientoNombre,
+                                          textAlign: TextAlign.center, // Centrar título
                                           style: TextStyle(
-                                            color: comportamientosEvaluados.contains(comportamientoNombre) ? Colors.green : Colors.black,
+                                            color: comportamientosEvaluados.contains(comportamientoNombre) ? const Color.fromARGB(255, 79, 109, 80) : Colors.black,
                                             fontWeight: comportamientosEvaluados.contains(comportamientoNombre) ? FontWeight.bold : FontWeight.normal,
                                           ),
                                         ),
-                                        subtitle: Text(principio.benchmarkComportamiento.split(":").last.trim()),
-                                        trailing: const Icon(Icons.arrow_forward_ios),
+                                        subtitle: Text(
+                                          principio.benchmarkComportamiento.split(":").last.trim(),
+                                          style: const TextStyle(color: Colors.black),
+                                        ),
+                                        trailing: const Icon(
+                                          Icons.arrow_forward_ios,
+                                          color: Colors.black,
+                                        ),
                                         onTap: () async {
                                          
                                           final String evaluacionIdParaNavegacion = calificacionActual?.id ?? const Uuid().v4();

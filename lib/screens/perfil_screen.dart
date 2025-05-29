@@ -64,17 +64,14 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
     try {
       await _supabaseService.actualizarPerfil({
         'nombre': _nombreController.text.trim(),
-        'email': _emailController.text.trim(), // Considerar si el email se puede actualizar o es fijo
+        'email': _emailController.text.trim(),
         'telefono': _telefonoController.text.trim(),
         'foto_url': _fotoUrl,
       });
 
-      // Lógica para cambiar contraseña si se proporcionó una nueva
       if (_newPasswordController.text.isNotEmpty) {
         if (_newPasswordController.text != _confirmPasswordController.text) {
           _showError('Las nuevas contraseñas no coinciden.');
-          // No continuar si las contraseñas no coinciden, pero el perfil ya se actualizó.
-          // Considerar si se debe revertir la actualización del perfil o manejar de otra forma.
           setState(() => _loading = false);
           return;
         }
@@ -87,7 +84,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
       }
 
       if (!mounted) return;
-      Navigator.pop(context); // Opcional: decidir si se navega hacia atrás después de actualizar
+      Navigator.pop(context);
     } catch (e) {
       _showError('Error al actualizar: $e');
     } finally {
@@ -142,131 +139,112 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
 
     return Scaffold(
       appBar: AppBar(
-      title: const Text('Mi Perfil'),
-      backgroundColor: const Color(0xFF003056),
-      foregroundColor: const Color.fromARGB(255, 255, 255, 255), // Text and icon color
-      elevation: 2, // Subtle shadow for definition
+        title: const Text('Mi Perfil'),
+        backgroundColor: const Color(0xFF003056),
+        foregroundColor: Colors.white,
+        elevation: 2,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 90.0, vertical: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          CircleAvatar(
-                            radius: 60,
-                            backgroundImage: _fotoUrl != null ? NetworkImage(_fotoUrl!) : null,
-                            child: _fotoUrl == null ? const Icon(Icons.person, size: 60) : null,
-                          ),
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: GestureDetector(
-                              onTap: _seleccionarFoto,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey.shade800,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                                padding: const EdgeInsets.all(6),
-                                child: const Icon(Icons.camera_alt, color: Colors.white),
-                              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundImage: _fotoUrl != null ? NetworkImage(_fotoUrl!) : null,
+                          child: _fotoUrl == null ? const Icon(Icons.person, size: 60) : null,
+                        ),
+                        GestureDetector(
+                          onTap: _seleccionarFoto,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey.shade800,
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
+                            padding: const EdgeInsets.all(6),
+                            child: const Icon(Icons.camera_alt, color: Colors.white),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    TextField(
-                      controller: _nombreController,
-                      decoration: const InputDecoration(labelText: 'Nombre'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(labelText: 'Correo'),
-                      // Considerar si el email debe ser editable o no
-                      // readOnly: true, 
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _telefonoController,
-                      decoration: const InputDecoration(labelText: 'Teléfono'),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 24),
-                    const Text('Cambiar Contraseña (opcional)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _newPasswordController,
-                      decoration: InputDecoration(
-                        labelText: 'Nueva Contraseña (dejar en blanco para no cambiar)',
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () {
-                            setState(() {
-                              _obscureNewPassword = !_obscureNewPassword;
-                            });
-                          },
                         ),
-                      ),
-                      obscureText: _obscureNewPassword,
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _confirmPasswordController,
-                      decoration: InputDecoration(
-                        labelText: 'Confirmar Nueva Contraseña',
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () {
-                            setState(() {
-                              _obscureConfirmPassword = !_obscureConfirmPassword;
-                            });
-                          },
-                        ),
-                      ),
-                      obscureText: _obscureConfirmPassword,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Sección para el Tema de la app
-                    const Text('Tema de la app', style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      title: const Text('Modo Oscuro'),
-                      value: current == ThemeMode.dark,
-                      onChanged: (bool isDarkMode) {
-                        themeNotifier.setTheme(isDarkMode ? ThemeMode.dark : ThemeMode.light);
-                      },
-                      activeColor: const Color(0xFF003056),
-                    ),
-                    const SizedBox(height: 24),
-                    // Fin Sección para el Tema de la app
-
-                    ElevatedButton(
-                      onPressed: _actualizarPerfil,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003056),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text(
-                        'Actualizar Perfil',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _nombreController,
+                    decoration: const InputDecoration(labelText: 'Nombre'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(labelText: 'Correo'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _telefonoController,
+                    decoration: const InputDecoration(labelText: 'Teléfono'),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Cambiar Contraseña (opcional)', style: TextStyle(fontSize: 16)),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _newPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Nueva Contraseña',
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
                       ),
                     ),
-                  ],
-                ),
+                    obscureText: _obscureNewPassword,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _confirmPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Confirmar Contraseña',
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                      ),
+                    ),
+                    obscureText: _obscureConfirmPassword,
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Tema de la app', style: TextStyle(fontSize: 16)),
+                  const SizedBox(height: 12),
+                  SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment(value: ThemeMode.system, label: Text('Auto'), icon: Icon(Icons.settings)),
+                      ButtonSegment(value: ThemeMode.light, label: Text('Claro'), icon: Icon(Icons.light_mode)),
+                      ButtonSegment(value: ThemeMode.dark, label: Text('Oscuro'), icon: Icon(Icons.dark_mode)),
+                    ],
+                    selected: {current},
+                    onSelectionChanged: (modes) {
+                      final selected = modes.first;
+                      themeNotifier.setTheme(selected);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _actualizarPerfil,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF003056),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Actualizar Perfil', style: TextStyle(fontSize: 16, color: Colors.white)),
+                  ),
+                ],
               ),
             ),
     );

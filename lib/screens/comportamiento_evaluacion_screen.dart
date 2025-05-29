@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:applensys/screens/tabla_registros.dart';
 import 'package:applensys/services/domain/calificacion_service.dart';
 import 'package:applensys/services/domain/storage_service.dart';
 import 'package:flutter/material.dart';
@@ -544,6 +545,24 @@ class _ComportamientoEvaluacionScreenState
             ),
           ),
         ]),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TablasRegistrosScreen( 
+                evaluacionId: widget.evaluacionId,
+                empresaId: widget.empresaId, 
+                asociadoId: widget.asociadoId, 
+                dimensionId: widget.dimensionId,
+              ),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFF003056),
+        tooltip: 'Ver Registros',
+        child: const Icon(Icons.table_chart, color: Colors.white),
       ),
     );
   }

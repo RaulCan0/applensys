@@ -136,7 +136,6 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     return Card(
       elevation: 3,
       margin: const EdgeInsets.symmetric(vertical: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 16, horizontal: sidePadding),
         child: Column(

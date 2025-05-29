@@ -1,105 +1,55 @@
-// lib/screens/tablas_registros.dart
-
 import 'package:flutter/material.dart';
-import 'package:applensys/models/empresa.dart';
-import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 
 class TablasRegistrosScreen extends StatefulWidget {
-  /// Datos en memoria: dimensión → evaluaciónId → lista de registros
-  static Map<String, Map<String, List<Map<String, dynamic>>>> registrosDatos = {
-    'Dimensión 1': {},
-    'Dimensión 2': {},
-    'Dimensión 3': {},
-  };
-
-  /// Notificador para reconstruir la UI al agregar un registro
-  static final ValueNotifier<bool> dataChanged = ValueNotifier<bool>(false);
-
-  final Empresa empresa;
   final String evaluacionId;
+  final String empresaId;
+  final String asociadoId;
+  final String dimensionId;
 
   const TablasRegistrosScreen({
     super.key,
-    required this.empresa,
-    required this.evaluacionId, required String empresaId, required String asociadoId, required String dimension,
+    required this.evaluacionId,
+    required this.empresaId,
+    required this.asociadoId,
+    required this.dimensionId,
   });
-
-  /// Agrega un nuevo registro (fila) a la tabla de la dimensión indicada
-  static Future<void> actualizarDato(
-    String evaluacionId, {
-    required String dimension,
-    required String principio,
-    required String comportamiento,
-    required String nivel,
-    required String nombreAsociado,
-    required int calificacion,
-    required List<String> sistemasAsociados,
-    required String observacion,
-    required String evidencia,
-  }) async {
-    final dimMap = registrosDatos.putIfAbsent(dimension, () => {});
-    final lista = dimMap.putIfAbsent(evaluacionId, () => []);
-    lista.add({
-      'principio': principio,
-      'comportamiento': comportamiento,
-      'nivel': nivel,
-      'nombreAsociado': nombreAsociado,
-      'calificacion': calificacion,
-      'sistemasAsociados': sistemasAsociados,
-      'observacion': observacion,
-      'evidencia': evidencia,
-    });
-    // Guarda en caché
-    await EvaluacionCacheService().guardarTablas(registrosDatos); // MODIFICADO: guardarRegistros -> guardarTablas
-    // Dispara la actualización de la UI
-    dataChanged.value = !dataChanged.value;
-  }
-
-  /// Limpia todos los registros
-  static Future<void> limpiarDatos() async {
-    registrosDatos.clear();
-    dataChanged.value = false;
-    await EvaluacionCacheService().limpiarCacheTablaDatos(); // MODIFICADO: Llamar a limpiarCacheTablaDatos
-  }
 
   @override
   State<TablasRegistrosScreen> createState() => _TablasRegistrosScreenState();
 }
 
 class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
-  late List<String> dimensiones;
   final Map<String, String> _dimMap = {
-    'Dimensión 1': 'Dimensión 1',
-    'Dimensión 2': 'Dimensión 2',
-    'Dimensión 3': 'Dimensión 3',
+    'Dimensión 1': '1',
+    'Dimensión 2': '2',
+    'Dimensión 3': '3',
   };
+
+  late List<String> dimensiones;
 
   @override
   void initState() {
     super.initState();
-    TablasRegistrosScreen.dataChanged.addListener(_onDataChanged);
-    _cargarDesdeCache();
+    dimensiones = _dimMap.keys.toList();
   }
 
-  @override
-  void dispose() {
-    TablasRegistrosScreen.dataChanged.removeListener(_onDataChanged);
-    super.dispose();
-  }
+  Future<List<Map<String, dynamic>>> _fetchRegistros(String dimNombre) async {
+    final dimId = _dimMap[dimNombre];
+    final response = await Supabase.instance.client
+        .from('calificaciones')
+        .select()
+        .eq('evaluacion_id', widget.evaluacionId)
+        .eq('id_empresa', widget.empresaId)
+        .eq('id_asociado', widget.asociadoId)
+        .eq('id_dimension', dimId!);
 
-  void _onDataChanged() => setState(() {});
-
-  Future<void> _cargarDesdeCache() async {
-    final data = await EvaluacionCacheService().cargarTablas(); // MODIFICADO: cargarRegistros -> cargarTablas
-    if (data.isNotEmpty) {
-      setState(() => TablasRegistrosScreen.registrosDatos = data);
-    }
+    return List<Map<String, dynamic>>.from(response);
   }
 
   @override
   Widget build(BuildContext context) {
-    dimensiones = _dimMap.keys.toList();
     return DefaultTabController(
       length: dimensiones.length,
       child: Scaffold(
@@ -119,43 +69,29 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
         endDrawer: const DrawerLensys(),
         body: TabBarView(
           children: dimensiones.map((dim) {
-            final filas = TablasRegistrosScreen
-                    .registrosDatos[_dimMap[dim]]?[widget.evaluacionId] ??
-                [];
-            if (filas.isEmpty) {
-              return const Center(child: Text('No hay registros'));
-            }
-            return _buildDataTable(filas);
-            
+            return FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchRegistros(dim),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error al cargar datos: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No hay registros'));
+                } else {
+                  return _buildDataTable(snapshot.data!);
+                }
+              },
+            );
           }).toList(),
         ),
         floatingActionButton: Builder(
-          builder: (BuildContext fabContext) { // Usar Builder para obtener el contexto correcto
+          builder: (BuildContext fabContext) {
             return FloatingActionButton(
               onPressed: () {
-                // Acceder al TabController usando el contexto del Builder
                 final tabController = DefaultTabController.of(fabContext);
                 final currentIndex = tabController.index;
                 final currentDimensionKey = dimensiones[currentIndex];
-                
-                // ignore: avoid_print
-                print('FAB presionado. Dimensión actual: $currentDimensionKey, Evaluación ID: ${widget.evaluacionId}');
-                
-                // Aquí iría la lógica para mostrar un diálogo o navegar
-                // a una pantalla para crear un nuevo registro.
-                // Se necesitarían todos los campos para llamar a:
-                // TablasRegistrosScreen.actualizarDato(
-                //   widget.evaluacionId,
-                //   dimension: currentDimensionKey, 
-                //   principio: "...";
-                //   comportamiento: "...";
-                //   nivel: "...";
-                //   nombreAsociado: "...";
-                //   calificacion: 0;
-                //   sistemasAsociados: [];
-                //   observacion: "...";
-                //   evidencia: "...";
-                // );
 
                 ScaffoldMessenger.of(fabContext).showSnackBar(
                   SnackBar(content: Text('Añadir nuevo registro a: $currentDimensionKey (acción pendiente)')),
@@ -165,7 +101,7 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
               tooltip: 'Añadir nuevo registro',
               child: const Icon(Icons.add, color: Colors.white),
             );
-          }
+          },
         ),
       ),
     );
@@ -184,25 +120,21 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
             headingRowColor: WidgetStateProperty.all(const Color(0xFF003056)),
             border: TableBorder.all(color: const Color(0xFF003056)),
             columns: const [
-              DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
               DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Nivel', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Nombre Asociado', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Calificación', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Sistemas Asociados', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Observación', style: TextStyle(color: Colors.white))),
-              DataColumn(label: Text('Evidencia', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Puntaje', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Fecha Evaluación', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Observaciones', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Sistemas', style: TextStyle(color: Colors.white))),
+              DataColumn(label: Text('Evidencia URL', style: TextStyle(color: Colors.white))),
             ],
             rows: filas.map((f) {
               return DataRow(cells: [
-                DataCell(Text(f['principio'] ?? '')),
                 DataCell(Text(f['comportamiento'] ?? '')),
-                DataCell(Text(f['nivel'] ?? '')),
-                DataCell(Text(f['nombreAsociado'] ?? '')),
-                DataCell(Text('${f['calificacion'] ?? ''}')),
-                DataCell(Text((f['sistemasAsociados'] as List<String>).join(', '))),
-                DataCell(Text(f['observacion'] ?? '')),
-                DataCell(Text(f['evidencia'] ?? '')),
+                DataCell(Text('${f['puntaje'] ?? ''}')),
+                DataCell(Text(f['fecha_evaluacion']?.toString().split('T').first ?? '')),
+                DataCell(Text(f['observaciones'] ?? '')),
+                DataCell(Text(f['sistemas'] ?? '')),
+                DataCell(Text(f['evidencia_url'] ?? '')),
               ]);
             }).toList(),
           ),

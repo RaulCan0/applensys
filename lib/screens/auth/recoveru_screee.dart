@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:applensys/providers/text_size_provider.dart'; // Importar el provider
+import 'package:applensys/providers/theme_provider.dart'; // Importar themeModeProvider
 
 final recoveryControllerProvider =
     StateNotifierProvider<RecoveryController, AsyncValue<void>>(
@@ -67,11 +68,20 @@ class _RecoveryScreenState extends ConsumerState<RecoveryScreen> {
     final recoveryState = ref.watch(recoveryControllerProvider);
     final textSize = ref.watch(textSizeProvider); // Obtener el tamaño de texto
     final double scaleFactor = textSize / 14.0; // Asumiendo 14.0 como tamaño base
+    final themeMode = ref.watch(themeModeProvider); // Observar el themeModeProvider
+
+    // Determinar el color de fondo del Scaffold basado en el tema
+    final scaffoldBackgroundColor = themeMode == ThemeMode.dark
+        ? const Color.fromARGB(75, 206, 206, 206) // Fondo gris para modo oscuro
+        : Theme.of(context).scaffoldBackgroundColor; // Fondo del tema claro por defecto
 
     return Scaffold(
+      backgroundColor: scaffoldBackgroundColor, // Aplicar color de fondo dinámico
       appBar: AppBar(
-        title: Text('Recuperar contraseña', style: TextStyle(fontSize: 20 * scaleFactor)), // Aplicar scaleFactor
-        toolbarHeight: kToolbarHeight * scaleFactor, // Escalar altura de AppBar
+        title: Text('Recuperar contraseña', style: TextStyle(fontSize: 20 * scaleFactor, color: Colors.white)), // Texto siempre blanco
+        toolbarHeight: kToolbarHeight * scaleFactor,
+        backgroundColor: const Color(0xFF003056), // AppBar siempre azul
+        iconTheme: const IconThemeData(color: Colors.white), // Icono de flecha siempre blanco
       ),
       body: Padding(
         padding: EdgeInsets.all(16 * scaleFactor), // Aplicar scaleFactor al padding

@@ -2,15 +2,17 @@ import 'package:applensys/screens/auth/login_screen.dart';
 import 'package:applensys/screens/auth/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:applensys/providers/theme_provider.dart';
 
-class LoaderScreen extends StatefulWidget {
+class LoaderScreen extends ConsumerStatefulWidget {
   const LoaderScreen({super.key});
 
   @override
-  State<LoaderScreen> createState() => _LoaderScreenState();
+  ConsumerState<LoaderScreen> createState() => _LoaderScreenState();
 }
 
-class _LoaderScreenState extends State<LoaderScreen> {
+class _LoaderScreenState extends ConsumerState<LoaderScreen> {
   bool _isReady = false;
 
   @override
@@ -30,19 +32,48 @@ class _LoaderScreenState extends State<LoaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
+    final logoAsset = themeMode == ThemeMode.dark ? 'assets/logoblanco.png' : 'assets/logo.png';
+
+    // Define los colores para el estado de carga inicial (_isReady == false)
+    final initialLoaderBackgroundColor = themeMode == ThemeMode.dark
+        ? const Color.fromARGB(75, 206, 206, 206) // Fondo gris para modo oscuro
+        : const Color.fromARGB(255, 254, 255, 255); // Fondo blanco para modo claro
+    final initialLoaderIndicatorColor = themeMode == ThemeMode.dark
+        ? Colors.white // Indicador blanco en fondo gris oscuro
+        : const Color(0xFF003056); // Indicador azul en fondo blanco
+
     if (!_isReady) {
       return Scaffold(
-        backgroundColor: const Color(0xFF003056),
-        body: const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+        backgroundColor: initialLoaderBackgroundColor, // Aplicar color de fondo dinámico
+        body: Center(
+          child: CircularProgressIndicator(color: initialLoaderIndicatorColor), // Aplicar color de indicador dinámico
         ),
       );
     }
 
+    // Define los colores para el estado principal (_isReady == true)
+    final mainScaffoldBackgroundColor = themeMode == ThemeMode.dark
+        ? const Color.fromARGB(75, 206, 206, 206) // Fondo para modo oscuro
+        : const Color.fromARGB(255, 254, 255, 255); // Fondo para modo claro
+
+    // Colores para los botones (se mantienen fijos según diseño original)
+    const elevatedButtonBackgroundColor = Color(0xFF003056);
+    const elevatedButtonForegroundColor = Colors.white;
+    const outlinedButtonSideColor = Color(0xFF003056);
+    const outlinedButtonBackgroundColor = Colors.white; // Fondo del botón Outlined
+    const outlinedButtonForegroundColor = Color(0xFF003056); // Color del texto del botón Outlined
+
+    // Colores para el texto sobre el DiagonalPainter (se mantienen fijos)
+    const headerTextColor = Colors.white;
+    const subHeaderTextColor = Color.fromARGB(255, 221, 221, 221);
+
+
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 254, 255, 255),
+      backgroundColor: mainScaffoldBackgroundColor,
       body: Stack(
         children: [
+          // Pintor diagonal (se mantiene)
           CustomPaint(size: Size.infinite, painter: DiagonalPainter()),
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -55,7 +86,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: headerTextColor, // Usar color definido
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -63,14 +94,14 @@ class _LoaderScreenState extends State<LoaderScreen> {
                   'Bienvenido a la \naplicación oficial',
                     style: TextStyle(
                     fontSize: 18,
-                    color: Color.fromARGB(255, 221, 221, 221),
+                    color: subHeaderTextColor, // Usar color definido
                   ),
                 ),
                 const SizedBox(height: 50),
                 Center(
                   child: SizedBox(
                     height: 140,
-                    child: Image.asset('assets/logo.png'),
+                    child: Image.asset(logoAsset),
                   ),
                 ),
                 const Spacer(),
@@ -83,8 +114,8 @@ class _LoaderScreenState extends State<LoaderScreen> {
                         '/login',
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003056),
-                        foregroundColor: Colors.white,
+                        backgroundColor: elevatedButtonBackgroundColor,
+                        foregroundColor: elevatedButtonForegroundColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -99,14 +130,15 @@ class _LoaderScreenState extends State<LoaderScreen> {
                         '/register',
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF003056)),
-                        backgroundColor: Colors.white,
+                        side: const BorderSide(color: outlinedButtonSideColor),
+                        backgroundColor: outlinedButtonBackgroundColor,
+                        foregroundColor: outlinedButtonForegroundColor, // Color del texto/icono para OutlinedButton
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Registrarse', style: TextStyle(fontSize: 16, color: Color(0xFF003056))),
+                        child: const Text('Registrarse', style: TextStyle(fontSize: 16 /*, color: outlinedButtonForegroundColor - ya se aplica con foregroundColor del style*/)),
 
                     ),
                   ],
