@@ -1,5 +1,5 @@
 // register_screen.dart
-import 'package:applensys/services/domain/supabase_service.dart';
+import 'package:applensys/services/remote/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:applensys/providers/theme_provider.dart';

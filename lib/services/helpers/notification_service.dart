@@ -7,7 +7,17 @@ class NotificationService {
 
   static Future<void> init() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidInit);
+    const iosInit = DarwinInitializationSettings();
+    const windowsInit = WindowsInitializationSettings(
+      appName: 'Applensys',
+      appUserModelId: 'com.example.applensys',
+      guid: '00000000-0000-0000-0000-000000000000',
+    );
+    const initSettings = InitializationSettings(
+      android: androidInit,
+      iOS: iosInit,
+      windows: windowsInit,
+    );
     await _plugin.initialize(initSettings);
     tz.initializeTimeZones();
   }

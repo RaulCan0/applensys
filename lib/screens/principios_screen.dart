@@ -3,7 +3,7 @@ import 'package:applensys/models/calificacion.dart';
 import 'package:applensys/models/principio_json.dart';
 import 'package:applensys/screens/tablas_screen.dart' as tablas_screen;
 import 'package:applensys/services/domain/json_service.dart';
-import 'package:applensys/services/domain/supabase_service.dart';
+import 'package:applensys/services/remote/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';

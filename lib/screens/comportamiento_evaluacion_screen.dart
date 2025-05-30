@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:applensys/screens/tabla_registros.dart';
 import 'package:applensys/services/domain/calificacion_service.dart';
-import 'package:applensys/services/domain/storage_service.dart';
+import 'package:applensys/services/remote/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
