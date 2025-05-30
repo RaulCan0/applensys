@@ -236,7 +236,12 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                 final progreso = progresoAsociado[asociado.id] ?? 0.0;
                 return Card(
                   child: ListTile(
-                    leading: const Icon(Icons.person_outline, color: Color(0xFF003056)),
+                    leading: Icon(
+                      Icons.person_outline,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : const Color(0xFF003056),
+                    ),
                     title: Text(asociado.nombre, style: GoogleFonts.roboto()),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,10 +254,27 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Progreso:', style: GoogleFonts.roboto(fontWeight: FontWeight.bold, color: Colors.blueGrey[800])),
-                            Text('${(progreso * 100).toStringAsFixed(1)}% completado', style: GoogleFonts.roboto(fontWeight: FontWeight.w500, color: Colors.blueGrey[700])),
+                            Text(
+                              'Progreso:',
+                              style: GoogleFonts.roboto(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.blueGrey[800],
+                              ),
+                            ),
+                            Text(
+                              '${(progreso * 100).toStringAsFixed(1)}% completado',
+                              style: GoogleFonts.roboto(
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.blueGrey[700],
+                              ),
+                            ),
                           ],
                         ),
+                        
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: progreso,
@@ -260,6 +282,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                           color: Colors.green,
                         ),
                         Text('${(progreso * 100).toStringAsFixed(1)}% completado', style: GoogleFonts.roboto()),
+                      
                       ],
                     ),
                     onTap: () {
@@ -274,8 +297,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                         ),
                       ).then((_) => _cargarAsociados());
                     },
-                  ),
-                );
+                  ));
               },
             ),
           );

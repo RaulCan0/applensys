@@ -25,15 +25,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showAlert(String title, String message) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
+        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white,
+        title: Text(title, style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+        content: Text(message, style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Aceptar'),
+            child: Text('Aceptar', style: TextStyle(color: isDarkMode ? Colors.tealAccent[100] : Theme.of(context).primaryColor)),
           ),
         ],
       ),
@@ -46,7 +48,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    // Validar formato de email
     final email = _emailController.text.trim();
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     if (!emailRegex.hasMatch(email)) {
@@ -83,46 +84,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
-    final logoAsset = themeMode == ThemeMode.dark ? 'assets/logoblanco.png' : 'assets/logo.png';
-    const scaffoldBackgroundColor = Color(0xFF003056); // Fondo del Scaffold siempre azul
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDarkMode ?Color(0xFF003056): const Color(0xFF003056);
+    final scaffoldBackgroundColor = isDarkMode ? Color(0xFF003056) : primaryColor;
+    final containerBackgroundColor = isDarkMode ? Colors.grey[850]! : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF003056);
+    final hintTextColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+    final iconColor = isDarkMode ? Colors.white70 : Colors.grey[600];
+    final logoAsset = isDarkMode ? 'assets/logoblanco.png' : 'assets/logo.png';
+    final buttonTextColor = isDarkMode ? const Color.fromARGB(255, 255, 255, 255) : Colors.white;
+    final buttonBackgroundColor = isDarkMode ? Color(0xFF003056) : const Color.fromARGB(255, 255, 255, 255);
+    final forgotPasswordColor = isDarkMode ? Color.fromARGB(255, 255, 255, 255): const Color.fromARGB(255, 255, 255, 255);
 
-    final bool isDarkMode = themeMode == ThemeMode.dark;
-    final containerBackgroundColor = isDarkMode ? const Color.fromARGB(75, 206, 206, 206) : Colors.white;
-    // El color del texto del título principal dentro del contenedor será manejado por el Theme wrapper
-    // final textColor = isDarkMode ? Colors.black87 : const Color(0xFF003056); // Ya no se usa directamente aquí
-
-    const appBarIconColor = Colors.white;
-
-    // Define el tema para el contenido del card
-    // Si estamos en modo oscuro y el card es claro, usamos un tema claro para el contenido del card.
-    // De lo contrario, usamos el tema actual del contexto.
-    final ThemeData cardContentTheme = isDarkMode
-        ? ThemeData.light().copyWith(
-            // Puedes copiar aquí las fuentes u otras configuraciones específicas de tu tema claro principal si es necesario
-            // Por ejemplo, para mantener GoogleFonts:
-            // textTheme: GoogleFonts.robotoTextTheme(ThemeData.light().textTheme),
-            colorScheme: ThemeData.light().colorScheme.copyWith(
-                  primary: const Color(0xFF003056), // Color primario para elementos como el cursor, borde enfocado del TextField
-                ),
-            inputDecorationTheme: InputDecorationTheme(
-              border: const OutlineInputBorder(),
-              labelStyle: TextStyle(color: Colors.grey[700]), // Color para labels de TextField
-              // Asegúrate que los colores de prefijos y sufijos también sean visibles
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.black), // Color para TextButton
-            )
-          )
-        : Theme.of(context);
 
     return Scaffold(
-      backgroundColor: scaffoldBackgroundColor,
+      backgroundColor: scaffoldBackgroundColor, // Adaptado
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: appBarIconColor),
+          icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : Colors.white), // Adaptado
           onPressed: () => Navigator.pushReplacementNamed(context, '/loaderScreen'),
         ),
       ),
@@ -132,93 +113,118 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: containerBackgroundColor,
+              color: containerBackgroundColor, // Adaptado
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
                   // ignore: deprecated_member_use
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1), // Adaptado
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
               ],
             ),
-            child: Theme(
-              data: cardContentTheme, // Aplicar el tema al contenido del card
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset(logoAsset, height: 100),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Bienvenido de nuevo',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.black87 : const Color(0xFF003056), // Color explícito para el título
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset(logoAsset, height: 100),
+                const SizedBox(height: 20),
+                Text(
+                  'Bienvenido de nuevo',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'Correo electrónico',
+                    labelStyle: TextStyle(color: textColor),
+                    prefixIcon: Icon(Icons.person, color: textColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: textColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: textColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: textColor),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Correo electrónico',
-                      prefixIcon: Icon(Icons.person),
-                      border: OutlineInputBorder(),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    labelStyle: TextStyle(color: textColor),
+                    prefixIcon: Icon(Icons.lock, color: textColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: textColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: textColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: textColor),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: textColor,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                      prefixIcon: const Icon(Icons.lock),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/recovery'),
+                  child: Text(
+                    '¿Olvidaste tu contraseña?',
+                    style: TextStyle(color: textColor),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: buttonBackgroundColor,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          'Iniciar Sesión',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF003056),
+                          ),
+                          ),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
                   ),
-                  TextButton(
-                    onPressed: () => Navigator.pushNamed(context, '/recovery'),
-                    child: const Text(
-                      '¿Olvidaste tu contraseña?',
-                      // El estilo del TextButton ahora se toma de cardContentTheme.textButtonTheme
-                      // style: TextStyle(color: Colors.black), // Ya no es necesario aquí si se configura en TextButtonThemeData
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003056),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Iniciar Sesión',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
-              ),
+                
+              ],
             ),
           ),
         ),

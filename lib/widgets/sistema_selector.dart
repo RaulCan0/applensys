@@ -243,7 +243,10 @@ class _SistemasScreenState extends State<SistemasScreen> {
                                         });
                                       },
                                     ),
-                                    title: Text(sistema['nombre']),
+                                    title: Text(
+                                      sistema['nombre'],
+                                      style: const TextStyle(color: Color(0xFF003056)),
+                                    ),
                                     onTap: () => _mostrarDialogo(sistema),
                                   ),
                                 );

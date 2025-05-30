@@ -2,17 +2,15 @@ import 'package:applensys/screens/auth/login_screen.dart';
 import 'package:applensys/screens/auth/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:applensys/providers/theme_provider.dart';
 
-class LoaderScreen extends ConsumerStatefulWidget {
+class LoaderScreen extends StatefulWidget {
   const LoaderScreen({super.key});
 
   @override
-  ConsumerState<LoaderScreen> createState() => _LoaderScreenState();
+  State<LoaderScreen> createState() => _LoaderScreenState();
 }
 
-class _LoaderScreenState extends ConsumerState<LoaderScreen> {
+class _LoaderScreenState extends State<LoaderScreen> {
   bool _isReady = false;
 
   @override
@@ -32,49 +30,30 @@ class _LoaderScreenState extends ConsumerState<LoaderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
-    final logoAsset = themeMode == ThemeMode.dark ? 'assets/logoblanco.png' : 'assets/logo.png';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final logoAsset = isDarkMode ? 'assets/logoblanco.png' : 'assets/logo.png';
+    final primaryColor = isDarkMode ? const Color(0xFF003056): const Color(0xFF003056);
+    final secondaryColor = isDarkMode ? Colors.grey[700] :Colors.grey[600];
+    final textColor = isDarkMode ? Colors.white : const Color.fromARGB(255, 255, 255, 255);
+    final welcomeTextColor = isDarkMode ? Colors.grey[300] : const Color.fromARGB(255, 221, 221, 221);
+    final loaderScreenBackgroundColor = isDarkMode ? Colors.grey[900] : const Color.fromARGB(255, 254, 255, 255);
+    final diagonalPainterColor = isDarkMode ? Colors.grey[850]! : const Color(0xFF003056);
 
-    // Define los colores para el estado de carga inicial (_isReady == false)
-    final initialLoaderBackgroundColor = themeMode == ThemeMode.dark
-        ? const Color.fromARGB(75, 206, 206, 206) // Fondo gris para modo oscuro
-        : const Color.fromARGB(255, 254, 255, 255); // Fondo blanco para modo claro
-    final initialLoaderIndicatorColor = themeMode == ThemeMode.dark
-        ? Colors.white // Indicador blanco en fondo gris oscuro
-        : const Color(0xFF003056); // Indicador azul en fondo blanco
 
     if (!_isReady) {
       return Scaffold(
-        backgroundColor: initialLoaderBackgroundColor, // Aplicar color de fondo dinámico
+        backgroundColor: primaryColor, // Adaptado
         body: Center(
-          child: CircularProgressIndicator(color: initialLoaderIndicatorColor), // Aplicar color de indicador dinámico
+          child: CircularProgressIndicator(color: secondaryColor), // Adaptado
         ),
       );
     }
 
-    // Define los colores para el estado principal (_isReady == true)
-    final mainScaffoldBackgroundColor = themeMode == ThemeMode.dark
-        ? const Color.fromARGB(75, 206, 206, 206) // Fondo para modo oscuro
-        : const Color.fromARGB(255, 254, 255, 255); // Fondo para modo claro
-
-    // Colores para los botones (se mantienen fijos según diseño original)
-    const elevatedButtonBackgroundColor = Color(0xFF003056);
-    const elevatedButtonForegroundColor = Colors.white;
-    const outlinedButtonSideColor = Color(0xFF003056);
-    const outlinedButtonBackgroundColor = Colors.white; // Fondo del botón Outlined
-    const outlinedButtonForegroundColor = Color(0xFF003056); // Color del texto del botón Outlined
-
-    // Colores para el texto sobre el DiagonalPainter (se mantienen fijos)
-    const headerTextColor = Colors.white;
-    const subHeaderTextColor = Color.fromARGB(255, 221, 221, 221);
-
-
     return Scaffold(
-      backgroundColor: mainScaffoldBackgroundColor,
+      backgroundColor: loaderScreenBackgroundColor, // Adaptado
       body: Stack(
         children: [
-          // Pintor diagonal (se mantiene)
-          CustomPaint(size: Size.infinite, painter: DiagonalPainter()),
+          CustomPaint(size: Size.infinite, painter: DiagonalPainter(color: diagonalPainterColor)), // Adaptado
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -82,26 +61,26 @@ class _LoaderScreenState extends ConsumerState<LoaderScreen> {
               children: [
                 const SizedBox(height: 34),
                 Text(
-                  'LEANSYS TRAINING CENTER',
+                  'LEAN TRAINING CENTER',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: headerTextColor, // Usar color definido
+                    color: isDarkMode ? Colors.white : Colors.white, // Texto sobre el DiagonalPainter siempre blanco
                   ),
                 ),
                 const SizedBox(height: 5),
-                const Text(
+                Text(
                   'Bienvenido a la \naplicación oficial',
                     style: TextStyle(
                     fontSize: 18,
-                    color: subHeaderTextColor, // Usar color definido
+                    color: welcomeTextColor, // Adaptado para el fondo del DiagonalPainter
                   ),
                 ),
                 const SizedBox(height: 50),
                 Center(
                   child: SizedBox(
                     height: 140,
-                    child: Image.asset(logoAsset),
+                    child: Image.asset(logoAsset), // Adaptado
                   ),
                 ),
                 const Spacer(),
@@ -114,14 +93,17 @@ class _LoaderScreenState extends ConsumerState<LoaderScreen> {
                         '/login',
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: elevatedButtonBackgroundColor,
-                        foregroundColor: elevatedButtonForegroundColor,
+                        backgroundColor: primaryColor, // Adaptado
+                        foregroundColor: secondaryColor, // Adaptado
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text('Iniciar Sesión', style: TextStyle(fontSize: 16)),
+                      child: Text(
+                        'Iniciar Sesión',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     OutlinedButton(
@@ -130,15 +112,20 @@ class _LoaderScreenState extends ConsumerState<LoaderScreen> {
                         '/register',
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: outlinedButtonSideColor),
-                        backgroundColor: outlinedButtonBackgroundColor,
-                        foregroundColor: outlinedButtonForegroundColor, // Color del texto/icono para OutlinedButton
+                        side: BorderSide(color: primaryColor), // Adaptado
+                        backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Registrarse', style: TextStyle(fontSize: 16 /*, color: outlinedButtonForegroundColor - ya se aplica con foregroundColor del style*/)),
+                        child: Text(
+                          'Registrarse',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color:const Color(0xFF003056),
+                          ),
+                        ),
 
                     ),
                   ],
@@ -152,19 +139,20 @@ class _LoaderScreenState extends ConsumerState<LoaderScreen> {
     );
   }
 }
-
 class DiagonalPainter extends CustomPainter {
+  const DiagonalPainter({required Color color});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF003056)
+      ..color = const Color(0xFF003056) // siempre este color
       ..style = PaintingStyle.fill;
 
-    final path = Path();
-    path.moveTo(size.width, 0);
-    path.lineTo(0, size.height / 2);
-    path.lineTo(0, 0);
-    path.close();
+    final path = Path()
+      ..moveTo(size.width, 0)
+      ..lineTo(0, size.height / 2)
+      ..lineTo(0, 0)
+      ..close();
 
     canvas.drawPath(path, paint);
   }
@@ -172,3 +160,4 @@ class DiagonalPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

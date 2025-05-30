@@ -1,4 +1,9 @@
+// lib/screens/anotaciones_screen.dart
+
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
+
 import 'package:applensys/services/domain/anotaciones_service.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +11,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:applensys/providers/text_size_provider.dart';
 
-const azulLensys = Color(0xFF003056);
-const grisClaro = Color(0xFFF1F4F8);
+// StreamProvider a nivel de módulo
+final anotacionesProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>(
+  (ref) => AnotacionesService().streamAnotaciones(),
+);
 
 class AnotacionesScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -18,24 +25,31 @@ class AnotacionesScreen extends ConsumerStatefulWidget {
 }
 
 class _AnotacionesScreenState extends ConsumerState<AnotacionesScreen>
-    with SingleTickerProviderStateMixin { // Añadido SingleTickerProviderStateMixin
-  final AnotacionesService _service = AnotacionesService();
-  final TextEditingController _tituloController = TextEditingController();
-  final TextEditingController _contenidoController = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final _picker = ImagePicker();
+  final _tituloController = TextEditingController();
+  final _contenidoController = TextEditingController();
 
-  TabController? _tabController; // Controlador para las pestañas
-  final List<String> _categories = ['Todas', 'Trabajo', 'Personal']; // Categorías de ejemplo
+  // *** Define aquí tus categorías ***
+  final List<String> _categories = [
+    'Todas',
+    'Trabajo',
+    'Personal',
+    'Ideas',
+    'Proyectos',
+  ];
 
   @override
   void initState() {
     super.initState();
+    // IMPORTANT: length debe ser _categories.length
     _tabController = TabController(length: _categories.length, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabController?.dispose();
+    _tabController.dispose();
     _tituloController.dispose();
     _contenidoController.dispose();
     super.dispose();
@@ -44,6 +58,7 @@ class _AnotacionesScreenState extends ConsumerState<AnotacionesScreen>
   Future<void> _agregarAnotacion({String? archivoPath}) async {
     final titulo = _tituloController.text.trim();
     final contenido = _contenidoController.text.trim();
+    final categoria = _categories[_tabController.index];
 
     if (titulo.isEmpty) {
       _mostrarError('El título es obligatorio.');
@@ -51,281 +66,232 @@ class _AnotacionesScreenState extends ConsumerState<AnotacionesScreen>
     }
 
     try {
-      await _service.agregarAnotacion(
+      await AnotacionesService().agregarAnotacion(
         titulo: titulo,
         contenido: contenido.isNotEmpty ? contenido : null,
         archivoPath: archivoPath,
+        categoria: categoria,
       );
       _tituloController.clear();
       _contenidoController.clear();
-      if (mounted) Navigator.pop(context);
+      Navigator.pop(context);
     } catch (e) {
-      _mostrarError('Error al agregar anotación: $e');
+      _mostrarError('Error al agregar la anotación: $e');
     }
   }
 
-  Future<void> _seleccionarArchivo() async {
+  Future<void> _seleccionarImagen() async {
     final XFile? file = await _picker.pickImage(source: ImageSource.gallery);
     if (file != null) {
-      _agregarAnotacion(archivoPath: file.path);
+      await _agregarAnotacion(archivoPath: file.path);
     }
   }
 
-  Future<void> _eliminarAnotacion(int id) async {
-    try {
-      await _service.eliminarAnotacion(id);
-    } catch (e) {
-      _mostrarError('Error al eliminar: $e');
-    }
-  }
-
-  void _mostrarError(String mensaje) {
+  void _mostrarError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  Future<void> _mostrarFormulario(double scale) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24 * scale)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          left: 16 * scale,
+          right: 16 * scale,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16 * scale,
+          top: 24 * scale,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Nueva Página',
+              style: TextStyle(
+                fontSize: 18 * scale,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: 16 * scale),
+            TextField(
+              controller: _tituloController,
+              decoration: InputDecoration(
+                labelText: 'Título',
+                labelStyle:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 12 * scale),
+            TextField(
+              controller: _contenidoController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: 'Contenido (opcional)',
+                labelStyle:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16 * scale),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    FluentIcons.image_20_regular,
+                    size: 24 * scale,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  onPressed: _seleccionarImagen,
+                ),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () => _agregarAnotacion(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  child: Text('Guardar', style: TextStyle(fontSize: 14 * scale)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final textSize = ref.watch(textSizeProvider);
-    final double scaleFactor = textSize / 14.0;
+    final scale = textSize / 14.0;
+    final anotacionesAsync = ref.watch(anotacionesProvider);
 
     return Scaffold(
-      backgroundColor: grisClaro,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Center(
-          child: Text(
-            'Mis Anotaciones',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontWeight: FontWeight.w600,
-              fontSize: 20 * scaleFactor,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        title: Text('Mis Libretas', style: TextStyle(fontSize: 20 * scale)),
         centerTitle: true,
-        backgroundColor: azulLensys, // Corregido: Dentro del AppBar
-        elevation: 0, // Corregido: Dentro del AppBar
-        toolbarHeight: kToolbarHeight * scaleFactor, // Corregido: Dentro del AppBar
-        bottom: TabBar( // Añadido: Barra de pestañas para categorías
+        bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: _categories.map((String category) {
-            return Tab(
-              child: Text(
-                category,
-                style: TextStyle(fontSize: 14 * scaleFactor),
-              ),
-            );
-          }).toList(),
+          isScrollable: true,
+          indicatorColor: Theme.of(context).colorScheme.onPrimary,
+          tabs: _categories
+              .map((c) => Tab(child: Text(c, style: TextStyle(fontSize: 14 * scale))))
+              .toList(),
         ),
       ),
-      body: TabBarView( // Modificado: El body ahora es un TabBarView
-        controller: _tabController,
-        children: _categories.map((String category) {
-          // Por ahora, cada pestaña muestra todas las anotaciones.
-          // Más adelante, filtraremos por categoría.
-          return StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _service.streamAnotaciones(), 
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
+      body: anotacionesAsync.when(
+        error: (e, _) => Center(
+          child: Text('Error: $e', style: TextStyle(fontSize: 16 * scale)),
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        data: (anotaciones) {
+          return TabBarView(
+            controller: _tabController,
+            children: _categories.map((cat) {
+              final notas = cat == 'Todas'
+                  ? anotaciones
+                  : anotaciones.where((n) => n['categoria'] == cat).toList();
+
+              if (notas.isEmpty) {
                 return Center(
-                  child: Text(
-                    'Error: \\${snapshot.error}',
-                    style: TextStyle(fontSize: 14 * scaleFactor),
-                  ),
-                );
-              }
-              if (!snapshot.hasData) {
-                return Center(
-                  child: SizedBox(
-                    width: 24 * scaleFactor,
-                    height: 24 * scaleFactor,
-                    child: const CircularProgressIndicator(color: azulLensys),
-                  ),
+                  child: Text('Sin páginas en "$cat"',
+                      style: TextStyle(fontSize: 16 * scale)),
                 );
               }
 
-              final anotaciones = snapshot.data!;
-              if (category != 'Todas') {
-                anotaciones.retainWhere((a) => a['categoria'] == category);
-              }   
-              if (anotaciones.isEmpty) {
-                return Center(
-                  child: Text(
-                    'Sin anotaciones en esta categoría.',
-                    style: TextStyle(fontSize: 14 * scaleFactor),
+              return Padding(
+                padding: EdgeInsets.all(12 * scale),
+                child: GridView.builder(
+                  itemCount: notas.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12 * scale,
+                    mainAxisSpacing: 12 * scale,
+                    childAspectRatio: 3 / 4,
                   ),
-                );
-              }
-
-              return ListView.builder(
-                padding: EdgeInsets.all(12 * scaleFactor),
-                itemCount: anotaciones.length,
-                itemBuilder: (context, index) {
-                  final a = anotaciones[index];
-                  return Card(
-                    color: Colors.white,
-                    margin: EdgeInsets.only(bottom: 12 * scaleFactor),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16 * scaleFactor),
-                    ),
-                    elevation: 3,
-                    child: Padding(
-                      padding: EdgeInsets.all(16 * scaleFactor),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            a['titulo'],
-                            style: TextStyle(
-                                fontSize: 18 * scaleFactor,
-                                fontWeight: FontWeight.bold,
-                                color: azulLensys), // Color de título
-                          ),
-                          SizedBox(height: 8 * scaleFactor),
-                          if (a['contenido'] != null &&
-                              a['contenido'].isNotEmpty)
-                            Text(
-                              a['contenido'],
-                              style: TextStyle(
-                                  fontSize: 14 * scaleFactor,
-                                  color: Colors.black87),
-                            ),
-                          if (a['archivoPath'] != null)
-                            Padding(
-                              padding: EdgeInsets.only(top: 10 * scaleFactor),
-                              child: ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(12 * scaleFactor),
-                                child: Image.file(
-                                  File(a['archivoPath']),
-                                  height: 180 * scaleFactor,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
+                  itemBuilder: (context, i) {
+                    final nota = notas[i];
+                    return GestureDetector(
+                      onTap: () {
+                        // Navegación a detalle si lo necesitas
+                      },
+                      child: Card(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12 * scale),
+                        ),
+                        elevation: 2,
+                        child: Padding(
+                          padding: EdgeInsets.all(12 * scale),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(nota['titulo'],
+                                  style: TextStyle(
+                                    fontSize: 16 * scale,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  )),
+                              SizedBox(height: 8 * scale),
+                              if (nota['contenido'] != null &&
+                                  nota['contenido'].isNotEmpty)
+                                Expanded(
+                                  child: Text(
+                                    nota['contenido'],
+                                    maxLines: 6,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12 * scale,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: IconButton(
-                              icon: Icon(Icons.delete_outline,
-                                  color: Colors.redAccent,
-                                  size: 24 * scaleFactor),
-                              onPressed: () => _eliminarAnotacion(a['id']),
-                            ),
+                              if (nota['archivoPath'] != null)
+                                Padding(
+                                  padding: EdgeInsets.only(top: 8 * scale),
+                                  child: ClipRRect(
+                                    borderRadius:
+                                        BorderRadius.circular(8 * scale),
+                                    child: Image.file(
+                                      File(nota['archivoPath']),
+                                      fit: BoxFit.cover,
+                                      height: 60 * scale,
+                                      width: double.infinity,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
-            },
+            }).toList(),
           );
-        }).toList(),
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _mostrarFormularioAnotacion(context, scaleFactor),
-        backgroundColor: azulLensys,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28* scaleFactor),
-        ),
-        child: Icon(FluentIcons.note_add_20_regular, color: Colors.white),
-      ),
-    );
-  }
-
-  void _mostrarFormularioAnotacion(BuildContext context, double scaleFactor) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24 * scaleFactor)),
-      ),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          left: 16 * scaleFactor,
-          right: 16 * scaleFactor,
-          bottom: MediaQuery.of(context).viewInsets.bottom + (16 * scaleFactor),
-          top: 24 * scaleFactor,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Nueva Anotación',
-              style: TextStyle(fontSize: 18 * scaleFactor, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16 * scaleFactor),
-            TextField(
-              controller: _tituloController,
-              style: TextStyle(fontSize: 14 * scaleFactor),
-              decoration: InputDecoration(
-                labelText: 'Título',
-                labelStyle: TextStyle(fontSize: 14 * scaleFactor),
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 12 * scaleFactor),
-            TextField(
-              controller: _contenidoController,
-              maxLines: 3,
-              style: TextStyle(fontSize: 14 * scaleFactor),
-              decoration: InputDecoration(
-                labelText: 'Contenido (opcional)',
-                labelStyle: TextStyle(fontSize: 14 * scaleFactor),
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16 * scaleFactor),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.image, size: 18 * scaleFactor),
-                    label: Text('Imagen', style: TextStyle(fontSize: 14 * scaleFactor)),
-                    onPressed: _seleccionarArchivo,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: azulLensys,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        vertical: 12 * scaleFactor,
-                        horizontal: 16 * scaleFactor,
-                      ),
-                      textStyle: TextStyle(fontSize: 14 * scaleFactor),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12 * scaleFactor),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.save, size: 18 * scaleFactor),
-                    label: Text('Guardar', style: TextStyle(fontSize: 14 * scaleFactor)),
-                    onPressed: () => _agregarAnotacion(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: azulLensys,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        vertical: 12 * scaleFactor,
-                        horizontal: 16 * scaleFactor,
-                      ),
-                      textStyle: TextStyle(fontSize: 14 * scaleFactor),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+        onPressed: () => _mostrarFormulario(scale),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(FluentIcons.note_add_20_regular,
+            color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }

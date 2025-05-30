@@ -74,9 +74,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
 
     return Scaffold(
       key: scaffoldKey,
-      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), // Añadido drawer para el chat
+      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
       appBar: AppBar(
-                backgroundColor: const Color(0xFF003056),
+        backgroundColor: const Color(0xFF003056),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -115,70 +115,87 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                   child: Card(
                     elevation: 4,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Icon(dimension['icono'], color: dimension['color'], size: 36),
-                            title: Text(
-                              dimension['nombre'],
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AsociadoScreen(
+                              empresa: widget.empresa,
+                              dimensionId: dimension['id'],
+                              evaluacionId: widget.evaluacionId,
                             ),
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => AsociadoScreen(
-                                    empresa: widget.empresa,
-                                    dimensionId: dimension['id'],
-                                    evaluacionId: widget.evaluacionId,
+                          ),
+                        );
+                        setState(() {});
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(dimension['icono'], color: dimension['color'], size: 36),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    dimension['nombre'],
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                 ),
-                              );
-                              setState(() {});
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                          FutureBuilder<double>(
-                            future: evaluacionService.obtenerProgresoDimension(
-                              widget.empresa.id,
-                              dimension['id'],
+                              ],
                             ),
-                            initialData: 0.0,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
+                            const SizedBox(height: 10),
+                            FutureBuilder<double>(
+                              future: evaluacionService.obtenerProgresoDimension(
+                                widget.empresa.id,
+                                dimension['id'],
+                              ),
+                              initialData: 0.0,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      LinearProgressIndicator(),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Cargando progreso...',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  );
+                                }
+                                if (snapshot.hasError) {
+                                  return const Text(
+                                    'Error al cargar progreso',
+                                    style: TextStyle(fontSize: 12, color: Colors.red),
+                                  );
+                                }
+                                final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    LinearProgressIndicator(),
-                                    SizedBox(height: 4),
-                                    Text('Cargando progreso...', style: TextStyle(fontSize: 12)),
+                                  children: [
+                                    LinearProgressIndicator(
+                                      value: progreso,
+                                      minHeight: 8,
+                                      backgroundColor: Colors.grey[300],
+                                      color: dimension['color'],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${(progreso * 100).toStringAsFixed(1)}% completado',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
                                   ],
                                 );
-                              }
-                              if (snapshot.hasError) {
-                                return const Text('Error al cargar progreso', style: TextStyle(fontSize: 12, color: Colors.red));
-                              }
-                              final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  LinearProgressIndicator(
-                                    value: progreso,
-                                    minHeight: 8,
-                                    backgroundColor: Colors.grey[300],
-                                    color: dimension['color'],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text('${(progreso * 100).toStringAsFixed(1)}% completado', style: const TextStyle(fontSize: 12)),
-                                ],
-                              );
-                            },
-                          ),
-                        ],
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -195,7 +212,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                   icon: const Icon(Icons.save),
                   label: const Text('Continuar más tarde'),
                   style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF003056),
+                    backgroundColor: const Color(0xFF003056),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
@@ -221,7 +238,8 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                       await EvaluacionCacheService().eliminarPendiente();
 
                       TablasDimensionScreen.tablaDatos.clear();
-                      TablasDimensionScreen.dataChanged.value = !TablasDimensionScreen.dataChanged.value;
+                      TablasDimensionScreen.dataChanged.value =
+                          !TablasDimensionScreen.dataChanged.value;
 
                       final prefs = await SharedPreferences.getInstance();
                       final hist = prefs.getStringList('empresas_historial') ?? [];
