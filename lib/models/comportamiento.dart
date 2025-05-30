@@ -12,6 +12,7 @@ class Comportamiento {
   });
 }
 
+
 final List<String> comportamientosClaves = [
   'Soporte',
   'Reconocimiento',
