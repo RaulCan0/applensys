@@ -41,7 +41,9 @@ dependencies:
     sdk: flutter
   fluentui_system_icons: ^1.1.273
   file_picker: ^10.1.9
- 
+  open_file: ^3.2.1
+  share_plus: ^11.0.0
+  cross_file: ^0.3.4+2
 
 dev_dependencies:
   flutter_test:

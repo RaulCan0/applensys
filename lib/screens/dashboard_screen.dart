@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:applensys/widgets/chat_scren.dart';
@@ -5,12 +7,16 @@ import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
+import 'dart:math'; // para max
 import 'package:flutter/services.dart';
 import 'package:applensys/services/domain/reporte_utils_final.dart';
 import 'package:applensys/screens/tablas_screen.dart'; // importar la fuente de datos dinámicos
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:applensys/services/helpers/excel_exporter.dart';
 import 'package:applensys/services/domain/supabase_service.dart';
+import 'package:applensys/models/level_averages.dart'; // importar modelo de promedios
+import 'package:open_file/open_file.dart';
+import 'dart:io'; // Importar para File
 
 class DashboardScreen extends StatefulWidget {
   final String evaluacionId;
@@ -39,36 +45,125 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ];
 
   Widget _buildChart(String title) {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: BarChart(BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: 5,
-        barGroups: [
-          BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 3.5, color: Colors.orange)]),
-          BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 4.0, color: Colors.green)]),
-          BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 2.8, color: Colors.blue)]),
-        ],
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
-            switch (v.toInt()) {
-              case 0:
-                return const Text('Eje');
-              case 1:
-                return const Text('Gte');
-              case 2:
-                return const Text('Miembro');
-              default:
-                return const Text('');
+    switch (title) {
+      case 'Principios':
+        return FutureBuilder<List<LevelAverages>>(
+          future: _supabase.getPrinciplesAverages(widget.empresa.id),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+            final avgs = snapshot.data!;
+            final spots = <ScatterSpot>[];
+            for (int i = 0; i < avgs.length; i++) {
+              final x = i + 1.0;
+              spots.add(ScatterSpot(x, avgs[i].ejecutivo, color: Colors.orange, radius: 6));
+              spots.add(ScatterSpot(x, avgs[i].gerente, color: Colors.green, radius: 6));
+              spots.add(ScatterSpot(x, avgs[i].miembro, color: Colors.blue, radius: 6));
             }
-          })),
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-      )),
-    );
+            return Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: ScatterChart(
+                ScatterChartData(
+                  scatterSpots: spots,
+                  minX: 1,
+                  maxX: avgs.length.toDouble(),
+                  minY: 0,
+                  maxY: 5,
+                  gridData: FlGridData(show: true),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) => Text(value.toInt().toString()),
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true, interval: 1),
+                    ),
+                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      case 'Comportamientos':
+        return FutureBuilder<List<LevelAverages>>(
+          future: _supabase.getBehaviorAverages(widget.empresa.id),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+            final avgs = snapshot.data!;
+            final maxY = avgs
+                .expand((e) => [e.ejecutivo, e.gerente, e.miembro])
+                .fold<double>(0, (prev, el) => max(prev, el));
+            return Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: max(maxY, 5),
+                  barGroups: List.generate(
+                    avgs.length,
+                    (i) => BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(toY: avgs[i].ejecutivo, color: Colors.orange),
+                        BarChartRodData(toY: avgs[i].gerente, color: Colors.green),
+                        BarChartRodData(toY: avgs[i].miembro, color: Colors.blue),
+                      ],
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) => Text('B\\${value.toInt()+1}'),
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true, interval: 1),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            );
+          },
+        );
+      default:
+        return Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: BarChart(BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            maxY: 5,
+            barGroups: [
+              BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 3.5, color: Colors.orange)]),
+              BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 4.0, color: Colors.green)]),
+              BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 2.8, color: Colors.blue)]),
+            ],
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
+                switch (v.toInt()) {
+                  case 0:
+                    return const Text('Eje');
+                  case 1:
+                    return const Text('Gte');
+                  case 2:
+                    return const Text('Miembro');
+                  default:
+                    return const Text('');
+                }
+              })),
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            borderData: FlBorderData(show: false),
+          )),
+        );
+    }
   }
 
   Future<void> _exportReporte() async {
@@ -97,9 +192,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         t3,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Reporte generado en: $path')),
-      );
+      final reportFile = File(path);
+      if (await reportFile.exists()) {
+        await OpenFile.open(path);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Reporte Word generado en: $path')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se encontró el archivo de reporte.')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -117,9 +220,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         systemAverages: systemAverages,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Excel generado en: ${file.path}')),
-      );
+      if (await file.exists()) {
+        await OpenFile.open(file.path);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Excel generado en: ${file.path}')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se encontró el archivo Excel.')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
