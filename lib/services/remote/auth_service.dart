@@ -58,6 +58,13 @@ class AuthService {
     }
   }
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    // Esta función es la que se llamará desde RecoveryController.
+    // Simplemente envuelve la llamada a resetPassword y maneja la lógica de éxito/error internamente si es necesario,
+    // o simplemente propaga la excepción para que RecoveryController la maneje.
+    await _client.auth.resetPasswordForEmail(email);
+  }
+
   /// Cierra la sesión
   Future<void> signOut() async {
     final prefs = await SharedPreferences.getInstance();

@@ -1,27 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:applensys/providers/text_size_provider.dart'; // Importar el provider
-import 'package:applensys/providers/theme_provider.dart'; // Importar themeModeProvider
-
-final recoveryControllerProvider =
-    StateNotifierProvider<RecoveryController, AsyncValue<void>>(
-  (ref) => RecoveryController(),
-);
-
-class RecoveryController extends StateNotifier<AsyncValue<void>> {
-  RecoveryController() : super(const AsyncValue.data(null));
-
-  Future<void> sendPasswordResetEmail(String email) async {
-    state = const AsyncValue.loading();
-    try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(email);
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
-  }
-}
+import 'package:uni_links/uni_links.dart';
 
 class RecoveryScreen extends ConsumerStatefulWidget {
   const RecoveryScreen({super.key});
@@ -30,103 +12,178 @@ class RecoveryScreen extends ConsumerStatefulWidget {
   ConsumerState<RecoveryScreen> createState() => _RecoveryScreenState();
 }
 
-class _RecoveryScreenState extends ConsumerState<RecoveryScreen> {
-  final _formKey = GlobalKey<FormState>();
+class _RecoveryScreenState extends ConsumerState<RecoveryScreen>
+    with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKeyFront = GlobalKey<FormState>();
+  final _formKeyBack = GlobalKey<FormState>();
+  bool isBackVisible = false;
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+    _listenToDeepLinks();
+  }
+
+  void _listenToDeepLinks() {
+    uriLinkStream.listen((Uri? uri) async {
+      if (uri != null &&
+          uri.queryParameters['type'] == 'recovery' &&
+          uri.queryParameters.containsKey('access_token')) {
+        final token = uri.queryParameters['access_token']!;
+        await Supabase.instance.client.auth.setSession(token);
+        setState(() => isBackVisible = true);
+        _controller.forward();
+      }
+    });
+  }
+
+  void _sendRecoveryEmail() async {
+    if (_formKeyFront.currentState?.validate() ?? false) {
+      try {
+        await Supabase.instance.client.auth
+            .resetPasswordForEmail(_emailController.text);
+        _showSnackbar('Correo enviado con éxito');
+      } catch (e) {
+        _showSnackbar('Error: ${e.toString()}');
+      }
+    }
+  }
+
+  void _submitNewPassword() async {
+    if (_formKeyBack.currentState?.validate() ?? false) {
+      try {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(password: _passwordController.text),
+        );
+        _showSnackbar('Contraseña actualizada con éxito');
+        // ignore: use_build_context_synchronously
+        Navigator.pop(context);
+      } catch (e) {
+        _showSnackbar('Error: ${e.toString()}');
+      }
+    }
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   void dispose() {
+    _controller.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
-  }
-
-  void _onSubmit() async {
-    if (_formKey.currentState!.validate()) {
-      await ref
-          .read(recoveryControllerProvider.notifier)
-          .sendPasswordResetEmail(_emailController.text);
-      if (!mounted) return;
-
-      final state = ref.read(recoveryControllerProvider);
-      state.whenOrNull(
-        data: (_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Correo enviado con éxito')),
-          );
-        },
-        error: (err, _) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${err.toString()}')),
-          );
-        },
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final recoveryState = ref.watch(recoveryControllerProvider);
-    final textSize = ref.watch(textSizeProvider); // Obtener el tamaño de texto
-    final double scaleFactor = textSize / 14.0; // Asumiendo 14.0 como tamaño base
-    final themeMode = ref.watch(themeModeProvider); // Observar el themeModeProvider
-
-    // Determinar el color de fondo del Scaffold basado en el tema
-    final scaffoldBackgroundColor = themeMode == ThemeMode.dark
-        ? const Color.fromARGB(75, 206, 206, 206) // Fondo gris para modo oscuro
-        : Theme.of(context).scaffoldBackgroundColor; // Fondo del tema claro por defecto
-
+    final angle = _controller.value * pi;
     return Scaffold(
-      backgroundColor: scaffoldBackgroundColor, // Aplicar color de fondo dinámico
       appBar: AppBar(
-        title: Text('Recuperar contraseña', style: TextStyle(fontSize: 20 * scaleFactor, color: Colors.white)), // Texto siempre blanco
-        toolbarHeight: kToolbarHeight * scaleFactor,
-        backgroundColor: const Color(0xFF003056), // AppBar siempre azul
-        iconTheme: const IconThemeData(color: Colors.white), // Icono de flecha siempre blanco
+        title: const Text('Recuperar contraseña'),
+        backgroundColor: const Color(0xFF003056),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16 * scaleFactor), // Aplicar scaleFactor al padding
+      body: Center(
+        child: GestureDetector(
+          onTap: () {
+            if (isBackVisible) {
+              _controller.reverse();
+              setState(() => isBackVisible = false);
+            }
+          },
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              final transform = Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateY(angle);
+
+              return Transform(
+                transform: transform,
+                alignment: Alignment.center,
+                child: isBackVisible
+                    ? _buildBackCard(context)
+                    : _buildFrontCard(context),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFrontCard(BuildContext context) {
+    return Card(
+      elevation: 8,
+      margin: const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Form(
-          key: _formKey,
+          key: _formKeyFront,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Introduce tu correo para recibir el enlace de recuperación',
+              const Text(
+                'Ingresa tu correo para recuperar la contraseña',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16 * scaleFactor), // Aplicar scaleFactor
               ),
-              SizedBox(height: 16 * scaleFactor), // Aplicar scaleFactor
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: TextStyle(fontSize: 14 * scaleFactor), // Aplicar scaleFactor al texto de entrada
-                decoration: InputDecoration(
-                  labelText: 'Correo electrónico',
-                  labelStyle: TextStyle(fontSize: 14 * scaleFactor), // Aplicar scaleFactor al label
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      !value.contains('@')) {
-                    return 'Introduce un correo válido';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'Correo electrónico'),
+                validator: (value) =>
+                    value != null && value.contains('@') ? null : 'Correo inválido',
               ),
-              SizedBox(height: 16 * scaleFactor), // Aplicar scaleFactor
-              recoveryState.isLoading
-                  ? SizedBox(
-                      width: 24 * scaleFactor, // Escalar CircularProgressIndicator
-                      height: 24 * scaleFactor,
-                      child: const CircularProgressIndicator(),
-                    )
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 20 * scaleFactor, vertical: 12 * scaleFactor), // Escalar padding del botón
-                      ),
-                      onPressed: _onSubmit,
-                      child: Text('Enviar', style: TextStyle(fontSize: 16 * scaleFactor)), // Aplicar scaleFactor
-                    ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _sendRecoveryEmail,
+                child: const Text('Enviar enlace'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackCard(BuildContext context) {
+    return Card(
+      elevation: 8,
+      margin: const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKeyBack,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Ingresa tu nueva contraseña',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Nueva contraseña'),
+                validator: (value) => value != null && value.length >= 6
+                    ? null
+                    : 'Mínimo 6 caracteres',
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _submitNewPassword,
+                child: const Text('Actualizar contraseña'),
+              ),
             ],
           ),
         ),

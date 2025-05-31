@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:applensys/services/helpers/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,7 +14,6 @@ import 'package:applensys/screens/auth/login_screen.dart';
 import 'package:applensys/screens/auth/register_screen.dart';
 import 'package:applensys/screens/auth/recoveru_screee.dart';
 import 'package:applensys/screens/empresas_screen.dart';
-import 'package:applensys/services/domain/notification_service.dart';
 import 'package:applensys/services/local/evaluacion_cache_service.dart';
 
 void main() {

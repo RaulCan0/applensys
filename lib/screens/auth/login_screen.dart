@@ -208,7 +208,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: buttonBackgroundColor,
+                      backgroundColor: const Color(0xFF003056), // Fondo azul constante
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -218,7 +218,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Iniciar Sesión',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF003056),
+                            color: Colors.white, // Texto blanco constante
                           ),
                           ),
                         ),

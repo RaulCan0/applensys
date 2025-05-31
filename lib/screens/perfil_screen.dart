@@ -5,6 +5,8 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:applensys/services/helpers/notification_service.dart';
+
 
 class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
@@ -243,7 +245,24 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: const Text('Actualizar Perfil', style: TextStyle(fontSize: 16, color: Colors.white)),
-                  ),
+                  ),const SizedBox(height: 12),
+ElevatedButton.icon(
+  icon: const Icon(Icons.notifications),
+  label: const Text('Probar Notificación'),
+  onPressed: () async {
+    await NotificationService.showNotification(
+      'Notificación de prueba',
+      'Este es un mensaje de ejemplo desde PerfilScreen.',
+      payload: 'perfil_test',
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.green.shade700,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    padding: const EdgeInsets.symmetric(vertical: 16),
+  ),
+),
+
                 ],
               ),
             ),
