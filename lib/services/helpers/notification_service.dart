@@ -1,15 +1,15 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:timezone/timezone.dart' as tz_core;
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
 
-    // initSettings puede ser const si todos sus parámetros lo son.
     const initSettings = InitializationSettings(
       android: androidInit,
       iOS: iosInit,
@@ -20,14 +20,16 @@ class NotificationService {
       onDidReceiveNotificationResponse: (response) {
         final payload = response.payload;
         if (payload != null) {
+          // Aquí puedes manejar navegación según el payload
         }
       },
     );
 
-    tz_data.initializeTimeZones();
+    tz.initializeTimeZones();
   }
 
-  static Future<void> showNotification(String title, String body, {String? payload}) async {
+  static Future<void> showNotification(String title, String body,
+      {String? payload}) async {
     const androidDetails = AndroidNotificationDetails(
       'lensys_channel',
       'Canal General',
@@ -38,7 +40,7 @@ class NotificationService {
 
     const notificationDetails = NotificationDetails(
       android: androidDetails,
-      iOS: DarwinNotificationDetails(), // Puede ser const si no tiene estado mutable
+      iOS: DarwinNotificationDetails(),
     );
 
     await _plugin.show(
@@ -61,18 +63,18 @@ class NotificationService {
       id,
       title,
       body,
-      tz_core.TZDateTime.from(scheduledTime, tz_core.local),
-      const NotificationDetails( // Puede ser const
-        android: AndroidNotificationDetails( // Puede ser const
+      tz.TZDateTime.from(scheduledTime, tz.local),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
           'lensys_channel',
           'Canal Programado',
           channelDescription: 'Notificaciones programadas para recordatorios',
           importance: Importance.max,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(), // Puede ser const
+        iOS: DarwinNotificationDetails(),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, // Reemplazo de androidAllowWhileIdle
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
