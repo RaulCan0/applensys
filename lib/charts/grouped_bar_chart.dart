@@ -1,97 +1,75 @@
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class GroupedBarChart extends StatelessWidget {
-  final Map<String, List<double>> data;
+  final Map<String, List<double>> data; // key: Principio/Dimensión, values: [E, G, M]
   final String title;
   final double minY;
   final double maxY;
-  final String evaluacionId;
-  final List<String> comportamientosFijos;
 
   const GroupedBarChart({
     super.key,
     required this.data,
     required this.title,
-    required this.minY,
-    required this.maxY,
-    required this.evaluacionId,
-    required this.comportamientosFijos,
+    this.minY = 0,
+    this.maxY = 5,
   });
 
   @override
   Widget build(BuildContext context) {
-    final niveles = ['Ejecutivo', 'Gerente', 'Miembro'];
-    final colores = [Colors.blue, Colors.green, Colors.orange];
-
-    final barras = List.generate(comportamientosFijos.length, (i) {
-      return BarChartGroupData(
-        x: i,
-        barRods: List.generate(niveles.length, (j) {
-          final nivel = niveles[j];
-          final valor = i < data[nivel]!.length ? data[nivel]![i] : 0.0;
-          return BarChartRodData(
-            toY: valor,
-            color: colores[j],
-            width: 6,
-            borderRadius: BorderRadius.circular(2),
-          );
-        }),
-        showingTooltipIndicators: List.generate(niveles.length, (j) => j),
-      );
-    });
-
     return Card(
-      elevation: 5,
+      margin: const EdgeInsets.all(12),
+      elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 300,
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            AspectRatio(
+              aspectRatio: 1.5,
               child: BarChart(
                 BarChartData(
-                  barGroups: barras,
+                  alignment: BarChartAlignment.spaceAround,
                   maxY: maxY,
                   minY: minY,
                   barTouchData: BarTouchData(enabled: true),
-                  gridData: FlGridData(show: true),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 1,
-                        reservedSize: 30,
-                      ),
+                      sideTitles: SideTitles(showTitles: true, interval: 1),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 40,
-                        interval: 1,
-                        getTitlesWidget: (value, _) {
-                          final idx = value.toInt();
-                          if (idx >= 0 && idx < comportamientosFijos.length) {
-                            return RotatedBox(
-                              quarterTurns: 1,
-                              child: Text(
-                                comportamientosFijos[idx],
-                                style: const TextStyle(fontSize: 8),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                        getTitlesWidget: (value, meta) {
+                          final keys = data.keys.toList();
+                          if (value.toInt() >= 0 && value.toInt() < keys.length) {
+                            return SideTitleWidget(
+                              axisSide: meta.axisSide,
+                              child: Text(keys[value.toInt()], style: const TextStyle(fontSize: 10)),
                             );
                           }
                           return const SizedBox.shrink();
                         },
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
+                  barGroups: List.generate(data.length, (index) {
+                    final label = data.keys.elementAt(index);
+                    final valores = data[label]!;
+
+                    return BarChartGroupData(
+                      x: index,
+                      barRods: [
+                        BarChartRodData(toY: valores[0], width: 8, color: Colors.blue),   // Ejecutivo
+                        BarChartRodData(toY: valores[1], width: 8, color: Colors.orange), // Gerente
+                        BarChartRodData(toY: valores[2], width: 8, color: Colors.green),  // Miembro
+                      ],
+                      showingTooltipIndicators: [0, 1, 2],
+                    );
+                  }),
                 ),
               ),
             ),

@@ -1,78 +1,54 @@
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class HorizontalBarSystemsChart extends StatelessWidget {
-  final Map<String, Map<String, double>> data;
+  final Map<String, Map<String, int>> data; // {sistema: {nivel: cantidad}}
   final String title;
   final double minY;
   final double maxY;
-
 
   const HorizontalBarSystemsChart({
     super.key,
     required this.data,
     required this.title,
-    required this.minY,
-    required this.maxY,
+    this.minY = 0,
+    this.maxY = 10,
   });
 
   @override
   Widget build(BuildContext context) {
-    final niveles = ['Ejecutivo', 'Gerente', 'Miembro'];
-    final colores = [Colors.blue, Colors.green, Colors.orange];
-    final sistemas = data.keys.toList();
-
-    final barGroups = List.generate(sistemas.length, (i) {
-      final sistema = sistemas[i];
-      return BarChartGroupData(
-        x: i,
-        barRods: List.generate(niveles.length, (j) {
-          final nivel = niveles[j];
-          final cantidad = data[sistema]?[nivel]?.toDouble() ?? 0;
-          return BarChartRodData(
-            toY: cantidad,
-            width: 6,
-            color: colores[j],
-            borderRadius: BorderRadius.circular(2),
-          );
-        }),
-      );
-    });
+    final sistemaLabels = data.keys.toList();
 
     return Card(
-      elevation: 5,
+      margin: const EdgeInsets.all(12),
+      elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Expanded(
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            AspectRatio(
+              aspectRatio: 1.5,
               child: BarChart(
                 BarChartData(
-                  barGroups: barGroups,
-                  alignment: BarChartAlignment.center,
-                  maxY: maxY,
-                  minY: minY,
-                  barTouchData: BarTouchData(enabled: true),
-                  gridData: FlGridData(show: true),
+                  barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true, interval: 1),
+                    ),
+                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          final idx = value.toInt();
-                          if (idx >= 0 && idx < sistemas.length) {
-                            return RotatedBox(
-                              quarterTurns: 1,
-                              child: Text(
-                                sistemas[idx],
-                                style: const TextStyle(fontSize: 10),
-                              ),
+                          if (value.toInt() >= 0 && value.toInt() < sistemaLabels.length) {
+                            return SideTitleWidget(
+                              axisSide: meta.axisSide,
+                              child: Text(sistemaLabels[value.toInt()], style: const TextStyle(fontSize: 10)),
                             );
                           }
                           return const SizedBox.shrink();
@@ -80,6 +56,22 @@ class HorizontalBarSystemsChart extends StatelessWidget {
                       ),
                     ),
                   ),
+                  gridData: FlGridData(show: true),
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: maxY,
+                  minY: minY,
+                  barGroups: List.generate(data.length, (index) {
+                    final sistema = sistemaLabels[index];
+                    final niveles = data[sistema]!;
+                    return BarChartGroupData(
+                      x: index,
+                      barRods: [
+                        BarChartRodData(toY: (niveles['E'] ?? 0).toDouble(), width: 6, color: Colors.blue),
+                        BarChartRodData(toY: (niveles['G'] ?? 0).toDouble(), width: 6, color: Colors.orange),
+                        BarChartRodData(toY: (niveles['M'] ?? 0).toDouble(), width: 6, color: Colors.green),
+                      ],
+                    );
+                  }),
                 ),
               ),
             ),
