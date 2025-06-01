@@ -3,6 +3,11 @@ import 'dart:collection';
 class DashboardService {
   final Map<String, Map<String, Map<String, Map<String, List<int>>>>> _data = {};
 
+  // Getter para acceder a la estructura de datos de forma segura.
+  // Devuelve una copia no modificable para evitar cambios externos accidentales.
+  Map<String, Map<String, Map<String, Map<String, List<int>>>>> get estructura => 
+      UnmodifiableMapView(_data);
+
   DashboardService() {
     final estructuraBase = {
       "IMPULSORES CULTURALES": {

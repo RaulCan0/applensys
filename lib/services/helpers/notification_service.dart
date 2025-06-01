@@ -5,31 +5,59 @@ import 'package:timezone/timezone.dart' as tz;
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  static bool _isInitialized = false; // Bandera para verificar la inicialización
 
-  static Future<void> init() async {
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosInit = DarwinInitializationSettings();
+  static Future<bool> init() async {
+    if (_isInitialized) return true; // Evitar reinicialización
 
-    const initSettings = InitializationSettings(
-      android: androidInit,
-      iOS: iosInit,
-    );
+    try {
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosInit = DarwinInitializationSettings();
 
-    await _plugin.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (response) {
-        final payload = response.payload;
-        if (payload != null) {
-          // Aquí puedes manejar navegación según el payload
-        }
-      },
-    );
+      const initSettings = InitializationSettings(
+        android: androidInit,
+        iOS: iosInit,
+      );
 
-    tz.initializeTimeZones();
+      // Asegúrate de que el plugin se inicializa correctamente
+      final result = await _plugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (response) {
+          final payload = response.payload;
+          if (payload != null) {
+            // Aquí puedes manejar navegación según el payload
+          }
+        },
+      );
+      
+      if (result == false) { 
+        // print("Error: Falló la inicialización de FlutterLocalNotificationsPlugin.");
+        _isInitialized = false;
+        return false;
+      }
+
+      tz.initializeTimeZones();
+      _isInitialized = true;
+      // print("NotificationService inicializado correctamente.");
+      return true;
+    } catch (e) {
+      // print("Error al inicializar NotificationService: $e");
+      _isInitialized = false;
+      return false;
+    }
   }
 
   static Future<void> showNotification(String title, String body,
       {String? payload}) async {
+    if (!_isInitialized) {
+      // print("Error: NotificationService no está inicializado. Intentando inicializar ahora...");
+      bool success = await init();
+      if (!success) {
+        // print("Error: Falló el intento de reinicialización de NotificationService. No se puede mostrar la notificación.");
+        return; 
+      }
+    }
+
     const androidDetails = AndroidNotificationDetails(
       'lensys_channel',
       'Canal General',
@@ -59,6 +87,15 @@ class NotificationService {
     required DateTime scheduledTime,
     String? payload,
   }) async {
+    if (!_isInitialized) {
+      // print("Error: NotificationService no está inicializado. No se puede programar la notificación.");
+      bool success = await init();
+       if (!success) {
+        // print("Error: Falló el intento de reinicialización de NotificationService. No se puede programar la notificación.");
+        return; 
+      }
+    }
+
     await _plugin.zonedSchedule(
       id,
       title,

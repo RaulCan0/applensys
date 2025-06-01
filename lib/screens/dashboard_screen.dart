@@ -1,22 +1,9 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:applensys/widgets/chat_scren.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:convert';
-import 'dart:math'; // para max
-import 'package:flutter/services.dart';
-import 'package:applensys/services/domain/reporte_utils_final.dart';
-import 'package:applensys/screens/tablas_screen.dart'; // importar la fuente de datos dinámicos
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:applensys/services/helpers/excel_exporter.dart';
-import 'package:applensys/services/domain/supabase_service.dart';
-import 'package:applensys/models/level_averages.dart'; // importar modelo de promedios
-import 'package:open_file/open_file.dart';
-import 'dart:io'; // Importar para File
 
 class DashboardScreen extends StatefulWidget {
   final String evaluacionId;
@@ -33,7 +20,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final SupabaseService _supabase = SupabaseService();
   bool _autoPlay = true;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -45,197 +31,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ];
 
   Widget _buildChart(String title) {
-    switch (title) {
-      case 'Principios':
-        return FutureBuilder<List<LevelAverages>>(
-          future: _supabase.getPrinciplesAverages(widget.empresa.id),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-            final avgs = snapshot.data!;
-            final spots = <ScatterSpot>[];
-            for (int i = 0; i < avgs.length; i++) {
-              final x = i + 1.0;
-              spots.add(ScatterSpot(x, avgs[i].ejecutivo, color: Colors.orange, radius: 6));
-              spots.add(ScatterSpot(x, avgs[i].gerente, color: Colors.green, radius: 6));
-              spots.add(ScatterSpot(x, avgs[i].miembro, color: Colors.blue, radius: 6));
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: BarChart(BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: 5,
+        barGroups: [
+          BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 3.5, color: Colors.orange)]),
+          BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 4.0, color: Colors.green)]),
+          BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 2.8, color: Colors.blue)]),
+        ],
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
+            switch (v.toInt()) {
+              case 0: return const Text('Eje');
+              case 1: return const Text('Gte');
+              case 2: return const Text('Miembro');
+              default: return const Text('');
             }
-            return Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ScatterChart(
-                ScatterChartData(
-                  scatterSpots: spots,
-                  minX: 1,
-                  maxX: avgs.length.toDouble(),
-                  minY: 0,
-                  maxY: 5,
-                  gridData: FlGridData(show: true),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) => Text(value.toInt().toString()),
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, interval: 1),
-                    ),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      case 'Comportamientos':
-        return FutureBuilder<List<LevelAverages>>(
-          future: _supabase.getBehaviorAverages(widget.empresa.id),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-            final avgs = snapshot.data!;
-            final maxY = avgs
-                .expand((e) => [e.ejecutivo, e.gerente, e.miembro])
-                .fold<double>(0, (prev, el) => max(prev, el));
-            return Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: max(maxY, 5),
-                  barGroups: List.generate(
-                    avgs.length,
-                    (i) => BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(toY: avgs[i].ejecutivo, color: Colors.orange),
-                        BarChartRodData(toY: avgs[i].gerente, color: Colors.green),
-                        BarChartRodData(toY: avgs[i].miembro, color: Colors.blue),
-                      ],
-                    ),
-                  ),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) => Text('B\\${value.toInt()+1}'),
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, interval: 1),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                ),
-              ),
-            );
-          },
-        );
-      default:
-        return Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: BarChart(BarChartData(
-            alignment: BarChartAlignment.spaceAround,
-            maxY: 5,
-            barGroups: [
-              BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 3.5, color: Colors.orange)]),
-              BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 4.0, color: Colors.green)]),
-              BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 2.8, color: Colors.blue)]),
-            ],
-            titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
-                switch (v.toInt()) {
-                  case 0:
-                    return const Text('Eje');
-                  case 1:
-                    return const Text('Gte');
-                  case 2:
-                    return const Text('Miembro');
-                  default:
-                    return const Text('');
-                }
-              })),
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            ),
-            borderData: FlBorderData(show: false),
-          )),
-        );
-    }
-  }
-
-  Future<void> _exportReporte() async {
-    try {
-      // Cargar benchmarks de assets
-      final t1Data = await rootBundle.loadString('assets/t1.json');
-      final t2Data = await rootBundle.loadString('assets/t2.json');
-      final t3Data = await rootBundle.loadString('assets/t3.json');
-      final t1 = List<Map<String, dynamic>>.from(jsonDecode(t1Data));
-      final t2 = List<Map<String, dynamic>>.from(jsonDecode(t2Data));
-      final t3 = List<Map<String, dynamic>>.from(jsonDecode(t3Data));
-
-      // Obtener datos dinámicos de tablaDatos para esta evaluación
-      final allData = <Map<String, dynamic>>[];
-      for (var dimMap in TablasDimensionScreen.tablaDatos.values) {
-        final lista = dimMap[widget.evaluacionId];
-        if (lista != null) {
-          allData.addAll(lista);
-        }
-      }
-
-      final path = await ReporteUtils.exportReporteWordUnificado(
-        allData,
-        t1,
-        t2,
-        t3,
-      );
-      if (!mounted) return;
-      final reportFile = File(path);
-      if (await reportFile.exists()) {
-        await OpenFile.open(path);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Reporte Word generado en: $path')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se encontró el archivo de reporte.')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al generar reporte: $e')),
-      );
-    }
-  }
-
-  Future<void> _exportExcel() async {
-    try {
-      final behaviorAverages = await _supabase.getBehaviorAverages(widget.empresa.id);
-      final systemAverages = await _supabase.getSystemAverages(widget.empresa.id);
-      final file = await ExcelExporter.export(
-        behaviorAverages: behaviorAverages,
-        systemAverages: systemAverages,
-      );
-      if (!mounted) return;
-      if (await file.exists()) {
-        await OpenFile.open(file.path);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Excel generado en: ${file.path}')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se encontró el archivo Excel.')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al generar Excel: $e')),
-      );
-    }
+          })),
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+      )),
+    );
   }
 
   @override
@@ -272,7 +93,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => SlideDetailScreen(color: color, title: title, index: index),
+                        builder: (_) => SlideDetailScreen(
+                          title: title,
+                          color: color,
+                          index: index,
+                        ),
                       ),
                     );
                   },
@@ -299,19 +124,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
           ),
-         
- Positioned(
-            top: 0, right: 0, bottom: 0,
+          Positioned(
+            top: 100, right: 0, bottom: 100,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF003056),
-              ),              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              width: 50,
+              decoration: const BoxDecoration(color: Color(0xFF003056), borderRadius: BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12))),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 IconButton(icon: const Icon(Icons.chat, color: Colors.white), onPressed: () => _scaffoldKey.currentState?.openDrawer()),
                 const SizedBox(height: 20),
                 IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: () {}, tooltip: 'Recargar datos'),
-                IconButton(icon: const Icon(Icons.note_add_outlined, color: Colors.white), onPressed: _exportReporte, tooltip: 'Exportar Reporte'),
-                IconButton(icon: FaIcon(FontAwesomeIcons.fileWord, color: Colors.white), onPressed: _exportReporte, tooltip: 'Exportar Word'),
-                IconButton(icon: FaIcon(FontAwesomeIcons.fileExcel, color: Colors.white), onPressed: _exportExcel, tooltip: 'Exportar Excel'),
+                IconButton(icon: const Icon(Icons.note_add_outlined, color: Colors.white), onPressed: () {}, tooltip: 'Exportar Reporte'),
                 IconButton(icon: Icon(_autoPlay ? Icons.pause : Icons.play_arrow, color: Colors.white), onPressed: () => setState(() => _autoPlay = !_autoPlay), tooltip: _autoPlay ? 'Pausar slider' : 'Reproducir slider'),
               ]),
             ),
@@ -333,37 +155,18 @@ class SlideDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF003056),
-        title: Text(title),
-      ),
+      appBar: AppBar(backgroundColor: const Color(0xFF003056), title: Text(title)),
       body: InteractiveViewer(
         panEnabled: true,
         boundaryMargin: const EdgeInsets.all(20),
         minScale: 1.0,
         maxScale: 3.0,
-        child: Container(
-          width: screenSize.width,
-          height: screenSize.height,
-          color: color,
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                color: Colors.black87,
-                child: Text(
-                  title,
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const Spacer(),
-              Text('Detalle slide \${index + 1}', style: const TextStyle(color: Colors.white, fontSize: 48)),
-              const Spacer(),
-            ],
-          ),
-        ),
+        child: Container(width: screenSize.width, height: screenSize.height, color: color, child: Column(children: [
+          Container(width: double.infinity, decoration: const BoxDecoration(color: Colors.black87), padding: const EdgeInsets.symmetric(vertical: 16), child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
+          const Spacer(),
+          Center(child: Text('Detalle slide \\${index + 1}', style: const TextStyle(fontSize: 48, color: Colors.white))),
+          const Spacer(),
+        ])),
       ),
     );
   }

@@ -30,13 +30,16 @@ void main() {
       anonKey: Configurations.mSupabaseKey,
     );
 
-    await NotificationService.init();
+    bool notificationsInitialized = await NotificationService.init();
+    if (!notificationsInitialized) {
+      debugPrint("ALERTA: El servicio de notificaciones no pudo ser inicializado.");
+    }
+
     setupLocator();
     await locator<EvaluacionCacheService>().init();
 
     runApp(const ProviderScope(child: MyApp()));
   }, (error, stack) {
-    // En caso de errores en la zona, logéalos pero NO intentes mostrar UI
     debugPrint('ERROR EN LA ZONA PRINCIPAL:\n$error\n$stack');
   });
 }
