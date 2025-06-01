@@ -1,59 +1,28 @@
-// filepath: lib/charts/donut_chart.dart
-import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
-/// Gráfico de dona con promedios por las 3 dimensiones fijas
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+
 class DonutChart extends StatelessWidget {
   final Map<String, double> data;
-  final String title;
-  final double min;
-  final double max;
-  final String evaluacionId;
 
-  const DonutChart({
-    super.key,
-    required this.data,
-    required this.title,
-    this.min = 0,
-    this.max = 5,
-    required this.evaluacionId,
-  });
-
-  void actualizarDatos(Map<String, double> nuevosDatos) {
-    data.clear();
-    data.addAll(nuevosDatos);
-  }
+  const DonutChart({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final chartData = [
-      _ChartData('Impulsores culturales', data['1'] ?? 0),
-      _ChartData('Alineamiento empresarial', data['2'] ?? 0),
-      _ChartData('Mejora continua', data['3'] ?? 0),
-    ];
+    final sections = data.entries.map((e) {
+      return PieChartSectionData(
+        value: e.value,
+        title: e.key,
+        radius: 50,
+        titleStyle: const TextStyle(fontSize: 12, color: Colors.black),
+      );
+    }).toList();
 
-    return SfCircularChart(
-      title: ChartTitle(text: title.isEmpty ? 'Promedio por dimensión' : title),
-      legend: Legend(isVisible: true, overflowMode: LegendItemOverflowMode.wrap),
-      series: <DoughnutSeries<_ChartData, String>>[
-        DoughnutSeries<_ChartData, String>(
-          dataSource: chartData,
-          xValueMapper: (_ChartData d, _) => d.nombre,
-          yValueMapper: (_ChartData d, _) => d.promedio,
-          innerRadius: '60%',
-          dataLabelSettings: const DataLabelSettings(
-            isVisible: true,
-            labelPosition: ChartDataLabelPosition.outside,
-            textStyle: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
+    return PieChart(
+      PieChartData(
+        sections: sections,
+        centerSpaceRadius: 40,
+      ),
     );
   }
-}
-
-class _ChartData {
-  final String nombre;
-  final double promedio;
-  _ChartData(this.nombre, this.promedio);
 }

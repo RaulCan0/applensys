@@ -1,4 +1,3 @@
-
 class LevelAverages {
   final int id;
   final String nombre;
@@ -15,8 +14,7 @@ class LevelAverages {
     required this.gerente,
     required this.miembro,
     this.dimensionId,
-    double? general,
-    required String nivel,
+    double? general, required String nivel,
   }) : general = general ?? ((ejecutivo + gerente + miembro) / 3.0);
 
   factory LevelAverages.fromMap(Map<String, dynamic> map) {
@@ -33,8 +31,7 @@ class LevelAverages {
       dimensionId: map['dimensionId'] != null ? map['dimensionId'] as int : null,
       general: map['general'] != null
           ? (map['general'] as num).toDouble()
-          : ((ejecutivo + gerente + miembro) / 3.0),
-      nivel: '',
+          : ((ejecutivo + gerente + miembro) / 3.0), nivel: '',
     );
   }
 
@@ -49,6 +46,4 @@ class LevelAverages {
       'general': general,
     };
   }
-
-  String get nombreNivel => nombre;
 }
