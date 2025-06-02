@@ -1,9 +1,19 @@
+// lib/screens/dashboard_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:applensys/widgets/chat_scren.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:applensys/utils/evaluacion_chart_data.dart';
+import 'package:applensys/models/dimension.dart';
+import 'package:applensys/models/principio.dart';
+import 'package:applensys/models/comportamiento.dart';
+import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:applensys/charts/donut_chart.dart';
+import 'package:applensys/charts/scatter_bubble_chart.dart';
+import 'package:applensys/charts/grouped_bar_chart.dart';
+import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String evaluacionId;
@@ -20,153 +30,451 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  bool _autoPlay = true;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> slides = [
-    {'color': Colors.grey, 'title': 'General'},
-    {'color': Colors.blueGrey, 'title': 'Principios'},
-    {'color': Colors.teal, 'title': 'Comportamientos'},
-    {'color': Colors.indigo, 'title': 'Sistemas Asociados'},
-  ];
+  /// Esta lista guarda la estructura plana (dimensión → principios agregados → comportamientos) 
+  List<Map<String, dynamic>> _dimensionesRaw = [];
 
-  Widget _buildChart(String title) {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: BarChart(BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: 5,
-        barGroups: [
-          BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 3.5, color: Colors.orange)]),
-          BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 4.0, color: Colors.green)]),
-          BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 2.8, color: Colors.blue)]),
-        ],
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
-            switch (v.toInt()) {
-              case 0: return const Text('Eje');
-              case 1: return const Text('Gte');
-              case 2: return const Text('Miembro');
-              default: return const Text('');
+  /// Modelos definitivos (Dimension → Principio → Comportamiento) para los gráficos
+  List<Dimension> _dimensiones = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedData();
+  }
+
+  Future<void> _loadCachedData() async {
+    try {
+      final cacheService = EvaluacionCacheService();
+      await cacheService.init();
+
+      // 1) Recuperar toda la estructura almacenada en SharedPreferences
+      final rawTables = await cacheService.cargarTablas();
+      // rawTables: Map<String /* nombreDimensión */, Map<String /* evaluacionId */, List<Map<String,dynamic>>>>
+
+      final List<Map<String, dynamic>> dimensionesList = [];
+
+      // 2) Recorrer cada dimensión guardada
+      for (final dimName in rawTables.keys) {
+        final subMap = rawTables[dimName]!; 
+        // subMap: Map<evaluacionId, List<Map<String,dynamic>>>
+
+        // 2.1) Extraer solo las filas de esta dimensión para la evaluación actual
+        final List<Map<String, dynamic>> filasEstaDim =
+            (subMap[widget.evaluacionId] as List<dynamic>?)
+                    ?.cast<Map<String, dynamic>>() ??
+                <Map<String, dynamic>>[];
+
+        // Si no hay filas para este evaluacionId, omitimos la dimensión
+        if (filasEstaDim.isEmpty) continue;
+
+        // 3) Agrupar filasEstaDim por el campo "principio"
+        final Map<String, List<Map<String, dynamic>>> filasPorPrincipio = {};
+        for (final fila in filasEstaDim) {
+          // IMPORTANTE: aquí usamos 'dimension' sin tilde,
+          // porque en tu versión anterior se guardaba como "dimension", no "dimensión"
+          final String princ =
+              (fila['principio'] as String?)?.trim() ?? 'SinPrincipio';
+          filasPorPrincipio.putIfAbsent(princ, () => <Map<String, dynamic>>[]);
+          filasPorPrincipio[princ]!.add(fila);
+        }
+
+        // 4) Construir la lista de principios agregados
+        final List<Map<String, dynamic>> principiosAgregados = [];
+
+        filasPorPrincipio.forEach((principioName, filasPrincipio) {
+          // 4.1) Calcular sumas de Ejecutivo, Gerente, Miembro
+          double sumaEj = 0.0, sumaGe = 0.0, sumaMi = 0.0;
+          final Set<String> sistemasUnicos = {};
+
+          for (final row in filasPrincipio) {
+            sumaEj += (row['ejecutivo'] as num?)?.toDouble() ?? 0.0;
+            sumaGe += (row['gerente'] as num?)?.toDouble() ?? 0.0;
+            sumaMi += (row['miembro'] as num?)?.toDouble() ?? 0.0;
+
+            // Unir sistemas (suponemos que se guardó como List<String>)
+            final List<String> sistemasFila =
+                (row['sistemas'] as List<dynamic>?)
+                        ?.cast<String>()
+                        .map((s) => s.trim())
+                        .where((s) => s.isNotEmpty)
+                        .toList() ??
+                    <String>[];
+            sistemasUnicos.addAll(sistemasFila);
+          }
+
+          final int nComp = filasPrincipio.length;
+          final double promEj = (nComp > 0) ? (sumaEj / nComp) : 0.0;
+          final double promGe = (nComp > 0) ? (sumaGe / nComp) : 0.0;
+          final double promMi = (nComp > 0) ? (sumaMi / nComp) : 0.0;
+
+          // 4.2) Construir lista de comportamientos detallados
+          final List<Map<String, dynamic>> comportamientosRaw = [];
+          for (final row in filasPrincipio) {
+            final List<String> sistemasFila =
+                (row['sistemas'] as List<dynamic>?)
+                        ?.cast<String>()
+                        .map((s) => s.trim())
+                        .where((s) => s.isNotEmpty)
+                        .toList() ??
+                    <String>[];
+
+            comportamientosRaw.add({
+              'nombre':    row['comportamiento'] ?? '',
+              'ejecutivo': (row['ejecutivo'] as num?)?.toDouble() ?? 0.0,
+              'gerente':   (row['gerente'] as num?)?.toDouble() ?? 0.0,
+              'miembro':   (row['miembro'] as num?)?.toDouble() ?? 0.0,
+              'sistemas':  sistemasFila,
+              'nivel':     (row['nivel'] as String?) ?? '',
+            });
+          }
+
+          // 4.3) Crear el nodo final para este principio
+          principiosAgregados.add({
+            'id':              principioName,
+            'nombre':          principioName,
+            'promedio':        double.parse(
+                ((promEj + promGe + promMi) / 3.0).toStringAsFixed(2)),
+            'sistemas':        sistemasUnicos.toList(),
+            'comportamientos': comportamientosRaw,
+          });
+        });
+
+        // 5) Obtener promedio general de la dimensión (de la primera fila)
+        double promedioDimension = 0.0;
+        if (filasEstaDim.first.containsKey('promedio_dimension')) {
+          promedioDimension =
+              (filasEstaDim.first['promedio_dimension'] as num).toDouble();
+        }
+
+        // 6) Agregar esta dimensión a la lista final
+        dimensionesList.add({
+          'id':         dimName,
+          'nombre':     dimName,
+          'promedio':   promedioDimension,
+          'principios': principiosAgregados,
+        });
+      }
+
+      // 7) Convertir la lista de mapas a objetos Dimension → Principio → Comportamiento
+      final List<Dimension> dimsModel =
+          EvaluacionChartData.buildDimensionesChartData(dimensionesList);
+
+      setState(() {
+        _dimensionesRaw = dimensionesList;
+        _dimensiones    = dimsModel;
+        _isLoading      = false;
+      });
+    } catch (e) {
+      setState(() {
+        _dimensionesRaw = [];
+        _dimensiones    = [];
+        _isLoading      = false;
+      });
+    }
+  }
+
+  /// Construye datos para la Dona (PieChart): cada dimensión → promedioGeneral
+  Map<String, double> _buildDonutData() {
+    final Map<String, double> data = {};
+    for (final dim in _dimensiones) {
+      data[dim.nombre] = dim.promedioGeneral;
+    }
+    return data;
+  }
+
+  /// Construye datos para el Scatter (Principios): un punto por principio
+  List<ScatterData> _buildScatterData() {
+    final List<ScatterData> list = [];
+    final principios = EvaluacionChartData.extractPrincipios(_dimensiones);
+    for (var i = 0; i < principios.length; i++) {
+      final Principio pri = principios[i] as Principio;
+      final double promedio = pri.promedioGeneral.clamp(0.0, 5.0);
+      final double radio = pri.comportamientos.length.toDouble();
+      list.add(ScatterData(
+        x: i.toDouble(),
+        y: promedio,
+        radius: radio,
+        color: Colors.blueAccent,
+      ));
+    }
+    return list;
+  }
+
+  /// Construye datos para Barras Agrupadas (Comportamientos)
+  Map<String, List<double>> _buildGroupedBarData() {
+    final Map<String, List<double>> data = {};
+    final List<Comportamiento> comps = EvaluacionChartData
+        .extractComportamientos(_dimensiones)
+        .cast<Comportamiento>();
+    for (final comp in comps) {
+      data[comp.nombre] = [
+        comp.promedioEjecutivo.clamp(0.0, 5.0),
+        comp.promedioGerente.clamp(0.0, 5.0),
+        comp.promedioMiembro.clamp(0.0, 5.0),
+      ];
+    }
+    return data;
+  }
+
+  /// Construye datos para Barras Horizontales (Sistemas Asociados)
+  Map<String, Map<String, int>> _buildHorizontalBarsData() {
+    final Map<String, Map<String, int>> data = {};
+
+    for (final dimMap in _dimensionesRaw) {
+      final principiosList =
+          (dimMap['principios'] as List<dynamic>).cast<Map<String, dynamic>>();
+      for (final priMap in principiosList) {
+        final comportamientosList =
+            (priMap['comportamientos'] as List<dynamic>)
+                .cast<Map<String, dynamic>>();
+        for (final compMap in comportamientosList) {
+          final List<String> sistemasList =
+              (compMap['sistemas'] as List<dynamic>).cast<String>();
+          final String nivel = compMap['nivel'] as String? ?? '';
+
+          for (final sis in sistemasList) {
+            data.putIfAbsent(sis, () => {'E': 0, 'G': 0, 'M': 0});
+            if (nivel == 'E' || nivel == 'G' || nivel == 'M') {
+              data[sis]![nivel] = data[sis]![nivel]! + 1;
             }
-          })),
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-      )),
-    );
+          }
+        }
+      }
+    }
+
+    return data;
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       key: _scaffoldKey,
       drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
       endDrawer: const DrawerLensys(),
       appBar: AppBar(
         backgroundColor: const Color(0xFF003056),
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.of(context).pop()),
-        title: Text(widget.empresa.nombre, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          widget.empresa.nombre,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
-        actions: [IconButton(icon: const Icon(Icons.menu, color: Colors.white), onPressed: () => _scaffoldKey.currentState?.openEndDrawer())],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
       ),
-      body: Stack(
-        children: [
-          Center(
-            child: CarouselSlider.builder(
-              itemCount: slides.length,
-              options: CarouselOptions(
-                height: 550,
-                enlargeCenterPage: true,
-                autoPlay: _autoPlay,
-                aspectRatio: 20/9,
-                enableInfiniteScroll: true,
-                autoPlayInterval: const Duration(seconds: 5),
-              ),
-              itemBuilder: (context, index, realIdx) {
-                final color = slides[index]['color'] as Color;
-                final title = slides[index]['title'] as String;
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SlideDetailScreen(
-                          title: title,
-                          color: color,
-                          index: index,
-                        ),
-                      ),
-                    );
-                  },
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                Center(
+                  child: CarouselSlider.builder(
+                    itemCount: 4,
+                    options: CarouselOptions(
+                      height: screenSize.height * 0.75,
+                      enlargeCenterPage: true,
+                      autoPlay: true,
+                      aspectRatio: 16 / 9,
+                      enableInfiniteScroll: true,
+                      autoPlayInterval: const Duration(seconds: 5),
+                    ),
+                    itemBuilder: (context, index, realIdx) {
+                      switch (index) {
+                        case 0:
+                          return _buildChartContainer(
+                            color: Colors.grey,
+                            title: 'Dimensiones Generales',
+                            child: DonutChart(
+                              data: _buildDonutData(),
+                              title: 'Promedio por Dimensión',
+                            ),
+                          );
+                        case 1:
+                          return _buildChartContainer(
+                            color: Colors.blueGrey,
+                            title: 'Principios',
+                            child: ScatterBubbleChart(
+                              data: _buildScatterData(),
+                              title:
+                                  'Principios: Promedio vs. Nº Comportamientos',
+                            ),
+                          );
+                        case 2:
+                          return _buildChartContainer(
+                            color: Colors.teal,
+                            title: 'Comportamientos',
+                            child: GroupedBarChart(
+                              data: _buildGroupedBarData(),
+                              title: 'Promedios por Comportamiento',
+                              minY: 0,
+                              maxY: 5,
+                            ),
+                          );
+                        case 3:
+                          return _buildChartContainer(
+                            color: Colors.indigo,
+                            title: 'Sistemas Asociados',
+                            child: HorizontalBarSystemsChart(
+                              data: _buildHorizontalBarsData(),
+                              title: 'Distribución por Nivel y Sistema',
+                              minX: 0,
+                              maxX: 5,
+                            ),
+                          );
+                        default:
+                          return const SizedBox.shrink();
+                      }
+                    },
+                  ),
+                ),
+                Positioned(
+                  top: 100,
+                  right: 0,
+                  bottom: 100,
                   child: Container(
-                    width: MediaQuery.of(context).size.width * 0.92,
-                    height: 480,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24)),
+                    width: 50,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0D3B66),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomLeft: Radius.circular(12),
+                      ),
+                    ),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: double.infinity,
-                          decoration: const BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white), textAlign: TextAlign.center),
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.chat, color: Colors.white),
+                          onPressed: () =>
+                              _scaffoldKey.currentState?.openDrawer(),
+                          tooltip: 'Chat interno',
                         ),
-                        Expanded(child: _buildChart(title)),
+                        const SizedBox(height: 20),
+                        IconButton(
+                          icon: const Icon(Icons.refresh, color: Colors.white),
+                          onPressed: () {
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            _loadCachedData();
+                          },
+                          tooltip: 'Recargar datos',
+                        ),
+                        const SizedBox(height: 20),
+                        IconButton(
+                          icon: const Icon(Icons.note_add_outlined,
+                              color: Colors.white),
+                          onPressed: () {
+                            // Agregar nota: implementar si es necesario
+                          },
+                          tooltip: 'Agregar nota',
+                        ),
                       ],
                     ),
                   ),
-                );
-              },
+                ),
+              ],
             ),
+    );
+  }
+
+  Widget _buildChartContainer({
+    required Color color,
+    required String title,
+    required Widget child,
+  }) {
+    final screenSize = MediaQuery.of(context).size;
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _SlideDetailScreen(title: title, color: color),
           ),
-          Positioned(
-            top: 100, right: 0, bottom: 100,
-            child: Container(
-              width: 50,
-              decoration: const BoxDecoration(color: Color(0xFF003056), borderRadius: BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12))),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                IconButton(icon: const Icon(Icons.chat, color: Colors.white), onPressed: () => _scaffoldKey.currentState?.openDrawer()),
-                const SizedBox(height: 20),
-                IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: () {}, tooltip: 'Recargar datos'),
-                IconButton(icon: const Icon(Icons.note_add_outlined, color: Colors.white), onPressed: () {}, tooltip: 'Exportar Reporte'),
-                IconButton(icon: Icon(_autoPlay ? Icons.pause : Icons.play_arrow, color: Colors.white), onPressed: () => setState(() => _autoPlay = !_autoPlay), tooltip: _autoPlay ? 'Pausar slider' : 'Reproducir slider'),
-              ]),
+        );
+      },
+      child: Container(
+        width: screenSize.width * 0.92,
+        height: screenSize.height * 0.70,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Expanded(child: child),
+          ],
+        ),
       ),
     );
   }
 }
 
-class SlideDetailScreen extends StatelessWidget {
-  final Color color;
+class _SlideDetailScreen extends StatelessWidget {
   final String title;
-  final int index;
+  final Color color;
 
-  const SlideDetailScreen({super.key, required this.color, required this.title, required this.index});
+  const _SlideDetailScreen({
+    // ignore: unused_element_parameter
+    super.key,
+    required this.title,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(backgroundColor: const Color(0xFF003056), title: Text(title)),
-      body: InteractiveViewer(
-        panEnabled: true,
-        boundaryMargin: const EdgeInsets.all(20),
-        minScale: 1.0,
-        maxScale: 3.0,
-        child: Container(width: screenSize.width, height: screenSize.height, color: color, child: Column(children: [
-          Container(width: double.infinity, decoration: const BoxDecoration(color: Colors.black87), padding: const EdgeInsets.symmetric(vertical: 16), child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
-          const Spacer(),
-          Center(child: Text('Detalle slide \\${index + 1}', style: const TextStyle(fontSize: 48, color: Colors.white))),
-          const Spacer(),
-        ])),
+      backgroundColor: color,
+      appBar: AppBar(
+        backgroundColor: color,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white, fontSize: 22),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Text(
+          'Detalle de "$title"',
+          style: const TextStyle(fontSize: 24, color: Colors.white),
+        ),
       ),
     );
   }

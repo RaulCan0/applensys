@@ -1,9 +1,15 @@
-
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
+/// Gráfico de barras agrupadas. Recibe:
+///  • data: `Map<nombre_comportamiento, [valorEjecutivo, valorGerente, valorMiembro]>`
+///    Ejemplo: { "Trabajo en equipo": [4.0, 3.5, 4.2], "Comunicación": [3.8, 4.1, 3.9], … }
+///  • title: String (título encima del gráfico)
+///  • minY: double (mínimo del eje Y, típicamente 0)
+///  • maxY: double (máximo del eje Y, p. ej. 5)
 class GroupedBarChart extends StatelessWidget {
-  final Map<String, List<double>> data; // key: Principio/Dimensión, values: [E, G, M]
+  final Map<String, List<double>> data;
   final String title;
   final double minY;
   final double maxY;
@@ -12,70 +18,133 @@ class GroupedBarChart extends StatelessWidget {
     super.key,
     required this.data,
     required this.title,
-    this.minY = 0,
-    this.maxY = 5,
+    required this.minY,
+    required this.maxY,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(12),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            AspectRatio(
-              aspectRatio: 1.5,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: maxY,
-                  minY: minY,
-                  barTouchData: BarTouchData(enabled: true),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, interval: 1),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final keys = data.keys.toList();
-                          if (value.toInt() >= 0 && value.toInt() < keys.length) {
-                            return SideTitleWidget(
-                              axisSide: meta.axisSide,
-                              child: Text(keys[value.toInt()], style: const TextStyle(fontSize: 10)),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      ),
-                    ),
-                  ),
-                  barGroups: List.generate(data.length, (index) {
-                    final label = data.keys.elementAt(index);
-                    final valores = data[label]!;
+    final labels = data.keys.toList(); // Lista de nombres de comportamientos
 
-                    return BarChartGroupData(
-                      x: index,
-                      barRods: [
-                        BarChartRodData(toY: valores[0], width: 8, color: Colors.blue),   // Ejecutivo
-                        BarChartRodData(toY: valores[1], width: 8, color: Colors.orange), // Gerente
-                        BarChartRodData(toY: valores[2], width: 8, color: Colors.green),  // Miembro
-                      ],
-                      showingTooltipIndicators: [0, 1, 2],
-                    );
-                  }),
+    return Column(
+      children: [
+        // Título
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        // El BarChart ocupa todo el espacio restante
+        Expanded(
+          child: BarChart(
+            BarChartData(
+              minY: minY,
+              maxY: maxY,
+              barGroups: List.generate(labels.length, (i) {
+                final valores = data[labels[i]]!;
+                return BarChartGroupData(
+                  x: i,
+                  barsSpace: 4,
+                  barRods: [
+                    // Barra de Ejecutivo (azul)
+                    BarChartRodData(
+                      toY: valores[0],
+                      color: Colors.blue,
+                      width: 8,
+                    ),
+                    // Barra de Gerente (rojo)
+                    BarChartRodData(
+                      toY: valores[1],
+                      color: Colors.red,
+                      width: 8,
+                    ),
+                    // Barra de Miembro (verde)
+                    BarChartRodData(
+                      toY: valores[2],
+                      color: Colors.green,
+                      width: 8,
+                    ),
+                  ],
+                );
+              }),
+              groupsSpace: 20, // espacio entre cada grupo de 3 barras
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+                      if (index < 0 || index >= labels.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Transform.rotate(
+                          angle: -pi / 4, // rotar 45° para que quepan nombres largos
+                          child: Text(
+                            labels[index],
+                            style: const TextStyle(fontSize: 10),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: 1,
+                    reservedSize: 28,
+                    getTitlesWidget: (value, meta) {
+                      // Mostramos e.g. 0,1,2,3,4,5
+                      if (value % 1 == 0 && value >= minY && value <= maxY) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(fontSize: 12),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              gridData: FlGridData(
+                show: true,
+                horizontalInterval: 1,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withAlpha(77), // 0.3 opacity
+                    strokeWidth: 1,
+                  );
+                },
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: const Border(
+                  bottom: BorderSide(color: Colors.black, width: 2),
+                  left: BorderSide(color: Colors.black, width: 2),
+                  right: BorderSide(color: Colors.transparent),
+                  top: BorderSide(color: Colors.transparent),
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

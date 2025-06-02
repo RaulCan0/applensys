@@ -22,7 +22,10 @@ void main() {
 
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      Zone.current.handleUncaughtError(details.exception, details.stack!);
+      Zone.current.handleUncaughtError(
+        details.exception,
+        details.stack ?? StackTrace.empty,
+      );
     };
 
     await Supabase.initialize(
@@ -60,7 +63,7 @@ class MyApp extends ConsumerWidget {
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scaleFactor)),
-          child: child!,
+          child: child ?? const SizedBox.shrink(),
         );
       },
       theme: ThemeData(

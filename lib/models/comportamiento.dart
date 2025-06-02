@@ -1,13 +1,13 @@
 class Comportamiento {
   String nombre;
-  int ejecutivo;
-  int gerente;
-  int miembro;
+  final double promedioEjecutivo;
+  final double promedioGerente;
+  final double promedioMiembro;
 
   Comportamiento({
     required this.nombre,
-    this.ejecutivo = 0,
-    this.gerente = 0,
-    this.miembro = 0,
+    required this.promedioEjecutivo,
+    required this.promedioGerente,
+    required this.promedioMiembro,
   });
 }

@@ -11,6 +11,7 @@ class DetallesEvaluacionScreen extends StatefulWidget {
   final String evaluacionId;
   final String? dimension; // Hacerlo un campo de clase y opcional
   final int? initialTabIndex;
+  final Map<String, double>? promediosPasados; // Nuevo parámetro
 
   const DetallesEvaluacionScreen({
     super.key,
@@ -19,6 +20,7 @@ class DetallesEvaluacionScreen extends StatefulWidget {
     required this.evaluacionId,
     this.dimension, // Asignar al campo de clase, hacerlo opcional
     this.initialTabIndex, Map<String, double>? promedios,
+    this.promediosPasados, // Añadir al constructor
   });
 
   @override
@@ -48,17 +50,17 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: Colors.white,
+          color: Colors.white, // Asegurar que el icono de retroceso sea blanco
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('Graficos por Dimensión', style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: const Color(0xFF003056),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color(0xFF003056), // Color azul original
+        iconTheme: const IconThemeData(color: Colors.white), // Iconos blancos
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
-            color: Colors.white,
+            color: Colors.white, // Asegurar que el icono de menú sea blanco
             onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
