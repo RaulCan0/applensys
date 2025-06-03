@@ -17,8 +17,8 @@ class DetallesEvaluacionScreen extends StatefulWidget {
     required this.dimensionesPromedios,
     required this.empresa,
     required this.evaluacionId,
-    this.dimension, // Asignar al campo de clase, hacerlo opcional
-    this.initialTabIndex, Map<String, double>? promedios,
+    this.dimension,
+    this.initialTabIndex, Map<String, double>? promedios, 
   });
 
   @override

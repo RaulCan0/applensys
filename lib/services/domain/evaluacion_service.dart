@@ -104,7 +104,8 @@ class EvaluacionService {
   }
 
   Future<List<Calificacion>> getCalificacionesPorAsociado(String idAsociado) async {
-    final res = await _client.from('calificaciones').select().eq('id_asociado', idAsociado);
+    const String selectColumns = 'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url';
+    final res = await _client.from('calificaciones').select(selectColumns).eq('id_asociado', idAsociado);
     return (res as List).map((e) => Calificacion.fromMap(e)).toList();
   }
 
@@ -114,9 +115,10 @@ class EvaluacionService {
     required int idDimension,
     required String comportamiento,
   }) async {
+    const String selectColumns = 'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url';
     final res = await _client
         .from('calificaciones')
-        .select()
+        .select(selectColumns) // Especificar columnas
         .eq('id_asociado', idAsociado)
         .eq('id_empresa', idEmpresa)
         .eq('id_dimension', idDimension)

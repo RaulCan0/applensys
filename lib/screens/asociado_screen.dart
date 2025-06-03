@@ -54,7 +54,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
 
       for (final asociado in asociadosCargados) {
         final progreso = await _supabaseService.obtenerProgresoAsociado(
-          evaluacionId: widget.empresa.id,
+          evaluacionId: widget.evaluacionId, // CORREGIDO: Usar widget.evaluacionId en lugar de widget.empresa.id
           asociadoId: asociado.id,
           dimensionId: widget.dimensionId,
         );

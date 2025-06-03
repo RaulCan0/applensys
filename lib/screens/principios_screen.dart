@@ -129,15 +129,20 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
           IconButton(
             icon: const Icon(Icons.assessment, color: Colors.white),
             onPressed: () {
+              // Obtener el nombre interno de la dimensión para consistencia con TablasDimensionScreen
+              String nombreDimensionInternaActual = obtenerNombreDimensionInterna(widget.dimensionId);
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => tablas_screen.TablasDimensionScreen(
-                    empresaId: widget.empresa.id,
-                    dimension: '',
-                    empresa: widget.empresa,
-                    evaluacionId: '',
-                    asociadoId: '',
+                    empresa: widget.empresa, // Pasando la empresa completa
+                    evaluacionId: widget.asociado.id, // REVISAR: ¿Debería ser un ID de evaluación específico o el ID del asociado como identificador único para la tabla?
+                                                      // Si tienes un ID de evaluación global para la sesión, úsalo aquí.
+                                                      // Por ahora, uso widget.asociado.id asumiendo que cada asociado tiene su propia "evaluación" en este contexto de tabla.
+                    asociadoId: widget.asociado.id, // Pasando el ID del asociado actual
+                    empresaId: widget.empresa.id, // Pasando el ID de la empresa
+                    dimension: nombreDimensionInternaActual, // Pasando el nombre interno de la dimensión actual
                   ),
                 ),
               );
@@ -203,6 +208,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                   child: ExpansionTile(
                                     tilePadding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.04, vertical: screenSize.height * 0.02),
                                     childrenPadding: const EdgeInsets.only(bottom: 10),
+                                    iconColor: Colors.black, 
+                                    collapsedIconColor: Colors.black, // Añade esta línea para el estado colapsado
                                     title: Column(
                                       crossAxisAlignment: CrossAxisAlignment.center, // Centra el contenido de la columna
                                       children: [
@@ -238,7 +245,9 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         ),
                                         subtitle: Text(
                                           principio.benchmarkComportamiento.split(":").last.trim(),
+                                          textAlign: TextAlign.center,
                                           style: const TextStyle(color: Colors.black),
+                                        
                                         ),
                                         trailing: const Icon(
                                           Icons.arrow_forward_ios,
@@ -246,7 +255,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                         ),
                                         onTap: () async {
                                          
-                                          final String evaluacionIdParaNavegacion = calificacionActual?.id ?? const Uuid().v4();
+
+                                          final String evaluacionIdGeneral = widget.asociado.id; // Placeholder, ajusta según tu lógica de ID de evaluación.
 
                                           final resultado = await Navigator.push<String>(
                                             context,
@@ -254,12 +264,12 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                               builder: (_) => ComportamientoEvaluacionScreen(
                                                 principio: principio,
                                                 cargo: widget.asociado.cargo,
-                                                evaluacionId: evaluacionIdParaNavegacion, 
+                                                evaluacionId: evaluacionIdGeneral, // Usar el ID de evaluación general
                                                 dimensionId: widget.dimensionId,
                                                 empresaId: widget.empresa.id,
                                                 asociadoId: widget.asociado.id,
-                                                dimension: widget.dimensionId, // Asegúrate que esto es lo que esperas
-                                                calificacionExistente: calificacionActual, // Pasar la calificación completa
+                                                dimension: widget.dimensionId, // Este parámetro 'dimension' en ComportamientoEvaluacionScreen parece redundante si ya tienes dimensionId
+                                                calificacionExistente: calificacionActual,
                                               ),
                                             ),
                                           );

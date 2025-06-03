@@ -45,8 +45,7 @@ class ComportamientoEvaluacionScreen extends ConsumerStatefulWidget {
     required this.dimensionId,
     required this.empresaId,
     required this.asociadoId,
-    required String dimension,
-    this.calificacionExistente, // Añadir al constructor
+    this.calificacionExistente, required String dimension, // Añadir al constructor
   });
 
   @override

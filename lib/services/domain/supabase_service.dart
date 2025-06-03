@@ -133,11 +133,22 @@ class SupabaseService {
   Future<List<Calificacion>> getCalificacionesPorAsociado(
     String idAsociado,
   ) async {
+    // Define las columnas que existen en tu tabla 'calificaciones'
+    // Asegúrate de que coincidan con las columnas reales de tu base de datos y el modelo Calificacion.
+    const String selectColumns =
+        'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url';
+
     final response = await _client
         .from('calificaciones')
-        .select()
+        .select(selectColumns) // Especificar columnas explícitamente
         .eq('id_asociado', idAsociado);
-    return (response as List).map((e) => Calificacion.fromMap(e)).toList();
+
+    // Procesar la respuesta para convertirla en List<Calificacion>
+    // La respuesta 'response' ya es una List<Map<String, dynamic>> si la consulta tiene éxito.
+    // Si hay un error en la consulta, Postgrest puede lanzar una excepción antes de este punto.
+    return response
+        .map((item) => Calificacion.fromMap(item))
+        .toList();
   }
 
   Future<void> addCalificacion(Calificacion calificacion, {required String id, required String idAsociado}) async {
@@ -202,9 +213,10 @@ class SupabaseService {
 
   /// Obtiene todas las calificaciones de una empresa
   Future<List<Map<String, dynamic>>> getCalificacionesPorEmpresa(String empresaId) async {
+    const String selectColumns = 'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url';
     final res = await Supabase.instance.client
       .from('calificaciones')
-      .select()
+      .select(selectColumns)
       .eq('id_empresa', empresaId)
       .order('fecha_evaluacion', ascending: true);
     return List<Map<String, dynamic>>.from(res as List);

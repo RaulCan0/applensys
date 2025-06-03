@@ -37,10 +37,13 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchRegistros(String dimNombre) async {
     final dimId = _dimMap[dimNombre];
+    // Especifica las columnas que existen en tu tabla 'calificaciones'
+    const String selectColumns = 'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url'; // Asegúrate que estas columnas existan
+
     final response = await Supabase.instance.client
         .from('calificaciones')
-        .select()
-        .eq('evaluacion_id', widget.evaluacionId)
+        .select(selectColumns) // Selecciona explícitamente las columnas
+        // .eq('evaluacion_id', widget.evaluacionId) // Eliminado o ajusta si 'evaluacion_id' existe con otro nombre o si el filtro es diferente
         .eq('id_empresa', widget.empresaId)
         .eq('id_asociado', widget.asociadoId)
         .eq('id_dimension', dimId!);

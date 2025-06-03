@@ -21,15 +21,18 @@ class TablasDimensionScreen extends StatefulWidget {
   static final ValueNotifier<bool> dataChanged = ValueNotifier<bool>(false);
 
   final Empresa empresa;
-  final String evaluacionId;
+  final String evaluacionId; // Usado como clave en tablaDatos
+  final String asociadoId; // Nuevo: Hacerlo un campo de instancia si es necesario
+  final String empresaId;  // Nuevo: Hacerlo un campo de instancia si es necesario
+  final String dimension;  // Nuevo: Hacerlo un campo de instancia si es necesario (es el nombre interno de la dimensión)
 
   const TablasDimensionScreen({
     super.key,
     required this.empresa,
     required this.evaluacionId,
-    required String asociadoId,
-    required String empresaId,
-    required String dimension,
+    required this.asociadoId, // Ahora se asigna
+    required this.empresaId,  // Ahora se asigna
+    required this.dimension,  // Ahora se asigna
   });
 
   static Future<void> actualizarDato(

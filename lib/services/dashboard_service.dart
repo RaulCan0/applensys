@@ -47,9 +47,10 @@ class DashboardService {
   }
 
   Future<String> generateDimensionJson(String dimensionId) async {
+    const String selectColumns = 'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url';
     final records = await _client
         .from('calificaciones')
-        .select()
+        .select(selectColumns)
         .eq('id_empresa', empresaId)
         .eq('id_dimension', int.tryParse(dimensionId) ?? 0);
     return jsonEncode(records);
