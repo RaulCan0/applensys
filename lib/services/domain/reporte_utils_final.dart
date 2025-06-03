@@ -1,9 +1,8 @@
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-
+//considerar la orientacion de la hoja
 class ReporteComportamiento {
   final String comportamiento;
   final String definicion;
@@ -12,6 +11,7 @@ class ReporteComportamiento {
   final List<String> sistemasAsociados;
   final String resultado;
   final String benchmark;
+  //final string hallazgos
   final Map<String, double> grafico;
 
   ReporteComportamiento({
@@ -22,6 +22,7 @@ class ReporteComportamiento {
     required this.sistemasAsociados,
     required this.resultado,
     required this.benchmark,
+    //final string hallazgos
     required this.grafico,
   });
 
@@ -148,11 +149,11 @@ class ReporteUtils {
     buffer.writeln('<tr><th>Asociado</th><th>Dimensión</th><th>Principio</th><th>Comportamiento</th><th>Observaciones</th><th>Sistemas Asociados</th></tr>');
     for (var dato in tablaDatos) {
       buffer.writeln('<tr>');
-      buffer.writeln('<td>${dato['asociado_nombre']}</td>');
-      buffer.writeln('<td>${dato['dimension']}</td>');
-      buffer.writeln('<td>${dato['principio']}</td>');
-      buffer.writeln('<td>${dato['comportamiento']}</td>');
-      buffer.writeln('<td>${dato['observacion']}</td>');
+      buffer.writeln('<td>${dato['asociado_nombre'] ?? ''}</td>');
+      buffer.writeln('<td>${dato['dimension'] ?? ''}</td>');
+      buffer.writeln('<td>${dato['principio'] ?? ''}</td>');
+      buffer.writeln('<td>${dato['comportamiento'] ?? ''}</td>');
+      buffer.writeln('<td>${dato['observacion'] ?? ''}</td>');
       buffer.writeln('<td>${(dato['sistemas_asociados'] ?? []).join(", ")}</td>');
       buffer.writeln('</tr>');
     }

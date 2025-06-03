@@ -514,24 +514,39 @@ List<ScatterData> _buildScatterData() {
   }
 
   /// Callback para generar y abrir Word inmediatamente
-  Future<void> _onGenerarYAbrirWord() async {
-    try {
-      final t1 = await _loadJsonAsset('assets/t1.json');
-      final t2 = await _loadJsonAsset('assets/t2.json');
-      final t3 = await _loadJsonAsset('assets/t3.json');
-      final wordPath = await ReporteUtils.exportReporteWordUnificado(
-        _dimensionesRaw,
-        t1,
-        t2,
-        t3,
-      );
-      await OpenFile.open(wordPath);
-    } catch (e) {
+ Future<void> _onGenerarYAbrirWord() async {
+  try {
+    // 1. Cargar los JSON de benchmarks
+    final t1 = await _loadJsonAsset('assets/t1.json');
+    final t2 = await _loadJsonAsset('assets/t2.json');
+    final t3 = await _loadJsonAsset('assets/t3.json');
+
+    // 2. Generar el documento Word (puede devolver null si ocurre algún fallo interno)
+    final String wordPath = await ReporteUtils.exportReporteWordUnificado(
+      _dimensionesRaw,
+      t1,
+      t2,
+      t3,
+    );
+
+    // 3. Validar que 'wordPath' no sea null ni cadena vacía
+    if (wordPath.isEmpty) {
+      // Si aquí wordPath es null, mostramos un mensaje de error apropiado
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al generar/abrir Word: ${e.toString()}')),
+        const SnackBar(content: Text('No se pudo generar el documento Word.')),
       );
+      return;
     }
+
+    // 4. Abrir el archivo Word generado
+    await OpenFile.open(wordPath);
+  } catch (e) {
+    // En caso de cualquier otra excepción, mostramos la excepción original
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al generar/abrir Word: ${e.toString()}')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,3 @@
-// lib/charts/donut_chart.dart
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -7,59 +5,57 @@ import 'package:fl_chart/fl_chart.dart';
 /// Recibe:
 ///  • data: `Map<nombre_dimension, promedio>`
 ///  • title: String (título encima del gráfico)
+///  • dataMap: opcional `Map<nombre_dimension, color>` para personalizar colores
 class DonutChart extends StatelessWidget {
   final Map<String, double> data;
   final String title;
+  final Map<String, Color>? dataMap;
 
   const DonutChart({
     super.key,
     required this.data,
-    required this.title, required Map dataMap,
+    required this.title,
+    this.dataMap,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Si no hay datos, mostramos un mensaje en lugar del gráfico
     if (data.isEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
             'No hay datos para mostrar',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: Colors.white),
           ),
         ],
       );
     }
 
-    // Calculamos el total para porcentajes
     final total = data.values.fold<double>(0.0, (sum, val) => sum + val);
 
-    // Creamos una lista de colores "consistentes" para cada dimensión
-    // Puedes reemplazar este listado por los colores corporativos de Lensys si los tienes definidos
-    final palette = <Color>[
+    final fallbackPalette = <Color>[
       const Color(0xFFE63946), // rojo fuerte
-      const Color(0xFFF4A261), // naranja
       const Color(0xFF2A9D8F), // verde agua
-      const Color(0xFF264653), // azul oscuro
       const Color(0xFFE9C46A), // amarillo suave
-      const Color(0xFF8D99AE), // gris azulado
     ];
 
-    // Construimos cada sección del PieChart asignando un color según el índice en data.keys
     final sections = <PieChartSectionData>[];
     final keys = data.keys.toList();
+
     for (var i = 0; i < keys.length; i++) {
       final key = keys[i];
       final value = data[key]!;
-      final color = palette[i % palette.length];
-      // Si deseas mostrar el porcentaje dentro de la dona, podrías usar:
-      // final porcentaje = total > 0 ? (value / total * 100).toStringAsFixed(1) : '0.0';
+      final color = dataMap?[key] ?? fallbackPalette[i % fallbackPalette.length];
       sections.add(
         PieChartSectionData(
           value: value,
@@ -72,13 +68,15 @@ class DonutChart extends StatelessWidget {
 
     return Column(
       children: [
-        // Título encima del gráfico
         Text(
           title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         const SizedBox(height: 8),
-        // El gráfico en sí, contenido en un Container con altura fija para evitar problemas de constraints
         SizedBox(
           height: 150,
           child: PieChart(
@@ -90,21 +88,20 @@ class DonutChart extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // Leyenda: cada entrada muestra un recuadro de color + nombre de dimensión + porcentaje
         Wrap(
           alignment: WrapAlignment.center,
           spacing: 12,
           runSpacing: 8,
           children: [
-            for (var i = 0; i < keys.length; i++) ...[
+            for (var i = 0; i < keys.length; i++)
               _LegendItem(
-                color: palette[i % palette.length],
+                color: dataMap?[keys[i]] ??
+                    fallbackPalette[i % fallbackPalette.length],
                 label: keys[i],
                 porcentaje: total > 0
                     ? (data[keys[i]]! / total * 100).toStringAsFixed(1)
                     : '0.0',
               ),
-            ]
           ],
         ),
       ],
@@ -112,9 +109,6 @@ class DonutChart extends StatelessWidget {
   }
 }
 
-/// Widget privado para cada elemento de la leyenda:
-/// • Un cuadrado de color
-/// • El texto: "nombre (XX.X%)"
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
@@ -142,7 +136,10 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           '$label ($porcentaje%)',
-          style: const TextStyle(fontSize: 12),
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.white,
+          ),
         ),
       ],
     );

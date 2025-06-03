@@ -30,7 +30,7 @@ class ExcelExporter {
     for (var col = 0; col < headers.length; col++) {
       sheet.updateCell(
         CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0),
-        headers[col] as CellValue?,
+        TextCellValue(headers[col]),
       );
     }
 
@@ -38,11 +38,11 @@ class ExcelExporter {
     for (var i = 0; i < behaviorAverages.length; i++) {
       final row = i + 1;
       final b = behaviorAverages[i];
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row), 'Comportamiento' as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row), b.nombre as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row), b.ejecutivo as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row), b.gerente as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row), b.miembro as CellValue?);
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row), TextCellValue('Comportamiento'));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row), TextCellValue(b.nombre));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row), DoubleCellValue(b.ejecutivo));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row), DoubleCellValue(b.gerente));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row), DoubleCellValue(b.miembro));
     }
 
     // 5. Datos de sistemas asociados
@@ -50,11 +50,11 @@ class ExcelExporter {
     for (var j = 0; j < systemAverages.length; j++) {
       final row = startRow + j;
       final s = systemAverages[j];
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row), 'Sistema Asociado' as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row), s.nombre as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row), s.ejecutivo as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row), s.gerente as CellValue?);
-      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row), s.miembro as CellValue?);
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row), TextCellValue('Sistema Asociado'));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row), TextCellValue(s.nombre));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row), DoubleCellValue(s.ejecutivo));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row), DoubleCellValue(s.gerente));
+      sheet.updateCell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row), DoubleCellValue(s.miembro));
     }
 
     // 6. Guardar el archivo en documentos
