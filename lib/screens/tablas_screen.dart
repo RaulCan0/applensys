@@ -127,6 +127,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     dimensiones = dimensionInterna.keys.toList();
 
     return DefaultTabController(

@@ -70,6 +70,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
@@ -111,7 +112,10 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
               itemBuilder: (context, index) {
                 final dimension = dimensiones[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                  padding: EdgeInsets.symmetric(
+                    vertical: screenSize.height * 0.01,
+                    horizontal: screenSize.width * 0.05,
+                  ),
                   child: Card(
                     elevation: 4,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

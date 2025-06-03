@@ -85,7 +85,7 @@ class GroupedBarChart extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
                       return SideTitleWidget(
-                        axisSide: meta.axisSide,
+                        meta: meta,
                         child: Transform.rotate(
                           angle: -pi / 4, // rotar 45° para que quepan nombres largos
                           child: Text(

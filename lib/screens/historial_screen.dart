@@ -40,10 +40,16 @@ class _HistorialScreenState extends State<HistorialScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial de Empresas'),
-                backgroundColor: const Color(0xFF003056),
+        title: Text(
+          'Historial de Empresas',
+          style: TextStyle(fontSize: screenSize.width * 0.05),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF003056),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

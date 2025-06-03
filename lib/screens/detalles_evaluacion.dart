@@ -11,7 +11,6 @@ class DetallesEvaluacionScreen extends StatefulWidget {
   final String evaluacionId;
   final String? dimension; // Hacerlo un campo de clase y opcional
   final int? initialTabIndex;
-  final Map<String, double>? promediosPasados; // Nuevo parámetro
 
   const DetallesEvaluacionScreen({
     super.key,
@@ -20,7 +19,6 @@ class DetallesEvaluacionScreen extends StatefulWidget {
     required this.evaluacionId,
     this.dimension, // Asignar al campo de clase, hacerlo opcional
     this.initialTabIndex, Map<String, double>? promedios,
-    this.promediosPasados, // Añadir al constructor
   });
 
   @override
@@ -44,42 +42,52 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
   }
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       key: _scaffoldKey,
-      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()), // Añadido drawer para el chat
+      drawer: SizedBox(width: screenSize.width * 0.8, child: const ChatWidgetDrawer()),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: Colors.white, // Asegurar que el icono de retroceso sea blanco
+          color: Colors.white,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Graficos por Dimensión', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Graficos por Dimensión',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+          ),
+        ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF003056), // Color azul original
-        iconTheme: const IconThemeData(color: Colors.white), // Iconos blancos
+        backgroundColor: const Color(0xFF003056),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
-            color: Colors.white, // Asegurar que el icono de menú sea blanco
+            color: Colors.white,
             onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kTextTabBarHeight),
+          preferredSize: Size.fromHeight(screenSize.height * 0.05),
           child: TabBar(
             controller: _tabController,
             indicatorColor: Colors.grey.shade300,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.grey.shade300,
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: widget.dimensionesPromedios.keys.map((key) => Tab(text: key)).toList(), // Usar widget.dimensionesPromedios directamente
+            tabs: widget.dimensionesPromedios.keys
+                .map((key) => Tab(text: key))
+                .toList(),
           ),
         ),
       ),
-      endDrawer: const DrawerLensys(),
+      endDrawer: SizedBox(width: screenSize.width * 0.8, child: const DrawerLensys()),
       body: TabBarView(
         controller: _tabController,
-        children: widget.dimensionesPromedios.keys.map((dimension) { // Usar widget.dimensionesPromedios directamente
+        children: widget.dimensionesPromedios.keys.map((dimension) {
           final promedios = widget.dimensionesPromedios[dimension]!;
           return _buildDimensionDetails(context, dimension, promedios);
         }).toList(),
@@ -92,20 +100,25 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     String dimension,
     Map<String, double> promedios,
   ) {
+    final screenSize = MediaQuery.of(context).size;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 150),
+      padding: EdgeInsets.symmetric(
+        vertical: screenSize.height * 0.05,
+        horizontal: screenSize.width * 0.1,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildPromedioGeneralCard(
             context,
             promedios,
-            chartHeight: 300,
-            sidePadding: 24,
+            chartHeight: screenSize.height * 0.4,
+            sidePadding: screenSize.width * 0.05,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: screenSize.height * 0.02),
           _buildDropdownAssociates(dimension),
-          const SizedBox(height: 16),
+          SizedBox(height: screenSize.height * 0.02),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF003056),
@@ -131,15 +144,20 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
   }
 
   Widget _buildPromedioGeneralCard(BuildContext context, Map<String, double> promedios, {double chartHeight = 150, double sidePadding = 90}) {
+    final screenSize = MediaQuery.of(context).size;
+
     final avgE = promedios['Ejecutivo'] ?? 0;
     final avgG = promedios['Gerente'] ?? 0;
     final avgM = promedios['Miembro'] ?? 0;
 
     return Card(
       elevation: 3,
-      margin: const EdgeInsets.symmetric(vertical: 20),
+      margin: EdgeInsets.symmetric(vertical: screenSize.height * 0.02),
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: sidePadding),
+        padding: EdgeInsets.symmetric(
+          vertical: screenSize.height * 0.02,
+          horizontal: sidePadding,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -147,7 +165,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
               'Promedios por Cargo',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: screenSize.height * 0.01),
             FractionallySizedBox(
               widthFactor: 1.0,
               child: SizedBox(
@@ -168,14 +186,14 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
                         sideTitles: SideTitles(
                           showTitles: true,
                           interval: 1,
-                          reservedSize: 20,
+                          reservedSize: screenSize.width * 0.05,
                           getTitlesWidget: _leftTitleWidget,
                         ),
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 20,
+                          reservedSize: screenSize.height * 0.05,
                           getTitlesWidget: _bottomTitleWidget,
                         ),
                       ),
@@ -188,7 +206,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenSize.height * 0.02),
             _buildColorBar(avgE, avgG, avgM),
           ],
         ),

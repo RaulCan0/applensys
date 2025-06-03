@@ -110,6 +110,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     final empresaCreada = empresas.isNotEmpty ? empresas.last : null;
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -118,7 +119,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
       drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
       endDrawer: DrawerLensys(),
       appBar: AppBar(
-                backgroundColor: const Color(0xFF003056),
+        backgroundColor: const Color(0xFF003056),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.message, color: Colors.white),

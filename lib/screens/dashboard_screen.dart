@@ -33,10 +33,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoading = true;
 
-  /// Esta lista guarda la estructura plana (dimensión → principios agregados → comportamientos) 
+  /// Estructura cruda: lista de mapas que luego convertimos a Dimension→Principio→Comportamiento
   List<Map<String, dynamic>> _dimensionesRaw = [];
 
-  /// Modelos definitivos (Dimension → Principio → Comportamiento) para los gráficos
+  /// Modelos definitivos para los gráficos
   List<Dimension> _dimensiones = [];
 
   @override
@@ -50,42 +50,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final cacheService = EvaluacionCacheService();
       await cacheService.init();
 
-      // 1) Recuperar toda la estructura almacenada en SharedPreferences
+      // 1) Recuperar la estructura completa desde SharedPreferences
       final rawTables = await cacheService.cargarTablas();
-      // rawTables: Map<String /* nombreDimensión */, Map<String /* evaluacionId */, List<Map<String,dynamic>>>>
+      // rawTables tiene la forma:
+      // {
+      //   "Dimensión 1": {
+      //     "eval-123": [ { fila1 }, { fila2 }, ... ]
+      //   },
+      //   "Dimensión 2": {
+      //     "eval-123": [ { filaA }, { filaB }, ... ]
+      //   },
+      //   ...
+      // }
 
       final List<Map<String, dynamic>> dimensionesList = [];
 
       // 2) Recorrer cada dimensión guardada
       for (final dimName in rawTables.keys) {
         final subMap = rawTables[dimName]!; 
-        // subMap: Map<evaluacionId, List<Map<String,dynamic>>>
+        // subMap es Map<evaluacionId, List<Map<String, dynamic>>>
 
-        // 2.1) Extraer solo las filas de esta dimensión para la evaluación actual
-        final List<Map<String, dynamic>> filasEstaDim =
+        // 2.1) Extraer únicamente las filas de la evaluación actual:
+        final List<Map<String, dynamic>> filasEstaDim = 
             (subMap[widget.evaluacionId] as List<dynamic>?)
-                    ?.cast<Map<String, dynamic>>() ??
-                <Map<String, dynamic>>[];
+                ?.cast<Map<String, dynamic>>() 
+            ?? <Map<String, dynamic>>[];
 
-        // Si no hay filas para este evaluacionId, omitimos la dimensión
+        // Si no hay filas para este evaluacionId, omitimos esta dimensión
         if (filasEstaDim.isEmpty) continue;
 
         // 3) Agrupar filasEstaDim por el campo "principio"
         final Map<String, List<Map<String, dynamic>>> filasPorPrincipio = {};
         for (final fila in filasEstaDim) {
-          // IMPORTANTE: aquí usamos 'dimension' sin tilde,
-          // porque en tu versión anterior se guardaba como "dimension", no "dimensión"
-          final String princ =
-              (fila['principio'] as String?)?.trim() ?? 'SinPrincipio';
+          final String princ = (fila['principio'] as String?)?.trim() ?? 'SinPrincipio';
           filasPorPrincipio.putIfAbsent(princ, () => <Map<String, dynamic>>[]);
           filasPorPrincipio[princ]!.add(fila);
         }
 
-        // 4) Construir la lista de principios agregados
+        // 4) Construir lista de principios agregados
         final List<Map<String, dynamic>> principiosAgregados = [];
 
         filasPorPrincipio.forEach((principioName, filasPrincipio) {
-          // 4.1) Calcular sumas de Ejecutivo, Gerente, Miembro
+          // 4.1) Calcular sumas de niveles
           double sumaEj = 0.0, sumaGe = 0.0, sumaMi = 0.0;
           final Set<String> sistemasUnicos = {};
 
@@ -94,14 +100,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             sumaGe += (row['gerente'] as num?)?.toDouble() ?? 0.0;
             sumaMi += (row['miembro'] as num?)?.toDouble() ?? 0.0;
 
-            // Unir sistemas (suponemos que se guardó como List<String>)
+            // Unir sistemas (guardados como List<String>)
             final List<String> sistemasFila =
                 (row['sistemas'] as List<dynamic>?)
-                        ?.cast<String>()
-                        .map((s) => s.trim())
-                        .where((s) => s.isNotEmpty)
-                        .toList() ??
-                    <String>[];
+                    ?.cast<String>()
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty)
+                    .toList()
+                ?? <String>[];
             sistemasUnicos.addAll(sistemasFila);
           }
 
@@ -115,11 +121,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           for (final row in filasPrincipio) {
             final List<String> sistemasFila =
                 (row['sistemas'] as List<dynamic>?)
-                        ?.cast<String>()
-                        .map((s) => s.trim())
-                        .where((s) => s.isNotEmpty)
-                        .toList() ??
-                    <String>[];
+                    ?.cast<String>()
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty)
+                    .toList()
+                ?? <String>[];
 
             comportamientosRaw.add({
               'nombre':    row['comportamiento'] ?? '',
@@ -131,25 +137,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
             });
           }
 
-          // 4.3) Crear el nodo final para este principio
+          // 4.3) Nodo final para este principio
           principiosAgregados.add({
             'id':              principioName,
             'nombre':          principioName,
-            'promedio':        double.parse(
-                ((promEj + promGe + promMi) / 3.0).toStringAsFixed(2)),
+            'promedio':        double.parse(((promEj + promGe + promMi) / 3.0).toStringAsFixed(2)),
             'sistemas':        sistemasUnicos.toList(),
             'comportamientos': comportamientosRaw,
           });
         });
 
-        // 5) Obtener promedio general de la dimensión (de la primera fila)
+        // 5) Obtener promedioDimension de la primera fila, si existe
         double promedioDimension = 0.0;
         if (filasEstaDim.first.containsKey('promedio_dimension')) {
-          promedioDimension =
-              (filasEstaDim.first['promedio_dimension'] as num).toDouble();
+          promedioDimension = (filasEstaDim.first['promedio_dimension'] as num).toDouble();
         }
 
-        // 6) Agregar esta dimensión a la lista final
+        // 6) Agregar dimensión a la lista final
         dimensionesList.add({
           'id':         dimName,
           'nombre':     dimName,
@@ -158,7 +162,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
 
-      // 7) Convertir la lista de mapas a objetos Dimension → Principio → Comportamiento
+      // 7) Convertir a modelos definitivos
       final List<Dimension> dimsModel =
           EvaluacionChartData.buildDimensionesChartData(dimensionesList);
 
@@ -167,7 +171,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _dimensiones    = dimsModel;
         _isLoading      = false;
       });
-    } catch (e) {
+    } catch (e, st) {
+      ('ERROR en _loadCachedData(): $e');
+      (st);
       setState(() {
         _dimensionesRaw = [];
         _dimensiones    = [];
@@ -176,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Construye datos para la Dona (PieChart): cada dimensión → promedioGeneral
+  /// Construye datos de dona: cada dimensión → su promedioGeneral.
   Map<String, double> _buildDonutData() {
     final Map<String, double> data = {};
     for (final dim in _dimensiones) {
@@ -185,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return data;
   }
 
-  /// Construye datos para el Scatter (Principios): un punto por principio
+  /// Construye datos de dispersión: un punto por cada principio (eje Y = promedio, radio = #comportamientos).
   List<ScatterData> _buildScatterData() {
     final List<ScatterData> list = [];
     final principios = EvaluacionChartData.extractPrincipios(_dimensiones);
@@ -203,7 +209,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return list;
   }
 
-  /// Construye datos para Barras Agrupadas (Comportamientos)
+  /// Construye datos de barras agrupadas (comportamientos → [ejecutivo, gerente, miembro]).
   Map<String, List<double>> _buildGroupedBarData() {
     final Map<String, List<double>> data = {};
     final List<Comportamiento> comps = EvaluacionChartData
@@ -219,7 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return data;
   }
 
-  /// Construye datos para Barras Horizontales (Sistemas Asociados)
+  /// Construye datos de barras horizontales: por cada sistema, cuento #E, #G, #M.
   Map<String, Map<String, int>> _buildHorizontalBarsData() {
     final Map<String, Map<String, int>> data = {};
 
@@ -227,9 +233,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final principiosList =
           (dimMap['principios'] as List<dynamic>).cast<Map<String, dynamic>>();
       for (final priMap in principiosList) {
-        final comportamientosList =
-            (priMap['comportamientos'] as List<dynamic>)
-                .cast<Map<String, dynamic>>();
+        final comportamientosList = (priMap['comportamientos'] as List<dynamic>)
+            .cast<Map<String, dynamic>>();
         for (final compMap in comportamientosList) {
           final List<String> sistemasList =
               (compMap['sistemas'] as List<dynamic>).cast<String>();
@@ -254,8 +259,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
-      endDrawer: const DrawerLensys(),
+      drawer: SizedBox(width: screenSize.width * 0.8, child: const ChatWidgetDrawer()),
+      endDrawer: SizedBox(width: screenSize.width * 0.8, child: const DrawerLensys()),
       appBar: AppBar(
         backgroundColor: const Color(0xFF003056),
         leading: IconButton(
@@ -266,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           widget.empresa.nombre,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 20, // Mantener constante para evitar errores
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -289,7 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       height: screenSize.height * 0.75,
                       enlargeCenterPage: true,
                       autoPlay: true,
-                      aspectRatio: 16 / 9,
+                      aspectRatio: screenSize.width / screenSize.height,
                       enableInfiniteScroll: true,
                       autoPlayInterval: const Duration(seconds: 5),
                     ),
@@ -343,11 +348,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 Positioned(
-                  top: 100,
+                  top: screenSize.height * 0.1,
                   right: 0,
-                  bottom: 100,
+                  bottom: screenSize.height * 0.1,
                   child: Container(
-                    width: 50,
+                    width: screenSize.width * 0.12,
                     decoration: const BoxDecoration(
                       color: Color(0xFF0D3B66),
                       borderRadius: BorderRadius.only(
@@ -360,11 +365,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.chat, color: Colors.white),
-                          onPressed: () =>
-                              _scaffoldKey.currentState?.openDrawer(),
+                          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                           tooltip: 'Chat interno',
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: screenSize.height * 0.02),
                         IconButton(
                           icon: const Icon(Icons.refresh, color: Colors.white),
                           onPressed: () {
@@ -375,12 +379,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           },
                           tooltip: 'Recargar datos',
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: screenSize.height * 0.02),
                         IconButton(
-                          icon: const Icon(Icons.note_add_outlined,
-                              color: Colors.white),
+                          icon: const Icon(Icons.note_add_outlined, color: Colors.white),
                           onPressed: () {
-                            // Agregar nota: implementar si es necesario
+                            // Si necesitas acción de "Agregar nota", implementa aquí.
                           },
                           tooltip: 'Agregar nota',
                         ),
@@ -422,8 +425,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
@@ -450,12 +452,9 @@ class _SlideDetailScreen extends StatelessWidget {
   final Color color;
 
   const _SlideDetailScreen({
-    // ignore: unused_element_parameter
-    super.key,
     required this.title,
     required this.color,
   });
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

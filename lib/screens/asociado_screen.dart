@@ -311,6 +311,8 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       key: _scaffoldKey,
       drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),

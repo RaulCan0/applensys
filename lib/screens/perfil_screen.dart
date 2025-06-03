@@ -136,20 +136,25 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     final current = ref.watch(themeModeProvider);
     final themeNotifier = ref.read(themeModeProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
-        backgroundColor: const Color(0xFF003056),
-        foregroundColor: Colors.white,
-        elevation: 2,
+        title: Text(
+          'Perfil',
+          style: TextStyle(fontSize: screenSize.width * 0.05),
+        ),
+        centerTitle: true,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: EdgeInsets.symmetric(
+                vertical: screenSize.height * 0.02,
+                horizontal: screenSize.width * 0.05,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -177,25 +182,25 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: screenSize.height * 0.03),
                   TextField(
                     controller: _nombreController,
                     decoration: const InputDecoration(labelText: 'Nombre'),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: screenSize.height * 0.02),
                   TextField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Correo'),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: screenSize.height * 0.02),
                   TextField(
                     controller: _telefonoController,
                     decoration: const InputDecoration(labelText: 'Teléfono'),
                     keyboardType: TextInputType.phone,
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: screenSize.height * 0.03),
                   const Text('Cambiar Contraseña (opcional)', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 12),
+                  SizedBox(height: screenSize.height * 0.02),
                   TextField(
                     controller: _newPasswordController,
                     decoration: InputDecoration(
@@ -207,7 +212,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     ),
                     obscureText: _obscureNewPassword,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: screenSize.height * 0.02),
                   TextField(
                     controller: _confirmPasswordController,
                     decoration: InputDecoration(
@@ -219,9 +224,9 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     ),
                     obscureText: _obscureConfirmPassword,
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: screenSize.height * 0.03),
                   const Text('Tema de la app', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 12),
+                  SizedBox(height: screenSize.height * 0.02),
                   SegmentedButton<ThemeMode>(
                     segments: const [
                       ButtonSegment(value: ThemeMode.system, label: Text('Auto'), icon: Icon(Icons.settings)),
@@ -234,7 +239,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       themeNotifier.setTheme(selected);
                     },
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: screenSize.height * 0.03),
                   ElevatedButton(
                     onPressed: _actualizarPerfil,
                     style: ElevatedButton.styleFrom(
@@ -245,24 +250,24 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: const Text('Actualizar Perfil', style: TextStyle(fontSize: 16, color: Colors.white)),
-                  ),const SizedBox(height: 12),
-ElevatedButton.icon(
-  icon: const Icon(Icons.notifications),
-  label: const Text('Probar Notificación'),
-  onPressed: () async {
-    await NotificationService.showNotification(
-      'Notificación de prueba',
-      'Este es un mensaje de ejemplo desde PerfilScreen.',
-      payload: 'perfil_test',
-    );
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.green.shade700,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    padding: const EdgeInsets.symmetric(vertical: 16),
-  ),
-),
-
+                  ),
+                  SizedBox(height: screenSize.height * 0.02),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.notifications),
+                    label: const Text('Probar Notificación'),
+                    onPressed: () async {
+                      await NotificationService.showNotification(
+                        'Notificación de prueba',
+                        'Este es un mensaje de ejemplo desde PerfilScreen.',
+                        payload: 'perfil_test',
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
                 ],
               ),
             ),

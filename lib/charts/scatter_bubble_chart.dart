@@ -61,14 +61,12 @@ class ScatterBubbleChart extends StatelessWidget {
           child: ScatterChart(
             ScatterChartData(
               scatterSpots: data.map((d) {
-                // Ajustar coordenadas para que no salgan de 0..5
                 final double x = d.x.clamp(minAxis, maxAxis);
                 final double y = d.y.clamp(minAxis, maxAxis);
                 return ScatterSpot(
                   x,
                   y,
-                  color: d.color,
-                  radius: d.radius,
+                
                 );
               }).toList(),
               minX: minAxis,

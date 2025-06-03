@@ -8,7 +8,8 @@ class ResultadosHistorialScreen extends StatefulWidget {
   const ResultadosHistorialScreen({
     super.key,
     required this.empresaId,
-    required this.empresaNombre, required Map<String, dynamic> empresa,
+    required this.empresaNombre,
+    required Map<String, dynamic> empresa,
   });
 
   @override
@@ -49,17 +50,28 @@ class _ResultadosHistorialScreenState extends State<ResultadosHistorialScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Resultados: ${widget.empresaNombre}'),
-                backgroundColor: const Color(0xFF003056),
+        title: Text(
+          'Resultados Historial',
+          style: TextStyle(fontSize: screenSize.width * 0.05),
+        ),
         centerTitle: true,
+        backgroundColor: const Color(0xFF003056),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error != null
               ? Center(child: Text('Error: $error'))
-              : _buildContenido(),
+              : Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: screenSize.height * 0.02,
+                    horizontal: screenSize.width * 0.05,
+                  ),
+                  child: _buildContenido(),
+                ),
     );
   }
 

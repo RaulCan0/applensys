@@ -351,7 +351,7 @@ class _ComportamientoEvaluacionScreenState
       ),);
   }
 
-  void _mostrarLentesRolDialog() {
+ void _mostrarLentesRolDialog() {
     showDialog<void>(
       context: context,
       barrierDismissible: true,

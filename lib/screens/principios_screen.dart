@@ -113,6 +113,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         title: Center(
@@ -199,7 +201,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                     ],
                                   ),
                                   child: ExpansionTile(
-                                    tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    tilePadding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.04, vertical: screenSize.height * 0.02),
                                     childrenPadding: const EdgeInsets.only(bottom: 10),
                                     title: Column(
                                       crossAxisAlignment: CrossAxisAlignment.center, // Centra el contenido de la columna

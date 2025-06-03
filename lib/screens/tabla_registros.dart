@@ -50,6 +50,8 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return DefaultTabController(
       length: dimensiones.length,
       child: Scaffold(
