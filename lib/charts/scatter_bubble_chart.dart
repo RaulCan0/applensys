@@ -1,32 +1,29 @@
+// lib/charts/scatter_bubble_chart.dart
 
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-/// Representa cada punto (burbuja) en el ScatterBubbleChart:
+/// Representa cada punto “burbuja” en el ScatterBubbleChart.
+/// Solo guardamos posición X, posición Y y color. El tamaño será fijo.
 class ScatterData {
-  /// Posición en X
+  /// Posición en X (normalmente el índice de un principio)
   final double x;
 
-  /// Posición en Y
+  /// Posición en Y (por ejemplo, el promedio que va de 0 a 5)
   final double y;
 
-  /// Radio deseado (se ignorará si la librería no lo admite)
-  final double radius;
-
-  /// Color deseado (se ignorará si la librería no lo admite)
+  /// Color deseado para la burbuja (por nivel)
   final Color color;
 
   ScatterData({
     required this.x,
     required this.y,
-    required this.radius,
     required this.color,
   });
 }
 
-/// Gráfico de dispersión con burbujas.
-/// Los ejes X e Y están fijos de 0 a 5.
+/// Gráfico de dispersión con “burbujas” de tamaño constante.
+/// Ejes fijos de 0 a 5 (tanto en X como en Y).
 class ScatterBubbleChart extends StatelessWidget {
   final List<ScatterData> data;
   final String title;
@@ -43,6 +40,9 @@ class ScatterBubbleChart extends StatelessWidget {
     const double minAxis = 0;
     const double maxAxis = 5;
 
+    // Radio fijo para todas las burbujas
+    const double fixedRadius = 8;
+
     return Column(
       children: [
         // Título encima del gráfico
@@ -57,20 +57,25 @@ class ScatterBubbleChart extends StatelessWidget {
           ),
         ),
 
-        // ScatterChart ocupa el espacio restante
+        // ScatterChart ocupa el resto del espacio disponible
         Expanded(
           child: ScatterChart(
             ScatterChartData(
               scatterSpots: data.map((d) {
-                // Ajustar X e Y para que no sobrepasen [0,5]
-                final double x = d.x.clamp(minAxis, maxAxis);
-                final double y = d.y.clamp(minAxis, maxAxis);
+                // Clamp para que X e Y queden dentro de [0, 5]
+                final double xPos = d.x.clamp(minAxis, maxAxis);
+                final double yPos = d.y.clamp(minAxis, maxAxis);
 
-                // En fl_chart 1.x el constructor de ScatterSpot ya no acepta
-                // los parámetros named "radius" ni "color". 
-                // Para evitar errores, solo devolvemos la posición (x,y) 
-                // y la librería usará tamaño y color por defecto.
-                return ScatterSpot(x, y);
+                // Creamos un ScatterSpot con tamaño fijo y color d.color:
+                return ScatterSpot(
+                  xPos,
+                  yPos,
+                  dotPainter: FlDotCirclePainter(
+                    radius: fixedRadius,
+                    color: d.color,
+                    strokeWidth: 0,
+                  ),
+                );
               }).toList(),
               minX: minAxis,
               maxX: maxAxis,
@@ -92,6 +97,7 @@ class ScatterBubbleChart extends StatelessWidget {
                     showTitles: true,
                     interval: 1,
                     getTitlesWidget: (value, meta) {
+                      // Muestra 0, 1, 2, 3, 4, 5 en el eje Y
                       if (value >= 0 && value <= 5 && value % 1 == 0) {
                         return Text(
                           value.toInt().toString(),
@@ -107,6 +113,7 @@ class ScatterBubbleChart extends StatelessWidget {
                     showTitles: true,
                     interval: 1,
                     getTitlesWidget: (value, meta) {
+                      // Muestra 0, 1, 2, 3, 4, 5 en el eje X
                       if (value >= 0 && value <= 5 && value % 1 == 0) {
                         return Text(
                           value.toInt().toString(),

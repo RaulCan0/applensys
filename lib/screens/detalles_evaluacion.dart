@@ -350,4 +350,10 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
       },
     );
   }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 }

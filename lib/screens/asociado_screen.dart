@@ -54,7 +54,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
 
       for (final asociado in asociadosCargados) {
         final progreso = await _supabaseService.obtenerProgresoAsociado(
-          evaluacionId: widget.evaluacionId, // CORREGIDO: Usar widget.evaluacionId en lugar de widget.empresa.id
+          evaluacionId: widget.empresa.id, // CORREGIDO: Usar widget.empresa.id para progreso correcto
           asociadoId: asociado.id,
           dimensionId: widget.dimensionId,
         );
@@ -250,7 +250,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                           '${asociado.cargo.trim().toLowerCase() == "miembro" ? "MIEMBRO DE EQUIPO" : asociado.cargo.toUpperCase()} - ${asociado.antiguedad} años',
                           style: GoogleFonts.roboto(fontSize: 14, color: Colors.grey),
                         ),
-                        const SizedBox(height: 4),
+                       const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -264,7 +264,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                               ),
                             ),
                             Text(
-                              '', // placeholder to be replaced by progress percent below
+                              '${(progreso * 100).toStringAsFixed(1)}% completado',
                               style: GoogleFonts.roboto(
                                 fontWeight: FontWeight.w500,
                                 color: Theme.of(context).brightness == Brightness.dark
@@ -274,12 +274,15 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                             ),
                           ],
                         ),
+                        
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: progreso,
                           backgroundColor: Colors.grey[300],
                           color: Colors.green,
                         ),
+                        Text('${(progreso * 100).toStringAsFixed(1)}% completado', style: GoogleFonts.roboto()),
+                      
                       ],
                     ),
                     onTap: () {

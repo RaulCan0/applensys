@@ -1,3 +1,5 @@
+// lib/charts/horizontal_bar_systems_chart.dart
+
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -23,10 +25,8 @@ class HorizontalBarSystemsChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lista de sistemas (claves del Map)
+    // 1) Convertimos el Map original en lista de objetos internos:
     final sistemas = data.keys.toList();
-
-    // Convertir cada sistema y sus conteos en un objeto _SystemSeries
     final List<_SystemSeries> seriesData = sistemas.map((sis) {
       final counts = data[sis]!;
       return _SystemSeries(
@@ -39,7 +39,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
 
     return Column(
       children: [
-        // Título
+        // ► Título encima del gráfico
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 4),
           child: Text(
@@ -51,25 +51,29 @@ class HorizontalBarSystemsChart extends StatelessWidget {
           ),
         ),
 
-        // El gráfico ocupa el espacio restante
+        // ► Gráfico propiamente dicho (ocupa todo el espacio restante)
         Expanded(
           child: SfCartesianChart(
-            primaryXAxis: NumericAxis(
-              minimum: minX,
-              maximum: maxX,
-              interval: 1,
-              majorGridLines: const MajorGridLines(
-                color: Colors.grey,
-                width: 0.5,
-              ),
-              axisLine: const AxisLine(color: Colors.black, width: 2),
-              labelStyle: const TextStyle(fontSize: 12),
-            ),
-            primaryYAxis: CategoryAxis(
+            // — Marcamos isTransposed para que las barras salgan horizontales
+            isTransposed: true,
+
+            // — Ahora que está transpuesto:
+            //    • primaryXAxis será CategoryAxis (categorías aparecen en vertical)
+            //    • primaryYAxis será NumericAxis (valores en horizontal)
+            primaryXAxis: CategoryAxis(
               majorGridLines: const MajorGridLines(color: Colors.grey, width: 0.5),
               axisLine: const AxisLine(color: Colors.black, width: 2),
               labelStyle: const TextStyle(fontSize: 12),
             ),
+            primaryYAxis: NumericAxis(
+              minimum: minX,
+              maximum: maxX,
+              interval: 1,
+              majorGridLines: const MajorGridLines(color: Colors.grey, width: 0.5),
+              axisLine: const AxisLine(color: Colors.black, width: 2),
+              labelStyle: const TextStyle(fontSize: 12),
+            ),
+
             legend: Legend(
               isVisible: true,
               position: LegendPosition.top,
@@ -77,10 +81,14 @@ class HorizontalBarSystemsChart extends StatelessWidget {
             ),
 
             series: <CartesianSeries<_SystemSeries, String>>[
-              // Serie para Ejecutivo (barras horizontales en azul)
+              // — Serie “Ejecutivo” (barra azul)
               BarSeries<_SystemSeries, String>(
                 dataSource: seriesData,
+                //   ■ xValueMapper debe devolver la "categoría" (String) 
+                //     que luego, al estar transpuesto, se coloca en eje Y
                 xValueMapper: (_SystemSeries d, _) => d.sistema,
+                //   ■ yValueMapper devuelve el valor numérico (double)
+                //     que se dibuja en el eje X porque está transpuesto
                 yValueMapper: (_SystemSeries d, _) => d.ejecutivo,
                 pointColorMapper: (_SystemSeries d, _) => Colors.blue,
                 name: 'Ejecutivo',
@@ -92,7 +100,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
                 spacing: 0.2,
               ),
 
-              // Serie para Gerente (rojo)
+              // — Serie “Gerente” (barra roja)
               BarSeries<_SystemSeries, String>(
                 dataSource: seriesData,
                 xValueMapper: (_SystemSeries d, _) => d.sistema,
@@ -107,7 +115,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
                 spacing: 0.2,
               ),
 
-              // Serie para Miembro (verde)
+              // — Serie “Miembro” (barra verde)
               BarSeries<_SystemSeries, String>(
                 dataSource: seriesData,
                 xValueMapper: (_SystemSeries d, _) => d.sistema,
@@ -129,7 +137,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
   }
 }
 
-/// Clase interna para mapear cada sistema y sus conteos por nivel
+/// Modelo interno para unir nombre de sistema con sus conteos
 class _SystemSeries {
   final String sistema;
   final double ejecutivo;
