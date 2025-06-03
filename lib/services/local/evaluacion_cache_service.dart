@@ -85,7 +85,8 @@ class EvaluacionCacheService {
   Future<void> limpiarEvaluacionCompleta() async {
     await init();
     await _prefs!.remove(_keyEvaluacionPendiente);
-    await _prefs!.remove(_keyTablaDatos);
+    // Se omite eliminación automática de _keyTablaDatos para preservar tablas hasta que el usuario confirme
+    // await _prefs!.remove(_keyTablaDatos);
     await _prefs!.remove(_keyEvaluacionAsociados);
     await _prefs!.remove(_keyEvaluacionPrincipios);
     await _prefs!.remove(_keyEvaluacionComportamientos);

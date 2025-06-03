@@ -76,6 +76,7 @@ class SupabaseService {
 
   // ASOCIADOS
   Future<List<Asociado>> getAsociadosPorEmpresa(String empresaId) async {
+    if (empresaId.isEmpty) return [];
     final response = await _client
         .from('asociados')
         .select()
@@ -133,7 +134,8 @@ class SupabaseService {
   Future<List<Calificacion>> getCalificacionesPorAsociado(
     String idAsociado,
   ) async {
-    // Define las columnas que existen en tu tabla 'calificaciones'
+    if (idAsociado.isEmpty) return [];
+    // Define las columnas que existen in tu tabla 'calificaciones'
     // Asegúrate de que coincidan con las columnas reales de tu base de datos y el modelo Calificacion.
     const String selectColumns =
         'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url';
@@ -213,6 +215,7 @@ class SupabaseService {
 
   /// Obtiene todas las calificaciones de una empresa
   Future<List<Map<String, dynamic>>> getCalificacionesPorEmpresa(String empresaId) async {
+    if (empresaId.isEmpty) return [];
     const String selectColumns = 'id, id_asociado, id_empresa, id_dimension, comportamiento, puntaje, fecha_evaluacion, observaciones, sistemas, evidencia_url';
     final res = await Supabase.instance.client
       .from('calificaciones')
@@ -546,6 +549,7 @@ class SupabaseService {
     required String asociadoId,
     required String dimensionId,
   }) async {
+    if (evaluacionId.isEmpty || asociadoId.isEmpty || dimensionId.isEmpty) return 0.0;
     final response = await _client
         .from('calificaciones')
         .select('comportamiento')
@@ -553,7 +557,7 @@ class SupabaseService {
         .eq('id_empresa', evaluacionId)
         .eq('id_dimension', int.tryParse(dimensionId) ?? -1);
 
-    final total = response.length;
+    final total = (response as List).length;
     final mapaTotales = {'1': 6, '2': 14, '3': 8};
     final totalDimension = mapaTotales[dimensionId] ?? 1;
     return total / totalDimension;

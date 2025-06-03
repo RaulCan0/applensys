@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:applensys/screens/detalles_evaluacion.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
+import 'package:applensys/screens/dashboard_screen.dart';
 
 extension CapitalizeExtension on String {
   String capitalize() {
@@ -141,6 +142,21 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
           title: const Text('Resultados en tiempo real', style: TextStyle(color: Colors.white)),
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.dashboard, color: Colors.white),
+              tooltip: 'Ver Dashboard',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DashboardScreen(
+                      evaluacionId: widget.evaluacionId,
+                      empresa: widget.empresa,
+                    ),
+                  ),
+                );
+              },
+            ),
             Builder(
               builder: (context) => IconButton(
                 icon: const Icon(Icons.menu),

@@ -238,8 +238,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                   onPressed: () async {
                     try {
                       final cache = EvaluacionCacheService();
-                      await cache.limpiarEvaluacionCompleta();
-                      await EvaluacionCacheService().eliminarPendiente();
+                      // Solo eliminar evaluación pendiente y luego limpiar datos de tabla
+                      await cache.eliminarPendiente();
+                      await cache.limpiarCacheTablaDatos();
 
                       TablasDimensionScreen.tablaDatos.clear();
                       TablasDimensionScreen.dataChanged.value =

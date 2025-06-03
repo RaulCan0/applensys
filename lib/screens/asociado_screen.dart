@@ -264,7 +264,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                               ),
                             ),
                             Text(
-                              '${(progreso * 100).toStringAsFixed(1)}% completado',
+                              '', // placeholder to be replaced by progress percent below
                               style: GoogleFonts.roboto(
                                 fontWeight: FontWeight.w500,
                                 color: Theme.of(context).brightness == Brightness.dark
@@ -274,15 +274,12 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                             ),
                           ],
                         ),
-                        
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: progreso,
                           backgroundColor: Colors.grey[300],
                           color: Colors.green,
                         ),
-                        Text('${(progreso * 100).toStringAsFixed(1)}% completado', style: GoogleFonts.roboto()),
-                      
                       ],
                     ),
                     onTap: () {

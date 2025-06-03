@@ -12,7 +12,7 @@ class DonutChart extends StatelessWidget {
   const DonutChart({
     super.key,
     required this.data,
-    required this.title,
+    required this.title, required Map<String, double> dataMap,
   });
 
   @override
