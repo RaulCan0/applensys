@@ -14,6 +14,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
   final String title;
   final double minX;
   final double maxX;
+  final bool isDetail;
 
   const HorizontalBarSystemsChart({
     super.key,
@@ -21,6 +22,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
     required this.title,
     required this.minX,
     required this.maxX,
+    this.isDetail = false,
   });
 
   @override
@@ -75,7 +77,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
             ),
 
             legend: Legend(
-              isVisible: true,
+              isVisible: isDetail,
               position: LegendPosition.top,
               overflowMode: LegendItemOverflowMode.wrap,
             ),
@@ -97,7 +99,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
                   topRight: Radius.circular(6),
                   bottomRight: Radius.circular(6),
                 ),
-                spacing: 0.2,
+                spacing: isDetail ? 0.4 : 0.2,
               ),
 
               // — Serie “Gerente” (barra roja)
@@ -112,7 +114,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
                   topRight: Radius.circular(6),
                   bottomRight: Radius.circular(6),
                 ),
-                spacing: 0.2,
+                spacing: isDetail ? 0.4 : 0.2,
               ),
 
               // — Serie “Miembro” (barra verde)
@@ -127,7 +129,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
                   topRight: Radius.circular(6),
                   bottomRight: Radius.circular(6),
                 ),
-                spacing: 0.2,
+                spacing: isDetail ? 0.4 : 0.2,
               ),
             ],
           ),

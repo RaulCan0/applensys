@@ -21,31 +21,29 @@ class ScatterData {
     required this.color,
   });
 }
-
-/// Gráfico de dispersión con “burbujas” de tamaño constante.
-/// Ejes fijos de 0 a 5 (tanto en X como en Y).
 class ScatterBubbleChart extends StatelessWidget {
   final List<ScatterData> data;
   final String title;
+  final bool isDetail;
 
   const ScatterBubbleChart({
     super.key,
     required this.data,
     required this.title,
+    this.isDetail = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Rango fijo de ejes de 0 a 5
-    const double minAxis = 0;
-    const double maxAxis = 5;
-
-    // Radio fijo para todas las burbujas
-    const double fixedRadius = 8;
+    // Eje X: promedio (0 a 5), Eje Y: principios (1 a 10)
+    const double minX = 0;
+    const double maxX = 5;
+    const double minY = 1;
+    const double maxY = 10;
+    final double fixedRadius = isDetail ? 14 : 8;
 
     return Column(
       children: [
-        // Título encima del gráfico
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 4),
           child: Text(
@@ -56,17 +54,12 @@ class ScatterBubbleChart extends StatelessWidget {
             ),
           ),
         ),
-
-        // ScatterChart ocupa el resto del espacio disponible
         Expanded(
           child: ScatterChart(
             ScatterChartData(
               scatterSpots: data.map((d) {
-                // Clamp para que X e Y queden dentro de [0, 5]
-                final double xPos = d.x.clamp(minAxis, maxAxis);
-                final double yPos = d.y.clamp(minAxis, maxAxis);
-
-                // Creamos un ScatterSpot con tamaño fijo y color d.color:
+                final double xPos = d.x.clamp(minX, maxX);
+                final double yPos = d.y.clamp(minY, maxY);
                 return ScatterSpot(
                   xPos,
                   yPos,
@@ -77,10 +70,10 @@ class ScatterBubbleChart extends StatelessWidget {
                   ),
                 );
               }).toList(),
-              minX: minAxis,
-              maxX: maxAxis,
-              minY: minAxis,
-              maxY: maxAxis,
+              minX: minX,
+              maxX: maxX,
+              minY: minY,
+              maxY: maxY,
               gridData: FlGridData(show: true),
               borderData: FlBorderData(
                 show: true,
@@ -94,11 +87,10 @@ class ScatterBubbleChart extends StatelessWidget {
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: true,
+                    showTitles: isDetail,
                     interval: 1,
                     getTitlesWidget: (value, meta) {
-                      // Muestra 0, 1, 2, 3, 4, 5 en el eje Y
-                      if (value >= 0 && value <= 5 && value % 1 == 0) {
+                      if (value >= 1 && value <= 10 && value % 1 == 0) {
                         return Text(
                           value.toInt().toString(),
                           style: const TextStyle(fontSize: 12),
@@ -110,10 +102,9 @@ class ScatterBubbleChart extends StatelessWidget {
                 ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: true,
+                    showTitles: isDetail,
                     interval: 1,
                     getTitlesWidget: (value, meta) {
-                      // Muestra 0, 1, 2, 3, 4, 5 en el eje X
                       if (value >= 0 && value <= 5 && value % 1 == 0) {
                         return Text(
                           value.toInt().toString(),

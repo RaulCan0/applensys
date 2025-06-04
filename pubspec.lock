@@ -73,6 +73,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
+  auto_update:
+    dependency: "direct main"
+    description:
+      name: auto_update
+      sha256: f078f2748ec04d87931e7cdd6baaa7b7074bab8bda7da508794871772b613acc
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
   boolean_selector:
     dependency: transitive
     description:

@@ -10,12 +10,14 @@ class DonutChart extends StatelessWidget {
   final Map<String, double> data;
   final String title;
   final Map<String, Color>? dataMap;
+  final bool isDetail;
 
   const DonutChart({
     super.key,
     required this.data,
     required this.title,
     this.dataMap,
+    this.isDetail = false,
   });
 
   @override
@@ -60,7 +62,7 @@ class DonutChart extends StatelessWidget {
         PieChartSectionData(
           value: value,
           color: color,
-          radius: 50,
+          radius: isDetail ? 70 : 50,
           showTitle: false,
         ),
       );
@@ -78,32 +80,33 @@ class DonutChart extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 150,
+          height: isDetail ? 220 : 150,
           child: PieChart(
             PieChartData(
               sectionsSpace: 2,
-              centerSpaceRadius: 30,
+              centerSpaceRadius: isDetail ? 50 : 30,
               sections: sections,
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 8,
-          children: [
-            for (var i = 0; i < keys.length; i++)
-              _LegendItem(
-                color: dataMap?[keys[i]] ??
-                    fallbackPalette[i % fallbackPalette.length],
-                label: keys[i],
-                porcentaje: total > 0
-                    ? (data[keys[i]]! / total * 100).toStringAsFixed(1)
-                    : '0.0',
-              ),
-          ],
-        ),
+        if (isDetail) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < keys.length; i++)
+                _LegendItem(
+                  color: dataMap?[keys[i]] ?? fallbackPalette[i % fallbackPalette.length],
+                  label: keys[i],
+                  porcentaje: total > 0
+                      ? (data[keys[i]]! / total * 100).toStringAsFixed(1)
+                      : '0.0',
+                ),
+            ],
+          ),
+        ],
       ],
     );
   }

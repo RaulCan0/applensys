@@ -607,6 +607,7 @@ List<ScatterData> _buildScatterData() {
                             'MEJORA CONTINUA': Colors.yellow,
                             'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
                           },
+                          isDetail: false,
                         ),
                       );
                     case 1:
@@ -616,6 +617,7 @@ List<ScatterData> _buildScatterData() {
                         child: ScatterBubbleChart(
                           data: _buildScatterData(),
                           title: 'Promedio por Principio',
+                          isDetail: false,
                         ),
                       );
                     case 2:
@@ -627,6 +629,7 @@ List<ScatterData> _buildScatterData() {
                           title: 'Distribución por Comportamiento y Nivel',
                           minY: 0,
                           maxY: 5,
+                          isDetail: false,
                         ),
                       );
                     case 3:
@@ -638,6 +641,7 @@ List<ScatterData> _buildScatterData() {
                           title: 'Conteos por Sistema y Nivel',
                           minX: 0,
                           maxX: 10,
+                          isDetail: false,
                         ),
                       );
                     default:
@@ -820,11 +824,13 @@ class _SlideDetailScreen extends StatelessWidget {
                   'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
                 }
               : {},
+          isDetail: true,
         );
       case 'Principios':
         return ScatterBubbleChart(
           data: chartData is List<ScatterData> ? chartData : [],
           title: 'Promedio por Principio',
+          isDetail: true,
         );
       case 'Comportamientos':
         return GroupedBarChart(
@@ -832,6 +838,7 @@ class _SlideDetailScreen extends StatelessWidget {
           title: 'Distribución por Comportamiento y Nivel',
           minY: 0,
           maxY: 5,
+          isDetail: true,
         );
       case 'Sistemas':
         final Map<String, Map<String, int>> safeData = {};
@@ -848,6 +855,7 @@ class _SlideDetailScreen extends StatelessWidget {
           title: 'Conteos por Sistema y Nivel',
           minX: 0,
           maxX: 10,
+          isDetail: true,
         );
       default:
         return const Center(

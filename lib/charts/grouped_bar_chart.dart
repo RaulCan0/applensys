@@ -13,6 +13,7 @@ class GroupedBarChart extends StatelessWidget {
   final String title;
   final double minY;
   final double maxY;
+  final bool isDetail;
 
   const GroupedBarChart({
     super.key,
@@ -20,6 +21,7 @@ class GroupedBarChart extends StatelessWidget {
     required this.title,
     required this.minY,
     required this.maxY,
+    this.isDetail = false,
   });
 
   @override
@@ -50,35 +52,35 @@ class GroupedBarChart extends StatelessWidget {
                 final valores = data[labels[i]]!;
                 return BarChartGroupData(
                   x: i,
-                  barsSpace: 4,
+                  barsSpace: isDetail ? 8 : 4,
                   barRods: [
                     // Barra de Ejecutivo (azul)
                     BarChartRodData(
                       toY: valores[0],
                       color: Colors.blue,
-                      width: 8,
+                      width: isDetail ? 16 : 8,
                     ),
                     // Barra de Gerente (rojo)
                     BarChartRodData(
                       toY: valores[1],
                       color: Colors.red,
-                      width: 8,
+                      width: isDetail ? 16 : 8,
                     ),
                     // Barra de Miembro (verde)
                     BarChartRodData(
                       toY: valores[2],
                       color: Colors.green,
-                      width: 8,
+                      width: isDetail ? 16 : 8,
                     ),
                   ],
                 );
               }),
-              groupsSpace: 20, // espacio entre cada grupo de 3 barras
+              groupsSpace: isDetail ? 32 : 20,
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
+                    showTitles: isDetail,
+                    reservedSize: isDetail ? 50 : 30,
                     getTitlesWidget: (value, meta) {
                       final index = value.toInt();
                       if (index < 0 || index >= labels.length) {
@@ -100,9 +102,9 @@ class GroupedBarChart extends StatelessWidget {
                 ),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: true,
+                    showTitles: isDetail,
                     interval: 1,
-                    reservedSize: 28,
+                    reservedSize: isDetail ? 40 : 28,
                     getTitlesWidget: (value, meta) {
                       // Mostramos e.g. 0,1,2,3,4,5
                       if (value % 1 == 0 && value >= minY && value <= maxY) {
@@ -123,7 +125,7 @@ class GroupedBarChart extends StatelessWidget {
                 ),
               ),
               gridData: FlGridData(
-                show: true,
+                show: isDetail,
                 horizontalInterval: 1,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
