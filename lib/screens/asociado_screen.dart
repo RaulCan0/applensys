@@ -7,7 +7,7 @@ import '../models/asociado.dart';
 import '../models/empresa.dart';
 import 'principios_screen.dart';
 import '../widgets/drawer_lensys.dart';
-import 'package:applensys/widgets/chat_scren.dart';
+import 'package:applensys/widgets/chat_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AsociadoScreen extends StatefulWidget {

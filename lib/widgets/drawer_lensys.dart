@@ -8,7 +8,7 @@ import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/screens/historial_screen.dart';
 import 'package:applensys/screens/perfil_screen.dart';
 import 'package:applensys/screens/tablas_screen.dart';
-import 'package:applensys/widgets/chat_scren.dart';
+import 'package:applensys/widgets/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

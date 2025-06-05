@@ -5,7 +5,7 @@
 import 'dart:convert';
 import 'package:applensys/services/shared/excel_exporter.dart';
 import 'package:flutter/material.dart';
-import 'package:applensys/widgets/chat_scren.dart';
+import 'package:applensys/widgets/chat_screen.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
 import 'package:applensys/utils/evaluacion_chart_data.dart';
@@ -106,11 +106,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (_dimensionesRaw.isNotEmpty) {
       _procesarDimensionesDesdeRaw(_dimensionesRaw);
+    }    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   /// Procesa las filas crudas a modelos [Dimension], [Principio] y [Comportamiento].
@@ -535,11 +535,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                    _buildChartContainer(
                     color: const Color(0xFF005F73),
-                    title: 'Promedio por Dimensión',
+                    title: 'EVALUACION POR DIMENSION',
                     child: Center( // <- Añadir Center aquí
                       child: DonutChart(
                         data: _buildDonutData(),
-                        title: 'Promedio por Dimensión',
+                        title: '',
                         dataMap: {
                           'IMPULSORES CULTURALES': Colors.redAccent,
                           'MEJORA CONTINUA': Colors.yellow,
@@ -563,10 +563,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   _buildChartContainer(
                     color: const Color(0xFF0A9396),
-                    title: 'Promedio por Principio',
+                    title: 'EVALUACION POR PRINCIPIO',
                     child: ScatterBubbleChart(
                       data: _buildScatterData(),
-                      title: 'Promedio por Principio',
+                      title: '',
                      
                       isDetail: false,
                     ),
@@ -782,6 +782,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () {
         final tieneDatos = (chartData is Map && chartData.isNotEmpty) ||
             (chartData is List && chartData.isNotEmpty);
+        if (!mounted) return; // Previene errores de dependents.isEmpty
         if (tieneDatos) {
           Navigator.push(
             context,

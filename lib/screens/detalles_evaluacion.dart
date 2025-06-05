@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:applensys/screens/dashboard_screen.dart';
 import '../widgets/drawer_lensys.dart';
-import 'package:applensys/widgets/chat_scren.dart'; // Nueva importación
+import 'package:applensys/widgets/chat_screen.dart'; // Nueva importación
 
 class DetallesEvaluacionScreen extends StatefulWidget {
   final Map<String, Map<String, double>> dimensionesPromedios;

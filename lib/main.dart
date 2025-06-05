@@ -15,7 +15,6 @@ import 'package:applensys/screens/auth/register_screen.dart';
 import 'package:applensys/screens/auth/recoveru_screee.dart';
 import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/services/local/evaluacion_cache_service.dart';
-import 'package:auto_update/auto_update.dart';
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();

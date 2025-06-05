@@ -5,7 +5,7 @@ import 'package:applensys/services/local/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/empresa.dart';
-import '../widgets/chat_scren.dart';
+import '../widgets/chat_screen.dart';
 import '../widgets/drawer_lensys.dart';
 import 'asociado_screen.dart';
 import 'empresas_screen.dart';
@@ -217,7 +217,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                         child: Row(
                           children: const [
                             Icon(Icons.insert_chart_outlined, color: Colors.grey, size: 36), // Icono modificado levemente para diferenciar
-                            SizedBox(width: 12),
+                            SizedBox(width: 20),
                             Expanded(
                               child: Text(
                                 'Resultados (próximamente)',
@@ -240,7 +240,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                       horizontal: screenSize.width * 0.05,
                     ),
                     child: Card(
-                      elevation: 2,
+                      elevation: 6,
                       color: Colors.grey.shade200,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Padding(
@@ -248,7 +248,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                         child: Row(
                           children: const [
                             Icon(Icons.assignment_turned_in_outlined, color: Colors.grey, size: 36), // Icono para evaluacion final
-                            SizedBox(width: 12),
+                            SizedBox(width: 20),
                             Expanded(
                               child: Text(
                                 'Evaluación Final (próximamente)',

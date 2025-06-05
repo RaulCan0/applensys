@@ -37,7 +37,8 @@ dependencies:
   excel: ^4.0.6
   path_provider: ^2.1.5
   carousel_slider: ^5.0.0
-  get_it: ^8.0.3
+  get_it: ^8.0.3 
+
   flutter_riverpod: ^2.6.1
   flutter_localizations:
     sdk: flutter
