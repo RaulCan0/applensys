@@ -3,9 +3,8 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
-
+import 'package:applensys/services/shared/excel_exporter.dart';
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:applensys/widgets/chat_scren.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
 import 'package:applensys/models/empresa.dart';
@@ -21,7 +20,6 @@ import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
 import 'package:open_file/open_file.dart';
 import 'package:applensys/custom/table_names.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:applensys/services/helpers/excel_exporter.dart';
 import 'package:applensys/services/domain/reporte_utils_final.dart';
 import 'package:applensys/models/level_averages.dart';
 
@@ -48,9 +46,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Modelos procesados para gráficos:
   List<Dimension> _dimensiones = [];
 
-  // Estado de Play/Pause (para el botón de la derecha)
-  bool _isPlaying = false;
-
   // Flag para saber si aún estamos cargando
   bool _isLoading = true;
 
@@ -67,10 +62,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     dynamic rawTables = await cacheService.cargarTablas();
 
     if (rawTables != null) {
-      // Si lo que viene es un Map<String, Map<String, List<Map<String, dynamic>>>>
-      // desanidamos y aplanamos todas las listas interiores.
+      // Si viene un Map<String, Map<String, List<Map<String, dynamic>>>>
+      final List<Map<String, dynamic>> flattened = [];
       if (rawTables is Map<String, dynamic>) {
-        final List<Map<String, dynamic>> flattened = [];
         for (final dimEntry in rawTables.entries) {
           final innerMap = dimEntry.value;
           if (innerMap is Map<String, dynamic>) {
@@ -88,13 +82,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         _dimensionesRaw = flattened;
       }
-      // Si rawTables ya era List<Map<String, dynamic>>, lo convertimos directamente:
+      // Si rawTables ya era List<Map<String, dynamic>>
       else if (rawTables is List<dynamic>) {
         _dimensionesRaw = rawTables.cast<Map<String, dynamic>>();
       }
     }
 
-    // Si después de intentar caché no hay nada, consultamos Supabase
+    // Si no hay datos en caché, consultamos Supabase
     if (_dimensionesRaw.isEmpty) {
       try {
         final supabase = Supabase.instance.client;
@@ -110,7 +104,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     }
 
-    // Procesar a modelos si hay registros
     if (_dimensionesRaw.isNotEmpty) {
       _procesarDimensionesDesdeRaw(_dimensionesRaw);
     }
@@ -120,13 +113,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  /// Convierte la lista de mapas (filas) a la estructura de modelos
-  /// [Dimension], [Principio] y [Comportamiento], calculando los promedios.
+  /// Procesa las filas crudas a modelos [Dimension], [Principio] y [Comportamiento].
   void _procesarDimensionesDesdeRaw(List<Map<String, dynamic>> raw) {
     final Map<String, List<Map<String, dynamic>>> porDimension = {};
     for (final fila in raw) {
-      final dimNombre =
-          (fila['dimension_id']?.toString()) ?? 'Sin dimensión';
+      final dimNombre = (fila['dimension_id']?.toString()) ?? 'Sin dimensión';
       porDimension.putIfAbsent(dimNombre, () => []).add(fila);
     }
 
@@ -136,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       double sumaGeneralDim = 0;
       int conteoGeneralDim = 0;
 
-      // 2) Agrupar por 'principio'
+      // Agrupar por 'principio'
       final Map<String, List<Map<String, dynamic>>> porPrincipio = {};
       for (final fila in filasDim) {
         final priNombre = (fila['principio'] as String?) ?? 'Sin principio';
@@ -149,7 +140,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         double sumaPri = 0;
         int conteoPri = 0;
 
-        // 3) Agrupar por 'comportamiento'
+        // Agrupar por 'comportamiento'
         final Map<String, List<Map<String, dynamic>>> porComportamiento = {};
         for (final filaP in filasPri) {
           final compNombre =
@@ -253,7 +244,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Datos para el gráfico de dona (promedio general por dimensión).
+  /// Datos para el gráfico de Dona (promedio general por dimensión).
   Map<String, double> _buildDonutData() {
     const nombresDimensiones = {
       '1': 'IMPULSORES CULTURALES',
@@ -268,79 +259,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return data;
   }
 
- 
-List<ScatterData> _buildScatterData() {
-  final List<ScatterData> list = [];
-  final principios =
-      EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
+  /// Construye ScatterData solo con promedios > 0 y usando orElse que
+  /// devuelve un Principio vacío en lugar de null.
+  List<ScatterData> _buildScatterData() {
+    const List<String> allPrinciples = [
+      'Respetar a Cada Individuo',
+      'Liderar con Humildad',
+      'Buscar la Perfección',
+      'Abrazar el Pensamiento Científico',
+      'Enfocarse en el Proceso',
+      'Asegurar la Calidad en la Fuente',
+      'Mejorar el Flujo y Jalón de Valor',
+      'Pensar Sistémicamente',
+      'Crear Constancia de Propósito',
+      'Crear Valor para el Cliente',
+    ];
 
-  for (var i = 0; i < principios.length; i++) {
-    final Principio pri = principios[i];
+    final principiosProcesados = EvaluacionChartData
+        .extractPrincipios(_dimensiones)
+        .cast<Principio>();
 
-    // Si el modelo Principio NO tiene atributos 'promedioEjecutivo' directos,
-    // debemos computarlos recorriendo sus comportamientos:
-    double sumaEj = 0, sumaGe = 0, sumaMi = 0;
-    int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
+    final List<ScatterData> list = [];
+    final principios =
+        EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
 
-    for (final comp in pri.comportamientos) {
-      // comp.promedioEjecutivo, comp.promedioGerente, comp.promedioMiembro
-      // están definidos en la clase Comportamiento:
-      if (comp.promedioEjecutivo > 0) {
-        sumaEj += comp.promedioEjecutivo;
-        cuentaEj++;
+    // Cada Principio tendrá índice Y fijo de 1 a 10
+    for (var i = 0; i < principios.length; i++) {
+      final Principio pri = principios[i];
+      final yIndex = i + 1; // 1..10
+
+      // Calcular promedio de niveles dentro del Principio
+      double sumaEj = 0, sumaGe = 0, sumaMi = 0;
+      int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
+
+      for (final comp in pri.comportamientos) {
+        if (comp.promedioEjecutivo > 0) {
+          sumaEj += comp.promedioEjecutivo;
+          cuentaEj++;
+        }
+        if (comp.promedioGerente > 0) {
+          sumaGe += comp.promedioGerente;
+          cuentaGe++;
+        }
+        if (comp.promedioMiembro > 0) {
+          sumaMi += comp.promedioMiembro;
+          cuentaMi++;
+        }
       }
-      if (comp.promedioGerente > 0) {
-        sumaGe += comp.promedioGerente;
-        cuentaGe++;
-      }
-      if (comp.promedioMiembro > 0) {
-        sumaMi += comp.promedioMiembro;
-        cuentaMi++;
-      }
+
+      final double promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
+      final double promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
+      final double promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
+
+      list.add(
+        ScatterData(x: promEj.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.red),
+      );
+      list.add(
+        ScatterData(x: promGe.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.green),
+      );
+      list.add(
+        ScatterData(x: promMi.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.blue),
+      );
     }
 
-    // Promedios (o 0 si no hay datos):
-    final double promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
-    final double promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
-    final double promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
-
-    // Clamp para que los valores queden en 0–5:
-    final double yEj = promEj.clamp(0.0, 5.0);
-    final double yGe = promGe.clamp(0.0, 5.0);
-    final double yMi = promMi.clamp(0.0, 5.0);
-
-    // X fijo = índice del principio
-    final double xPos = i.toDouble();
-
-    // Agregamos los tres puntos (cada color representa un nivel distinto):
-    list.add(
-      ScatterData(
-        x: xPos,
-        y: yEj,
-        color: Colors.redAccent, // Ejecutivo
-      ),
-    );
-    list.add(
-      ScatterData(
-        x: xPos,
-        y: yGe,
-                color: Colors.blueAccent, // Miembro
-
-      ),
-    );
-    list.add(
-      ScatterData(
-        x: xPos,
-        y: yMi,
-        color: Colors.greenAccent, // Gerente
-      ),
-    );
+    return list;
   }
 
-  return list;
-}
-
-  /// Datos para el gráfico de barras agrupadas (comportamientos → [E, G, M]).
+  /// Datos para el gráfico de Barras Agrupadas (promedios de Comportamientos).
   Map<String, List<double>> _buildGroupedBarData() {
     final Map<String, List<double>> data = {};
     final comps =
@@ -355,9 +340,9 @@ List<ScatterData> _buildScatterData() {
     return data;
   }
 
-  /// Datos para el gráfico de barras horizontales (conteo por sistema y nivel).
-  Map<String, Map<String, int>> _buildHorizontalBarsData() {
-    final Map<String, Map<String, int>> data = {};
+  /// Datos para el gráfico de Barras Horizontales (conteo por Sistema y Nivel).
+  Map<String, Map<String, double>> _buildHorizontalBarsData() { // Cambiado el tipo de retorno
+    final Map<String, Map<String, double>> data = {}; // Cambiado el tipo del mapa
 
     for (final row in _dimensionesRaw) {
       final listaSistemas = (row['sistemas'] as List<dynamic>?)
@@ -367,15 +352,15 @@ List<ScatterData> _buildScatterData() {
               .toList() ??
           <String>[];
 
-      final double valEj = (row['ejecutivo'] as num?)?.toDouble() ?? 0.0;
-      final double valGe = (row['gerente'] as num?)?.toDouble() ?? 0.0;
-      final double valMi = (row['miembro'] as num?)?.toDouble() ?? 0.0;
+      final valEj = (row['ejecutivo'] as num?)?.toDouble() ?? 0.0;
+      final valGe = (row['gerente'] as num?)?.toDouble() ?? 0.0;
+      final valMi = (row['miembro'] as num?)?.toDouble() ?? 0.0;
 
       for (final sis in listaSistemas) {
-        data.putIfAbsent(sis, () => {'E': 0, 'G': 0, 'M': 0});
-        if (valEj > 0) data[sis]!['E'] = data[sis]!['E']! + 1;
-        if (valGe > 0) data[sis]!['G'] = data[sis]!['G']! + 1;
-        if (valMi > 0) data[sis]!['M'] = data[sis]!['M']! + 1;
+        data.putIfAbsent(sis, () => {'E': 0.0, 'G': 0.0, 'M': 0.0}); // Inicializar con doubles
+        if (valEj > 0) data[sis]!['E'] = data[sis]!['E']! + 1.0; // Sumar como double
+        if (valGe > 0) data[sis]!['G'] = data[sis]!['G']! + 1.0; // Sumar como double
+        if (valMi > 0) data[sis]!['M'] = data[sis]!['M']! + 1.0; // Sumar como double
       }
     }
 
@@ -388,9 +373,9 @@ List<ScatterData> _buildScatterData() {
       const SnackBar(content: Text('Generando archivos Excel y Word...')),
     );
     try {
-      // 1. Construir promedios de comportamientos para Excel
+      // --- Preparación de datos para Excel (ya existente) ---
       final List<LevelAverages> behaviorAverages = [];
-      int id = 1;
+      int id = 1; 
       for (final dim in _dimensiones) {
         for (final pri in dim.principios) {
           for (final comp in pri.comportamientos) {
@@ -406,13 +391,11 @@ List<ScatterData> _buildScatterData() {
           }
         }
       }
-      // 2. Construir promedios de sistemas asociados para Excel
-      final Map<String, Map<String, int>> sistemasData =
-          _buildHorizontalBarsData();
+      final sistemasData = _buildHorizontalBarsData();
       final List<LevelAverages> systemAverages = [];
       sistemasData.forEach((sistema, niveles) {
         systemAverages.add(LevelAverages(
-          id: id++,
+          id: id++, 
           nombre: sistema,
           ejecutivo: (niveles['E'] ?? 0).toDouble(),
           gerente: (niveles['G'] ?? 0).toDouble(),
@@ -421,30 +404,67 @@ List<ScatterData> _buildScatterData() {
           nivel: '',
         ));
       });
-      // 3. Exportar Excel
+
+      // --- Generar Excel ---
       final excelFile = await ExcelExporter.export(
         behaviorAverages: behaviorAverages,
         systemAverages: systemAverages,
       );
-      // 4. Leer benchmarks para Word
+      
+      // --- Generar Word ---
       final t1 = await _loadJsonAsset('assets/t1.json');
       final t2 = await _loadJsonAsset('assets/t2.json');
       final t3 = await _loadJsonAsset('assets/t3.json');
-      // 5. Exportar Word
       final wordPath = await ReporteUtils.exportReporteWordUnificado(
-        _dimensionesRaw,
+        _dimensionesRaw, 
         t1,
         t2,
         t3,
       );
+      
+      ScaffoldMessenger.of(context).removeCurrentSnackBar(); 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Archivos generados:\nExcel: ${excelFile.path}\nWord: $wordPath',
+          duration: const Duration(seconds: 10), 
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Archivos generados con éxito.'),
+              Text('Excel: ${excelFile.path.split('/').last}'),
+              Text('Word: ${wordPath.split('/').last}'),
+            ],
+          ),
+          action: SnackBarAction(
+            label: 'ABRIR ARCHIVOS',
+            textColor: Colors.yellow,
+            onPressed: () async {
+              try {
+                await OpenFile.open(excelFile.path);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('No se pudo abrir Excel: ${e.toString()}')),
+                );
+              }
+              try {
+                if (wordPath.isNotEmpty) {
+                  await OpenFile.open(wordPath);
+                } else {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Ruta de Word no válida.')),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('No se pudo abrir Word: ${e.toString()}')),
+                );
+              }
+            },
           ),
         ),
       );
     } catch (e) {
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al generar archivos: ${e.toString()}')),
       );
@@ -455,98 +475,6 @@ List<ScatterData> _buildScatterData() {
     final data = await DefaultAssetBundle.of(context).loadString(path);
     return List<Map<String, dynamic>>.from(jsonDecode(data));
   }
-
-  /// Callback al presionar “Play/Pause”
-  void _onTogglePlayPause() {
-    setState(() {
-      _isPlaying = !_isPlaying;
-    });
-    final mensaje = _isPlaying ? 'Reanudado' : 'Pausado';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Dashboard $mensaje')),
-    );
-  }
-
-  /// Callback para generar y abrir Excel inmediatamente
-  Future<void> _onGenerarYAbrirExcel() async {
-    try {
-      final List<LevelAverages> behaviorAverages = [];
-      int id = 1;
-      for (final dim in _dimensiones) {
-        for (final pri in dim.principios) {
-          for (final comp in pri.comportamientos) {
-            behaviorAverages.add(LevelAverages(
-              id: id++,
-              nombre: comp.nombre,
-              ejecutivo: comp.promedioEjecutivo,
-              gerente: comp.promedioGerente,
-              miembro: comp.promedioMiembro,
-              dimensionId: int.tryParse(dim.id),
-              nivel: '',
-            ));
-          }
-        }
-      }
-      final Map<String, Map<String, int>> sistemasData =
-          _buildHorizontalBarsData();
-      final List<LevelAverages> systemAverages = [];
-      sistemasData.forEach((sistema, niveles) {
-        systemAverages.add(LevelAverages(
-          id: id++,
-          nombre: sistema,
-          ejecutivo: (niveles['E'] ?? 0).toDouble(),
-          gerente: (niveles['G'] ?? 0).toDouble(),
-          miembro: (niveles['M'] ?? 0).toDouble(),
-          dimensionId: null,
-          nivel: '',
-        ));
-      });
-      final excelFile = await ExcelExporter.export(
-        behaviorAverages: behaviorAverages,
-        systemAverages: systemAverages,
-      );
-      await OpenFile.open(excelFile.path);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al generar/abrir Excel: ${e.toString()}')),
-      );
-    }
-  }
-
-  /// Callback para generar y abrir Word inmediatamente
- Future<void> _onGenerarYAbrirWord() async {
-  try {
-    // 1. Cargar los JSON de benchmarks
-    final t1 = await _loadJsonAsset('assets/t1.json');
-    final t2 = await _loadJsonAsset('assets/t2.json');
-    final t3 = await _loadJsonAsset('assets/t3.json');
-
-    // 2. Generar el documento Word (puede devolver null si ocurre algún fallo interno)
-    final String wordPath = await ReporteUtils.exportReporteWordUnificado(
-      _dimensionesRaw,
-      t1,
-      t2,
-      t3,
-    );
-
-    // 3. Validar que 'wordPath' no sea null ni cadena vacía
-    if (wordPath.isEmpty) {
-      // Si aquí wordPath es null, mostramos un mensaje de error apropiado
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo generar el documento Word.')),
-      );
-      return;
-    }
-
-    // 4. Abrir el archivo Word generado
-    await OpenFile.open(wordPath);
-  } catch (e) {
-    // En caso de cualquier otra excepción, mostramos la excepción original
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al generar/abrir Word: ${e.toString()}')),
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -560,22 +488,21 @@ List<ScatterData> _buildScatterData() {
 
     return Scaffold(
       key: _scaffoldKey,
+
+      // Drawer izquierdo para chat (80% del ancho)
       drawer: SizedBox(
         width: screenSize.width * 0.8,
         child: const ChatWidgetDrawer(),
       ),
-      endDrawer: SizedBox(
-        width: screenSize.width * 0.8,
-        child: const DrawerLensys(),
-      ),
+
+      // EndDrawer derecho normal (sin envolver en SizedBox)
+      endDrawer: const DrawerLensys(),
+
       appBar: AppBar(
         backgroundColor: const Color(0xFF003056),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Si quieres asegurarte de que la navegación hacia atrás no
-            // encuentre dependientes vivos, puedes limpiar cualquier suscripción
-            // o controlador aquí antes de hacer pop().
             Navigator.of(context).pop();
           },
         ),
@@ -585,88 +512,128 @@ List<ScatterData> _buildScatterData() {
         ),
         centerTitle: true,
       ),
+
       body: Row(
         children: [
-          // ► Lado izquierdo: Carousel con los 4 gráficos (ocupa todo el espacio restante)
+          // ► Lado izquierdo: ListView con los 4 gráficos (ocupa todo el espacio restante)
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
-              child: CarouselSlider.builder(
-                itemCount: 4,
-                itemBuilder: (context, index, realIdx) {
-                  switch (index) {
-                    case 0:
-                      return _buildChartContainer(
-                        color: const Color(0xFF005F73),
-                        title: 'Dimensiones',
-                        child: DonutChart(
-                          data: _buildDonutData(),
-                          title: 'Promedio por Dimensión',
-                          dataMap: {
-                            'IMPULSORES CULTURALES': Colors.redAccent,
-                            'MEJORA CONTINUA': Colors.yellow,
-                            'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
-                          },
-                          isDetail: false,
-                        ),
-                      );
-                    case 1:
-                      return _buildChartContainer(
-                        color: const Color(0xFF0A9396),
-                        title: 'Principios',
-                        child: ScatterBubbleChart(
-                          data: _buildScatterData(),
-                          title: 'Promedio por Principio',
-                          isDetail: false,
-                        ),
-                      );
-                    case 2:
-                      return _buildChartContainer(
-                        color: const Color(0xFFE9D8A6),
-                        title: 'Comportamientos',
-                        child: GroupedBarChart(
-                          data: _buildGroupedBarData(),
-                          title: 'Distribución por Comportamiento y Nivel',
-                          minY: 0,
-                          maxY: 5,
-                          isDetail: false,
-                        ),
-                      );
-                    case 3:
-                      return _buildChartContainer(
-                        color: const Color(0xFFEE9B00),
-                        title: 'Sistemas',
-                        child: HorizontalBarSystemsChart(
-                          data: _buildHorizontalBarsData(),
-                          title: 'Conteos por Sistema y Nivel',
-                          minX: 0,
-                          maxX: 10,
-                          isDetail: false,
-                        ),
-                      );
-                    default:
-                      return const SizedBox.shrink();
-                  }
-                },
-                options: CarouselOptions(
-                  viewportFraction: 0.9,
-                  enlargeCenterPage: true,
-                  height: double.infinity,
-                  enableInfiniteScroll: false,
-                  autoPlay: false,
-                ),
+              child: ListView(
+                children: [
+                  // 1) Título “Dimensiones” en blanco, luego contenedor verde con su gráfico
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Dimensiones',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                   _buildChartContainer(
+                    color: const Color(0xFF005F73),
+                    title: 'Promedio por Dimensión',
+                    child: Center( // <- Añadir Center aquí
+                      child: DonutChart(
+                        data: _buildDonutData(),
+                        title: 'Promedio por Dimensión',
+                        dataMap: {
+                          'IMPULSORES CULTURALES': Colors.redAccent,
+                          'MEJORA CONTINUA': Colors.yellow,
+                          'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
+                        },
+                        isDetail: false,
+                      ),
+                    ),
+                  ),
+                  // 2) Título “Principios” en blanco, luego contenedor turquesa con su gráfico
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Principios',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildChartContainer(
+                    color: const Color(0xFF0A9396),
+                    title: 'Promedio por Principio',
+                    child: ScatterBubbleChart(
+                      data: _buildScatterData(),
+                      title: 'Promedio por Principio',
+                     
+                      isDetail: false,
+                    ),
+                  ),
+
+                  // 3) Título “Comportamientos” en blanco, luego contenedor amarillo con su gráfico
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Comportamientos',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildChartContainer(
+                    color: const Color(0xFFE9D8A6),
+                    title: 'Distribución por Comportamiento y Nivel',
+                    child: GroupedBarChart(
+                      data: _buildGroupedBarData(),
+                      title: 'Distribución por Comportamiento y Nivel',
+                      minY: 0,
+                      maxY: 5,
+                      isDetail: false,
+                    ),
+                  ),
+
+                  // 4) Título “Sistemas” en blanco, luego contenedor naranja con su gráfico
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Sistemas',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildChartContainer(
+                    color: const Color(0xFFEE9B00),
+                    title: 'Conteos por Sistema y Nivel',
+                    child: HorizontalBarSystemsChart(
+                      data: _buildHorizontalBarsData(),
+                      title: 'Conteos por Sistema y Nivel',
+                      minX: 0,
+                      maxX: 10,
+                      isDetail: false,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ),
 
-          // ► Lado derecho: sidebar estrecho con íconos (ancho fijo)
+          // ► Lado derecho: Sidebar estrecho con íconos (ancho 56px)
           Container(
-            width: screenSize.width * 0.08,
-            color: const Color(0xFF0D3B66),
+            width: 56, // ancho normal de sidebar
+            color: const Color(0xFF003056), // mismo color del AppBar
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icono para chat interno
+                // Chat interno
                 IconButton(
                   icon: const Icon(Icons.chat, color: Colors.white),
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
@@ -674,7 +641,7 @@ List<ScatterData> _buildScatterData() {
                 ),
                 const SizedBox(height: 16),
 
-                // Icono para generar documentos (Excel/Word)
+                // Generar Excel/Word
                 IconButton(
                   icon: const Icon(Icons.file_download, color: Colors.white),
                   onPressed: _onGenerarDocumentos,
@@ -682,30 +649,101 @@ List<ScatterData> _buildScatterData() {
                 ),
                 const SizedBox(height: 16),
 
-                // Icono para generar y abrir Excel
+                // Generar y abrir Excel
                 IconButton(
                   icon: const Icon(Icons.table_chart, color: Colors.green),
-                  onPressed: _onGenerarYAbrirExcel,
-                  tooltip: 'Generar y abrir Excel',
+                  onPressed: () async {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Generando Excel...')),
+                    );
+                    try {
+                      final List<LevelAverages> behaviorAverages = [];
+                      int id = 1;
+                      for (final dim in _dimensiones) {
+                        for (final pri in dim.principios) {
+                          for (final comp in pri.comportamientos) {
+                            behaviorAverages.add(LevelAverages(
+                              id: id++,
+                              nombre: comp.nombre,
+                              ejecutivo: comp.promedioEjecutivo,
+                              gerente: comp.promedioGerente,
+                              miembro: comp.promedioMiembro,
+                              dimensionId: int.tryParse(dim.id),
+                              nivel: '',
+                            ));
+                          }
+                        }
+                      }
+                      final sistemasData = _buildHorizontalBarsData();
+                      final List<LevelAverages> systemAverages = [];
+                      sistemasData.forEach((sistema, niveles) {
+                        systemAverages.add(LevelAverages(
+                          id: id++,
+                          nombre: sistema,
+                          ejecutivo: (niveles['E'] ?? 0).toDouble(),
+                          gerente: (niveles['G'] ?? 0).toDouble(),
+                          miembro: (niveles['M'] ?? 0).toDouble(),
+                          dimensionId: null,
+                          nivel: '',
+                        ));
+                      });
+                      final excelFile = await ExcelExporter.export(
+                        behaviorAverages: behaviorAverages,
+                        systemAverages: systemAverages,
+                      );
+                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Excel generado: ${excelFile.path.split('/').last}')),
+                      );
+                      await OpenFile.open(excelFile.path);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error al generar o abrir Excel: ${e.toString()}')),
+                      );
+                    }
+                  },
+                  tooltip: 'Generar y Abrir Excel',
                 ),
                 const SizedBox(height: 16),
 
-                // Icono para generar y abrir Word
+                // Generar y abrir Word
                 IconButton(
                   icon: const Icon(Icons.description, color: Colors.blue),
-                  onPressed: _onGenerarYAbrirWord,
-                  tooltip: 'Generar y abrir Word',
-                ),
-                const SizedBox(height: 16),
-
-                // Icono para Play/Pause
-                IconButton(
-                  icon: Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                  ),
-                  onPressed: _onTogglePlayPause,
-                  tooltip: _isPlaying ? 'Pausar' : 'Reanudar',
+                  onPressed: () async {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Generando Word...')),
+                    );
+                    try {
+                      final t1 = await _loadJsonAsset('assets/t1.json');
+                      final t2 = await _loadJsonAsset('assets/t2.json');
+                      final t3 = await _loadJsonAsset('assets/t3.json');
+                      final String wordPath =
+                          await ReporteUtils.exportReporteWordUnificado(
+                        _dimensionesRaw,
+                        t1,
+                        t2,
+                        t3,
+                      );
+                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                      if (wordPath.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No se pudo generar Word o la ruta está vacía.')),
+                        );
+                        return;
+                      }
+                       ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Word generado: ${wordPath.split('/').last}')),
+                      );
+                      await OpenFile.open(wordPath);
+                    } catch (e) {
+                       ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error al generar o abrir Word: ${e.toString()}')),
+                      );
+                    }
+                  },
+                  tooltip: 'Generar y Abrir Word',
                 ),
               ],
             ),
@@ -715,25 +753,25 @@ List<ScatterData> _buildScatterData() {
     );
   }
 
-  /// Cada gráfico está dentro de un contenedor redondeado, con un encabezado y espacio interior
+  /// Cada gráfico está dentro de un contenedor redondeado, con encabezado y margen.
   Widget _buildChartContainer({
     required Color color,
     required String title,
     required Widget child,
   }) {
-    // Determinar chartData para evaluar si hay datos
+    // Determinar chartData para validar si tiene datos
     dynamic chartData;
     switch (title) {
-      case 'Dimensiones':
+      case 'Promedio por Dimensión':
         chartData = _buildDonutData();
         break;
-      case 'Principios':
+      case 'Promedio por Principio':
         chartData = _buildScatterData();
         break;
-      case 'Comportamientos':
+      case 'Distribución por Comportamiento y Nivel':
         chartData = _buildGroupedBarData();
         break;
-      case 'Sistemas':
+      case 'Conteos por Sistema y Nivel':
         chartData = _buildHorizontalBarsData();
         break;
       default:
@@ -754,7 +792,7 @@ List<ScatterData> _buildScatterData() {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No hay datos para mostrar en el detalle de $title.')),
+            SnackBar(content: Text('No hay datos para mostrar en $title.')),
           );
         }
       },
@@ -766,7 +804,7 @@ List<ScatterData> _buildScatterData() {
         ),
         child: Column(
           children: [
-            // Encabezado (nombre del gráfico)
+            // Encabezado interno (subtítulo) con fondo blanco
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -785,10 +823,11 @@ List<ScatterData> _buildScatterData() {
               ),
             ),
 
-            // Espacio para el gráfico en sí (usa Expanded para llenar el área disponible)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
+            // Espacio para el gráfico (alto fijo de 240px)
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: SizedBox(
+                height: 400,
                 child: child,
               ),
             ),
@@ -808,12 +847,12 @@ class _SlideDetailScreen extends StatelessWidget {
   const _SlideDetailScreen({
     required this.title,
     required this.color,
-    this.chartData,
+    required this.chartData,
   });
 
   Widget _getChartForTitle(String title) {
     switch (title) {
-      case 'Dimensiones':
+      case 'Promedio por Dimensión':
         return DonutChart(
           data: chartData is Map<String, double> ? chartData : {},
           title: 'Promedio por Dimensión',
@@ -826,13 +865,13 @@ class _SlideDetailScreen extends StatelessWidget {
               : {},
           isDetail: true,
         );
-      case 'Principios':
+      case 'Promedio por Principio':
         return ScatterBubbleChart(
           data: chartData is List<ScatterData> ? chartData : [],
           title: 'Promedio por Principio',
           isDetail: true,
         );
-      case 'Comportamientos':
+      case 'Distribución por Comportamiento y Nivel':
         return GroupedBarChart(
           data: chartData is Map<String, List<double>> ? chartData : {},
           title: 'Distribución por Comportamiento y Nivel',
@@ -840,18 +879,34 @@ class _SlideDetailScreen extends StatelessWidget {
           maxY: 5,
           isDetail: true,
         );
-      case 'Sistemas':
-        final Map<String, Map<String, int>> safeData = {};
-        if (chartData is Map) {
-          chartData.forEach((k, v) {
-            if (v is Map) {
-              safeData[k.toString()] =
-                  v.map((kk, vv) => MapEntry(kk.toString(), (vv as int)));
+      case 'Conteos por Sistema y Nivel':
+        // chartData ya debería ser Map<String, Map<String, double>>
+        final Map<String, Map<String, double>> dataForChart;
+
+        if (chartData is Map<String, Map<String, double>>) {
+          dataForChart = chartData;
+        } else if (chartData is Map) {
+          // Fallback por si chartData no es del tipo esperado (ej. Map<String, Map<String, int>>)
+          dataForChart = {};
+          chartData.forEach((key, value) {
+            if (value is Map) {
+              final Map<String, double> innerDoubleMap = {};
+              value.forEach((innerKey, innerValue) {
+                if (innerValue is num) {
+                  innerDoubleMap[innerKey.toString()] = innerValue.toDouble();
+                }
+              });
+              if (innerDoubleMap.isNotEmpty) {
+                dataForChart[key.toString()] = innerDoubleMap;
+              }
             }
           });
+        } else {
+          dataForChart = {}; // Default a mapa vacío si el tipo es completamente inesperado
         }
+
         return HorizontalBarSystemsChart(
-          data: safeData,
+          data: dataForChart, // Ahora pasamos el tipo correcto
           title: 'Conteos por Sistema y Nivel',
           minX: 0,
           maxX: 10,

@@ -5,7 +5,7 @@ import 'package:applensys/services/local/evaluacion_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/empresa.dart';
-import '../widgets/chat_scren.dart'; // Nueva importación
+import '../widgets/chat_scren.dart';
 import '../widgets/drawer_lensys.dart';
 import 'asociado_screen.dart';
 import 'empresas_screen.dart';
@@ -108,102 +108,163 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: dimensiones.length,
+              itemCount: dimensiones.length + 2, // Modificado para incluir la nueva tarjeta
               itemBuilder: (context, index) {
-                final dimension = dimensiones[index];
-                return Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: screenSize.height * 0.01,
-                    horizontal: screenSize.width * 0.05,
-                  ),
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AsociadoScreen(
-                              empresa: widget.empresa,
-                              dimensionId: dimension['id'],
-                              evaluacionId: widget.evaluacionId,
-                            ),
-                          ),
-                        );
-                        setState(() {});
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(dimension['icono'], color: dimension['color'], size: 36),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    dimension['nombre'],
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            FutureBuilder<double>(
-                              future: evaluacionService.obtenerProgresoDimension(
-                                widget.empresa.id,
-                                dimension['id'],
+                if (index < dimensiones.length) {
+                  final dimension = dimensiones[index];
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenSize.height * 0.01,
+                      horizontal: screenSize.width * 0.05,
+                    ),
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AsociadoScreen(
+                                empresa: widget.empresa,
+                                dimensionId: dimension['id'],
+                                evaluacionId: widget.evaluacionId,
                               ),
-                              initialData: 0.0,
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
+                            ),
+                          );
+                          setState(() {});
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(dimension['icono'], color: dimension['color'], size: 36),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      dimension['nombre'],
+                                      style: const TextStyle(
+                                          fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              FutureBuilder<double>(
+                                future: evaluacionService.obtenerProgresoDimension(
+                                  widget.empresa.id,
+                                  dimension['id'],
+                                ),
+                                initialData: 0.0,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: const [
+                                        LinearProgressIndicator(),
+                                        SizedBox(height: 4),
+                                        Text('Cargando progreso...', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    );
+                                  }
+                                  if (snapshot.hasError) {
+                                    return const Text(
+                                      'Error al cargar progreso',
+                                      style: TextStyle(fontSize: 12, color: Colors.red),
+                                    );
+                                  }
+                                  final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      LinearProgressIndicator(),
-                                      SizedBox(height: 4),
+                                    children: [
+                                      LinearProgressIndicator(
+                                        value: progreso,
+                                        minHeight: 8,
+                                        backgroundColor: Colors.grey[300],
+                                        color: dimension['color'],
+                                      ),
+                                      const SizedBox(height: 4),
                                       Text(
-                                        'Cargando progreso...',
-                                        style: TextStyle(fontSize: 12),
+                                        '${(progreso * 100).toStringAsFixed(1)}% completado',
+                                        style: const TextStyle(fontSize: 12),
                                       ),
                                     ],
                                   );
-                                }
-                                if (snapshot.hasError) {
-                                  return const Text(
-                                    'Error al cargar progreso',
-                                    style: TextStyle(fontSize: 12, color: Colors.red),
-                                  );
-                                }
-                                final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    LinearProgressIndicator(
-                                      value: progreso,
-                                      minHeight: 8,
-                                      backgroundColor: Colors.grey[300],
-                                      color: dimension['color'],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${(progreso * 100).toStringAsFixed(1)}% completado',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                  ],
-                                );
-                              },
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                } else if (index == dimensiones.length) { // Tarjeta de Resultados Próximamente
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenSize.height * 0.01,
+                      horizontal: screenSize.width * 0.05,
+                    ),
+                    child: Card(
+                      elevation: 2,
+                      color: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.insert_chart_outlined, color: Colors.grey, size: 36), // Icono modificado levemente para diferenciar
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Resultados (próximamente)',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black54,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                );
+                  );
+                } else { // Nueva Tarjeta de Evaluacion Final Próximamente
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenSize.height * 0.01,
+                      horizontal: screenSize.width * 0.05,
+                    ),
+                    child: Card(
+                      elevation: 2,
+                      color: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.assignment_turned_in_outlined, color: Colors.grey, size: 36), // Icono para evaluacion final
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Evaluación Final (próximamente)',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
               },
             ),
           ),
@@ -238,7 +299,6 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                   onPressed: () async {
                     try {
                       final cache = EvaluacionCacheService();
-                      // Solo eliminar evaluación pendiente y luego limpiar datos de tabla
                       await cache.eliminarPendiente();
                       await cache.limpiarCacheTablaDatos();
 

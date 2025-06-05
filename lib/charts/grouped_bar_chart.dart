@@ -26,6 +26,15 @@ class GroupedBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay datos disponibles para mostrar.',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+
     final labels = data.keys.toList(); // Lista de nombres de comportamientos
 
     return Column(

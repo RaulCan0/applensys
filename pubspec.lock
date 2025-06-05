@@ -461,6 +461,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  image:
+    dependency: transitive
+    description:
+      name: image
+      sha256: f31d52537dc417fdcde36088fdf11d191026fd5e4fae742491ebd40e5a8bea7d
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.3.0"
   image_picker:
     dependency: "direct main"
     description:
@@ -533,6 +541,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.20.2"
+  jiffy:
+    dependency: transitive
+    description:
+      name: jiffy
+      sha256: "9bafbfe6d97587048bf449165e050029e716a12438f54a3d39e7e3a256decdac"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.4.3"
   js:
     dependency: transitive
     description:
@@ -837,6 +853,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.2"
+  quiver:
+    dependency: transitive
+    description:
+      name: quiver
+      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.2"
   realtime_client:
     dependency: transitive
     description:
@@ -1038,10 +1062,26 @@ packages:
     dependency: transitive
     description:
       name: syncfusion_flutter_core
-      sha256: "6898c5dc81f73ac4e1156a075e4dd4591ea8927f26dcc77f6ba0e9b1b1d6c8c5"
+      sha256: "73904e5db0c4181b179c4d3b28ed40e6c2898ad4d081f2c999a5b8a8f8475e3f"
       url: "https://pub.dev"
     source: hosted
-    version: "29.2.7"
+    version: "29.2.8"
+  syncfusion_flutter_xlsio:
+    dependency: "direct main"
+    description:
+      name: syncfusion_flutter_xlsio
+      sha256: "5b2aab7d4340bbe7fab22b5ff8bbbd73d0451122ba3f25041208f7ae6b5eae7f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "29.2.8"
+  syncfusion_officecore:
+    dependency: transitive
+    description:
+      name: syncfusion_officecore
+      sha256: "9d9a340b5f386efd0a2a926016c480ee2700f85516c5e60f6d1a7788ce928d11"
+      url: "https://pub.dev"
+    source: hosted
+    version: "29.2.8"
   term_glyph:
     dependency: transitive
     description:

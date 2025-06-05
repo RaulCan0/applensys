@@ -22,9 +22,9 @@ class TablasRegistrosScreen extends StatefulWidget {
 
 class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
   final Map<String, String> _dimMap = {
-    'Dimensión 1': '1',
-    'Dimensión 2': '2',
-    'Dimensión 3': '3',
+   'IMPULSORES CULTURALES': 'Dimensión 1',
+    'MEJORA CONTINUA': 'Dimensión 2',
+    'ALINEAMIENTO EMPRESARIAL': 'Dimensión 3',
   };
 
   late List<String> dimensiones;
@@ -60,9 +60,8 @@ class _TablasRegistrosScreenState extends State<TablasRegistrosScreen> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF003056),
-          leading: const BackButton(color: Colors.white),
-          title: const Text('Registros Detallados', style: TextStyle(color: Colors.white)),
-          centerTitle: true,
+          title: const Text('Registros detallados', style: TextStyle(color: Colors.white)),
+          iconTheme: const IconThemeData(color: Colors.white),
           bottom: TabBar(
             indicatorColor: Colors.grey.shade300,
             labelColor: Colors.white,

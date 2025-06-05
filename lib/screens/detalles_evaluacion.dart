@@ -1,3 +1,5 @@
+// lib/screens/detalles_evaluacion.dart
+
 import 'package:applensys/models/empresa.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -18,35 +20,39 @@ class DetallesEvaluacionScreen extends StatefulWidget {
     required this.empresa,
     required this.evaluacionId,
     this.dimension,
-    this.initialTabIndex, Map<String, double>? promedios, 
+    this.initialTabIndex, Map<String, double>? promedios,
   });
 
   @override
-  State<DetallesEvaluacionScreen> createState() => _DetallesEvaluacionScreenState();
+  State<DetallesEvaluacionScreen> createState() =>
+      _DetallesEvaluacionScreenState();
 }
 
 class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController; // Asegúrate que _tabController esté definido como late final o inicializado en initState
+  late TabController _tabController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    // Mantén la inicialización original de _tabController
     _tabController = TabController(
       length: widget.dimensionesPromedios.keys.length,
       vsync: this,
       initialIndex: widget.initialTabIndex ?? 0,
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: SizedBox(width: screenSize.width * 0.8, child: const ChatWidgetDrawer()),
+      // Left drawer con ancho fijo de 300
+      drawer: SizedBox(width: 300, child: const DrawerLensys()),
+      // Right drawer (endDrawer) con ancho por defecto
+      endDrawer: const DrawerLensys(),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -54,7 +60,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Graficos por Dimensión',
+          'Gráficos por Dimensión',
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -84,7 +90,6 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
           ),
         ),
       ),
-      endDrawer: SizedBox(width: screenSize.width * 0.8, child: const DrawerLensys()),
       body: TabBarView(
         controller: _tabController,
         children: widget.dimensionesPromedios.keys.map((dimension) {
@@ -143,7 +148,12 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     );
   }
 
-  Widget _buildPromedioGeneralCard(BuildContext context, Map<String, double> promedios, {double chartHeight = 150, double sidePadding = 90}) {
+  Widget _buildPromedioGeneralCard(
+    BuildContext context,
+    Map<String, double> promedios, {
+    double chartHeight = 150,
+    double sidePadding = 90,
+  }) {
     final screenSize = MediaQuery.of(context).size;
 
     final avgE = promedios['Ejecutivo'] ?? 0;
@@ -197,8 +207,10 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
                           getTitlesWidget: _bottomTitleWidget,
                         ),
                       ),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles:
+                          const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles:
+                          const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
                     gridData: FlGridData(show: true, horizontalInterval: 1),
                     borderData: FlBorderData(show: false),
@@ -231,8 +243,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
       ],
     );
   }
-  
-  // Helper para renderizar un segmento de barra proporcional al 0-5
+
   Widget _buildBarSegment(Color color, double percent, double value) {
     return LayoutBuilder(builder: (context, constraints) {
       return Stack(
@@ -281,7 +292,8 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
     if (value % 1 == 0) {
       return Padding(
         padding: const EdgeInsets.only(right: 4),
-        child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 12)),
+        child: Text(value.toInt().toString(),
+            style: const TextStyle(fontSize: 12)),
       );
     }
     return const SizedBox.shrink();
@@ -330,7 +342,8 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Detalles de la Calificación de ${calificacion['asociado_nombre']}"),
+          title: Text(
+              "Detalles de la Calificación de ${calificacion['asociado_nombre']}"),
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -139,11 +139,16 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF003056),
-          title: const Text('Resultados en tiempo real', style: TextStyle(color: Colors.white)),
+            title: const Center(
+            child: Text(
+              'Resultados en tiempo real',
+              style: TextStyle(color: Colors.white),
+            ),
+            ),
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             IconButton(
-              icon: const Icon(Icons.dashboard, color: Colors.white),
+              icon: const Icon(Icons.assessment, color: Colors.white),
               tooltip: 'Ver Dashboard',
               onPressed: () {
                 Navigator.push(

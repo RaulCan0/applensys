@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-/// Gráfico de dona (PieChart) con leyenda abajo.
-/// Recibe:
-///  • data: `Map<nombre_dimension, promedio>`
-///  • title: String (título encima del gráfico)
-///  • dataMap: opcional `Map<nombre_dimension, color>` para personalizar colores
 class DonutChart extends StatelessWidget {
   final Map<String, double> data;
   final String title;
@@ -58,12 +53,20 @@ class DonutChart extends StatelessWidget {
       final key = keys[i];
       final value = data[key]!;
       final color = dataMap?[key] ?? fallbackPalette[i % fallbackPalette.length];
+      final percentage = total > 0 ? (value / total * 100).toStringAsFixed(1) : '0.0';
+
       sections.add(
         PieChartSectionData(
           value: value,
           color: color,
           radius: isDetail ? 70 : 50,
-          showTitle: false,
+          title: '$percentage%',
+          showTitle: true,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
         ),
       );
     }

@@ -1,18 +1,10 @@
-// lib/charts/scatter_bubble_chart.dart
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-/// Representa cada punto “burbuja” en el ScatterBubbleChart.
-/// Solo guardamos posición X, posición Y y color. El tamaño será fijo.
+/// Datos individuales de cada burbuja
 class ScatterData {
-  /// Posición en X (normalmente el índice de un principio)
-  final double x;
-
-  /// Posición en Y (por ejemplo, el promedio que va de 0 a 5)
-  final double y;
-
-  /// Color deseado para la burbuja (por nivel)
+  final double x; // Promedio: 0.0 - 5.0
+  final double y; // Índice del principio: 1 - 10
   final Color color;
 
   ScatterData({
@@ -21,6 +13,7 @@ class ScatterData {
     required this.color,
   });
 }
+
 class ScatterBubbleChart extends StatelessWidget {
   final List<ScatterData> data;
   final String title;
@@ -33,9 +26,28 @@ class ScatterBubbleChart extends StatelessWidget {
     this.isDetail = false,
   });
 
+  static const List<String> principles = [
+    'Respetar a Cada Individuo',
+    'Liderar con Humildad',
+    'Buscar la Perfección',
+    'Abrazar el Pensamiento Científico',
+    'Enfocarse en el Proceso',
+    'Asegurar la Calidad en la Fuente',
+    'Mejorar el Flujo y Jalón de Valor',
+    'Pensar Sistémicamente',
+    'Crear Constancia de Propósito',
+    'Crear Valor para el Cliente',
+  ];
+
   @override
   Widget build(BuildContext context) {
-    // Eje X: promedio (0 a 5), Eje Y: principios (1 a 10)
+    if (data.isEmpty) {
+      return const Center(
+        child: Text('No hay datos disponibles para mostrar.',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      );
+    }
+
     const double minX = 0;
     const double maxX = 5;
     const double minY = 1;
@@ -44,6 +56,7 @@ class ScatterBubbleChart extends StatelessWidget {
 
     return Column(
       children: [
+        // Título del gráfico
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 4),
           child: Text(
@@ -54,12 +67,15 @@ class ScatterBubbleChart extends StatelessWidget {
             ),
           ),
         ),
+
+        // Se usa Expanded para que el gráfico se ajuste al espacio disponible
         Expanded(
           child: ScatterChart(
             ScatterChartData(
               scatterSpots: data.map((d) {
-                final double xPos = d.x.clamp(minX, maxX);
-                final double yPos = d.y.clamp(minY, maxY);
+                // Cada punto: x en [0..5], y en [1..10], invertido para que 1 esté arriba
+                final xPos = d.x.clamp(minX, maxX);
+                final yPos = (11 - d.y).clamp(minY, maxY);
                 return ScatterSpot(
                   xPos,
                   yPos,
@@ -87,13 +103,21 @@ class ScatterBubbleChart extends StatelessWidget {
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: isDetail,
+                    showTitles: true,
                     interval: 1,
+                    reservedSize: 100,
                     getTitlesWidget: (value, meta) {
-                      if (value >= 1 && value <= 10 && value % 1 == 0) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: const TextStyle(fontSize: 12),
+                      final index = value.toInt();
+                      if (index >= 1 && index <= 10) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4.0),
+                          child: Text(
+                            // Invertimos: value=10 → principles[0], value=1 → principles[9]
+                            principles[10 - index],
+                            style: const TextStyle(fontSize: 10),
+                            textAlign: TextAlign.right,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }
                       return const SizedBox.shrink();
@@ -102,25 +126,19 @@ class ScatterBubbleChart extends StatelessWidget {
                 ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: isDetail,
-                    interval: 1,
+                    showTitles: true,
+                    interval: 0.5,
                     getTitlesWidget: (value, meta) {
-                      if (value >= 0 && value <= 5 && value % 1 == 0) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: const TextStyle(fontSize: 12),
-                        );
-                      }
-                      return const SizedBox.shrink();
+                      return Text(
+                        value.toStringAsFixed(1),
+                        style: const TextStyle(fontSize: 10),
+                      );
                     },
                   ),
                 ),
-                rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
             ),
           ),

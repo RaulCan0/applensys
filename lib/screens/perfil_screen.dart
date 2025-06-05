@@ -144,7 +144,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
       appBar: AppBar(
         title: Text(
           'Perfil',
-          style: TextStyle(fontSize: screenSize.width * 0.05),
+          style: TextStyle(fontSize: 16),
         ),
         centerTitle: true,
       ),
@@ -256,11 +256,15 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     icon: const Icon(Icons.notifications),
                     label: const Text('Probar Notificación'),
                     onPressed: () async {
-                      await NotificationService.showNotification(
-                        'Notificación de prueba',
-                        'Este es un mensaje de ejemplo desde PerfilScreen.',
-                        payload: 'perfil_test',
-                      );
+                     await NotificationService.init(); // Inicializa
+
+await NotificationService.showInstantNotification(
+  id: 1,
+  title: "Evaluación completada",
+  body: "Has terminado de evaluar a Juan Pérez",
+  payload: "evaluacion_completa_juan",
+);
+
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green.shade700,

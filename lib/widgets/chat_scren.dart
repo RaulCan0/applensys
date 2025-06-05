@@ -122,12 +122,12 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                 if (_previousMessages.length < messages.length &&
                     latestMessage != null &&
                     latestMessage.userId != _myUserId) {
-                  NotificationService.showNotification(
-                    'Nuevo mensaje',
-                    latestMessage.content.length > 50
-                        ? '${latestMessage.content.substring(0, 50)}...'
-                        : latestMessage.content,
-                  );
+                  NotificationService.showInstantNotification(
+  id: 1,
+  title: "Evaluación completada",
+  body: "Has terminado de evaluar a Juan Pérez",
+  payload: "evaluacion_completa_juan",
+);
                 }
                 _previousMessages = List.from(messages);
 
