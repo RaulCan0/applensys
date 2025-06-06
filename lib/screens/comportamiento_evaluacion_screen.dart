@@ -1,4 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -18,6 +17,38 @@ import '../widgets/sistema_selector.dart';
 import '../widgets/drawer_lensys.dart';
 import '../providers/text_size_provider.dart';
 
+// Mapa de sistemas recomendados por comportamiento
+const Map<String, String> sistemasRecomendadosPorComportamiento = {
+  "Soporte": "Desarrollo de personal",
+  "Reconocer": "Medicion\nInvolucramiento\nReconocimiento",
+  "Comunidad": "Seguridad, Ambiental",
+  "Liderazgo de servidor": "Desarrollo de Personal",
+  "Valorar": "Desarrollo de Personal, Involucramiento",
+  "Empoderamiento": "Desarrollo de Personal",
+  "Mentalidad": "Solución de Problemas",
+  "Estructura": "Gestión Visual",
+  "Reflexionar": "Solución de Problemas, Gestión Visual",
+  "Análisis": "Mejora y Gestión Visual",
+  "Colaborar": "Voz del Cliente",
+  "Comprender": "Mejora, Solución de Problemas",
+  "Diseño": "Sistemas de Mejora",
+  "Atribución": "Planificación, Programación y de Mejora",
+  "A prueba de error": "Planificación, Programación",
+  "Propiedad": "Propiedad de Resultados",
+  "Conectar": "Comunicación Interna",
+  "Ininterrumpido": "Mejora y Alineamiento Estratégico",
+  "Demanda": "Planificación de la Demanda",
+  "Eliminar": "Despliegue de Estrategia",
+  "Optimizar": "Comunicación, Despliegue de Estrategia",
+  "Impacto": "Voz de cliente",
+  "Alinear": "Voz de cliente, Comunicación, Medición, Despliegue de Estrategia, Reconocimiento",
+  "Aclarar": "Gestión Estratégica",
+  "Comunicar": "Comunicación Organizacional",
+  "Relación": "Gestión de Clientes",
+  "Valor": "Entrega de Valor",
+  "Medida": "Medición de Resultados",
+};
+
 // Modificada para devolver la clave interna que TablasDimensionScreen espera.
 String obtenerNombreDimensionInterna(String dimensionId) {
   switch (dimensionId) {
@@ -27,7 +58,6 @@ String obtenerNombreDimensionInterna(String dimensionId) {
     default: return 'Dimensión 1'; // Considerar un manejo de error más robusto si es necesario
   }
 }
-
 class ComportamientoEvaluacionScreen extends ConsumerStatefulWidget {
   final PrincipioJson principio;
   final String cargo;
@@ -156,6 +186,7 @@ class _ComportamientoEvaluacionScreenState
         // Solo mostrar el diálogo de confirmación si la calificación no se pasó directamente (es decir, el usuario no hizo clic explícitamente para editar)
         if (widget.calificacionExistente == null) {
           final editar = await showDialog<bool>(
+            // ignore: use_build_context_synchronously
             context: context,
             builder: (_) => AlertDialog(
               title: const Text('Modificar calificación'),
@@ -487,7 +518,7 @@ class _ComportamientoEvaluacionScreenState
           Text(desc, style: TextStyle(fontSize: 14 * scaleFactor)),
 
           const SizedBox(height: 16),
-          ElevatedButton.icon(
+           ElevatedButton.icon(
             icon: const Icon(Icons.remove_red_eye),
             label: Text('Ver lentes de madurez', style: TextStyle(fontSize: 14 * scaleFactor)),
             onPressed: _mostrarLentesRolDialog,
@@ -498,20 +529,16 @@ class _ComportamientoEvaluacionScreenState
               padding: EdgeInsets.symmetric(vertical: 12 * scaleFactor, horizontal: 16 * scaleFactor),
             ),
           ),
-
-          const SizedBox(height: 16),
-          Row(children: [
-            Expanded(
-              child: TextField(
-                controller: observacionController,
-                maxLines: 2,
-                enabled: !isSaving,
-                decoration: const InputDecoration(hintText: 'Observaciones...', border: OutlineInputBorder()),
-              ),
+          // Mostrar sistemas recomendados según comportamiento
+          if (sistemasRecomendadosPorComportamiento.containsKey(widget.principio.benchmarkComportamiento.split(':').first.trim())) ...[
+            const SizedBox(height: 8),
+            Text(
+              sistemasRecomendadosPorComportamiento[widget.principio.benchmarkComportamiento.split(':').first.trim()]!.replaceAll('\\n', ', '),
             ),
             const SizedBox(width: 8),
             IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: isSaving ? null : _takePhoto),
-          ]),
+          ],
+
 
           if (sistemasSeleccionados.isNotEmpty) ...[
             const SizedBox(height: 12),
