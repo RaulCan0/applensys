@@ -18,6 +18,38 @@ import '../widgets/sistema_selector.dart';
 import '../widgets/drawer_lensys.dart';
 import '../providers/text_size_provider.dart';
 
+// Mapa de sistemas recomendados por comportamiento
+const Map<String, String> sistemasRecomendadosPorComportamiento = {
+  "Soporte": "Desarrollo de personal",
+  "Reconocer": "Medicion\nInvolucramiento\nReconocimiento",
+  "Comunidad": "Seguridad, Ambiental",
+  "Liderazgo de servidor": "Desarrollo de Personal",
+  "Valorar": "Desarrollo de Personal, Involucramiento",
+  "Empoderamiento": "Desarrollo de Personal",
+  "Mentalidad": "Solución de Problemas",
+  "Estructura": "Gestión Visual",
+  "Reflexionar": "Solución de Problemas, Gestión Visual",
+  "Análisis": "Mejora y Gestión Visual",
+  "Colaborar": "Voz del Cliente",
+  "Comprender": "Mejora, Solución de Problemas",
+  "Diseño": "Sistemas de Mejora",
+  "Atribución": "Planificación, Programación y de Mejora",
+  "A prueba de error": "Planificación, Programación",
+  "Propiedad": "Propiedad de Resultados",
+  "Conectar": "Comunicación Interna",
+  "Ininterrumpido": "Mejora y Alineamiento Estratégico",
+  "Demanda": "Planificación de la Demanda",
+  "Eliminar": "Despliegue de Estrategia",
+  "Optimizar": "Comunicación, Despliegue de Estrategia",
+  "Impacto": "Voz de cliente",
+  "Alinear": "Voz de cliente, Comunicación, Medición, Despliegue de Estrategia, Reconocimiento",
+  "Aclarar": "Gestión Estratégica",
+  "Comunicar": "Comunicación Organizacional",
+  "Relación": "Gestión de Clientes",
+  "Valor": "Entrega de Valor",
+  "Medida": "Medición de Resultados",
+};
+
 // Modificada para devolver la clave interna que TablasDimensionScreen espera.
 String obtenerNombreDimensionInterna(String dimensionId) {
   switch (dimensionId) {
@@ -497,6 +529,43 @@ class _ComportamientoEvaluacionScreenState
               padding: EdgeInsets.symmetric(vertical: 12 * scaleFactor, horizontal: 16 * scaleFactor),
             ),
           ),
+          // Mostrar sistemas recomendados según comportamiento
+          if (sistemasRecomendadosPorComportamiento.containsKey(widget.principio.benchmarkComportamiento.split(':').first.trim())) ...[
+            const SizedBox(height: 8),
+            Text(
+              sistemasRecomendadosPorComportamiento[widget.principio.benchmarkComportamiento.split(':').first.trim()]!.replaceAll('\\n', ', '),
+              style: TextStyle(
+                color: const Color(0xFF003056),
+                fontSize: 13 * scaleFactor,
+                fontStyle: FontStyle.italic,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+
+          const SizedBox(height: 16),
+          if (sistemasSeleccionados.isNotEmpty) ...[
+  const SizedBox(height: 16),
+  Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      const Icon(Icons.tips_and_updates_outlined, color: Color(0xFF003056)),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(
+          'Sistemas recomendados: ${sistemasSeleccionados.join(", ")}',
+          style: TextStyle(
+            color: Color(0xFF003056),
+            fontWeight: FontWeight.w600,
+            fontSize: 14 * scaleFactor,
+          ),
+          textAlign: TextAlign.start,
+        ),
+      ),
+    ],
+  ),
+],
 
           const SizedBox(height: 16),
           Row(children: [

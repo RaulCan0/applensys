@@ -91,7 +91,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final textColor = isDarkMode ? Colors.white : const Color(0xFF003056);
     final hintTextColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
     final iconColor = isDarkMode ? Colors.white70 : Colors.grey[600];
-    final logoAsset = isDarkMode ? 'assets/logoblanco.png' : 'assets/logo.png';
+    final logoAsset = isDarkMode ? 'assets/logoblanco.webp' : 'assets/logo.webp';
     final buttonTextColor = isDarkMode ? const Color.fromARGB(255, 255, 255, 255) : Colors.white;
     final buttonBackgroundColor = isDarkMode ? Color(0xFF003056) : const Color.fromARGB(255, 255, 255, 255);
     final forgotPasswordColor = isDarkMode ? Color.fromARGB(255, 255, 255, 255): const Color.fromARGB(255, 255, 255, 255);

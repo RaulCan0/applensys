@@ -30,7 +30,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
   final supabase = Supabase.instance.client;
   final SupabaseService _supabaseService = SupabaseService();
   final Map<String, double> progresoAsociado = {};
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKeyAsociado = GlobalKey<ScaffoldState>();
 
   List<Asociado> ejecutivos = [];
   List<Asociado> gerentes = [];
@@ -314,7 +314,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      key: _scaffoldKey,
+      key: _scaffoldKeyAsociado,
       drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
       appBar: AppBar(
         backgroundColor: const Color(0xFF003056),
@@ -332,7 +332,7 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
         actions: [
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            onPressed: () => _scaffoldKeyAsociado.currentState?.openEndDrawer(),
           ),
         ],
         bottom: TabBar(

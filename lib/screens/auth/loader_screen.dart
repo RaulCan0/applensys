@@ -31,7 +31,7 @@ class _LoaderScreenState extends State<LoaderScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final logoAsset = isDarkMode ? 'assets/logoblanco.png' : 'assets/logo.png';
+    final logoAsset = isDarkMode ? 'assets/logoblanco.webp' : 'assets/logo.webp';
     final primaryColor = isDarkMode ? const Color(0xFF003056): const Color(0xFF003056);
     final secondaryColor = isDarkMode ? Colors.grey[700] :Colors.grey[600];
     final textColor = isDarkMode ? Colors.white : const Color.fromARGB(255, 255, 255, 255);

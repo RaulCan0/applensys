@@ -289,7 +289,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
           evaluacionId: widget.evaluacionId,
           promedios: promediosPorDimension[dimensionActual],
           dimension: dimensionActual,
-          initialTabIndex: currentIndex,
+          initialTabIndex: currentIndex, 
         ),
       ),
     );

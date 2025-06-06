@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+/// Gráfico de dona (PieChart) con leyenda abajo.
+/// Recibe:
+///  • data: `Map<nombre_dimension, promedio>`
+///  • title: String (título encima del gráfico)
+///  • dataMap: opcional `Map<nombre_dimension, color>` para personalizar colores
 class DonutChart extends StatelessWidget {
   final Map<String, double> data;
   final String title;
@@ -53,20 +58,12 @@ class DonutChart extends StatelessWidget {
       final key = keys[i];
       final value = data[key]!;
       final color = dataMap?[key] ?? fallbackPalette[i % fallbackPalette.length];
-      final percentage = total > 0 ? (value / total * 100).toStringAsFixed(1) : '0.0';
-
       sections.add(
         PieChartSectionData(
           value: value,
           color: color,
-          radius: isDetail ? 70 : 50,
-          title: '$percentage%',
-          showTitle: true,
-          titleStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
+          radius: 50,
+          showTitle: false,
         ),
       );
     }
@@ -83,33 +80,32 @@ class DonutChart extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: isDetail ? 220 : 150,
+          height: 150,
           child: PieChart(
             PieChartData(
               sectionsSpace: 2,
-              centerSpaceRadius: isDetail ? 50 : 30,
+              centerSpaceRadius: 30,
               sections: sections,
             ),
           ),
         ),
-        if (isDetail) ...[
-          const SizedBox(height: 12),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              for (var i = 0; i < keys.length; i++)
-                _LegendItem(
-                  color: dataMap?[keys[i]] ?? fallbackPalette[i % fallbackPalette.length],
-                  label: keys[i],
-                  porcentaje: total > 0
-                      ? (data[keys[i]]! / total * 100).toStringAsFixed(1)
-                      : '0.0',
-                ),
-            ],
-          ),
-        ],
+        const SizedBox(height: 12),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            for (var i = 0; i < keys.length; i++)
+              _LegendItem(
+                color: dataMap?[keys[i]] ??
+                    fallbackPalette[i % fallbackPalette.length],
+                label: keys[i],
+                porcentaje: total > 0
+                    ? (data[keys[i]]! / total * 100).toStringAsFixed(1)
+                    : '0.0',
+              ),
+          ],
+        ),
       ],
     );
   }

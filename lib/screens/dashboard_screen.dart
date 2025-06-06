@@ -3,7 +3,6 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
-import 'package:applensys/services/shared/excel_exporter.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/widgets/chat_screen.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
@@ -20,6 +19,7 @@ import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
 import 'package:open_file/open_file.dart';
 import 'package:applensys/custom/table_names.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:applensys/services/shared/excel_exporter.dart';
 import 'package:applensys/services/domain/reporte_utils_final.dart';
 import 'package:applensys/models/level_averages.dart';
 
@@ -106,11 +106,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (_dimensionesRaw.isNotEmpty) {
       _procesarDimensionesDesdeRaw(_dimensionesRaw);
-    }    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   /// Procesa las filas crudas a modelos [Dimension], [Principio] y [Comportamiento].
@@ -373,9 +373,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const SnackBar(content: Text('Generando archivos Excel y Word...')),
     );
     try {
-      // --- Preparación de datos para Excel (ya existente) ---
       final List<LevelAverages> behaviorAverages = [];
-      int id = 1; 
+      int id = 1;
       for (final dim in _dimensiones) {
         for (final pri in dim.principios) {
           for (final comp in pri.comportamientos) {
@@ -395,7 +394,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final List<LevelAverages> systemAverages = [];
       sistemasData.forEach((sistema, niveles) {
         systemAverages.add(LevelAverages(
-          id: id++, 
+          id: id++,
           nombre: sistema,
           ejecutivo: (niveles['E'] ?? 0).toDouble(),
           gerente: (niveles['G'] ?? 0).toDouble(),
@@ -404,67 +403,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           nivel: '',
         ));
       });
-
-      // --- Generar Excel ---
       final excelFile = await ExcelExporter.export(
         behaviorAverages: behaviorAverages,
         systemAverages: systemAverages,
       );
-      
-      // --- Generar Word ---
       final t1 = await _loadJsonAsset('assets/t1.json');
       final t2 = await _loadJsonAsset('assets/t2.json');
       final t3 = await _loadJsonAsset('assets/t3.json');
       final wordPath = await ReporteUtils.exportReporteWordUnificado(
-        _dimensionesRaw, 
+        _dimensionesRaw,
         t1,
         t2,
         t3,
       );
-      
-      ScaffoldMessenger.of(context).removeCurrentSnackBar(); 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          duration: const Duration(seconds: 10), 
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Archivos generados con éxito.'),
-              Text('Excel: ${excelFile.path.split('/').last}'),
-              Text('Word: ${wordPath.split('/').last}'),
-            ],
-          ),
-          action: SnackBarAction(
-            label: 'ABRIR ARCHIVOS',
-            textColor: Colors.yellow,
-            onPressed: () async {
-              try {
-                await OpenFile.open(excelFile.path);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('No se pudo abrir Excel: ${e.toString()}')),
-                );
-              }
-              try {
-                if (wordPath.isNotEmpty) {
-                  await OpenFile.open(wordPath);
-                } else {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ruta de Word no válida.')),
-                  );
-                }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('No se pudo abrir Word: ${e.toString()}')),
-                );
-              }
-            },
+          content: Text(
+            'Archivos generados:\nExcel: ${excelFile.path}\nWord: $wordPath',
           ),
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al generar archivos: ${e.toString()}')),
       );
@@ -535,11 +494,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                    _buildChartContainer(
                     color: const Color(0xFF005F73),
-                    title: 'EVALUACION POR DIMENSION',
+                    title: 'Promedio por Dimensión',
                     child: Center( // <- Añadir Center aquí
                       child: DonutChart(
                         data: _buildDonutData(),
-                        title: '',
+                        title: 'Promedio por Dimensión',
                         dataMap: {
                           'IMPULSORES CULTURALES': Colors.redAccent,
                           'MEJORA CONTINUA': Colors.yellow,
@@ -563,10 +522,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   _buildChartContainer(
                     color: const Color(0xFF0A9396),
-                    title: 'EVALUACION POR PRINCIPIO',
+                    title: 'Promedio por Principio',
                     child: ScatterBubbleChart(
                       data: _buildScatterData(),
-                      title: '',
+                      title: 'Promedio por Principio',
                      
                       isDetail: false,
                     ),
@@ -653,9 +612,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 IconButton(
                   icon: const Icon(Icons.table_chart, color: Colors.green),
                   onPressed: () async {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Generando Excel...')),
-                    );
                     try {
                       final List<LevelAverages> behaviorAverages = [];
                       int id = 1;
@@ -691,19 +647,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         behaviorAverages: behaviorAverages,
                         systemAverages: systemAverages,
                       );
-                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Excel generado: ${excelFile.path.split('/').last}')),
-                      );
                       await OpenFile.open(excelFile.path);
                     } catch (e) {
-                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error al generar o abrir Excel: ${e.toString()}')),
+                        SnackBar(content: Text('Error al abrir Excel: ${e.toString()}')),
                       );
                     }
                   },
-                  tooltip: 'Generar y Abrir Excel',
+                  tooltip: 'Abrir Excel',
                 ),
                 const SizedBox(height: 16),
 
@@ -711,9 +662,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 IconButton(
                   icon: const Icon(Icons.description, color: Colors.blue),
                   onPressed: () async {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Generando Word...')),
-                    );
                     try {
                       final t1 = await _loadJsonAsset('assets/t1.json');
                       final t2 = await _loadJsonAsset('assets/t2.json');
@@ -725,25 +673,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         t2,
                         t3,
                       );
-                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
                       if (wordPath.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('No se pudo generar Word o la ruta está vacía.')),
+                          const SnackBar(content: Text('No se pudo generar Word.')),
                         );
                         return;
                       }
-                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Word generado: ${wordPath.split('/').last}')),
-                      );
                       await OpenFile.open(wordPath);
                     } catch (e) {
-                       ScaffoldMessenger.of(context).removeCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error al generar o abrir Word: ${e.toString()}')),
+                        SnackBar(content: Text('Error al abrir Word: ${e.toString()}')),
                       );
                     }
                   },
-                  tooltip: 'Generar y Abrir Word',
+                  tooltip: 'Abrir Word',
                 ),
               ],
             ),
@@ -782,7 +725,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () {
         final tieneDatos = (chartData is Map && chartData.isNotEmpty) ||
             (chartData is List && chartData.isNotEmpty);
-        if (!mounted) return; // Previene errores de dependents.isEmpty
         if (tieneDatos) {
           Navigator.push(
             context,
