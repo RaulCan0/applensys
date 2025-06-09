@@ -2,6 +2,8 @@ import 'package:applensys/charts/scatter_bubble_chart.dart';
 import 'package:applensys/models/comportamiento.dart';
 import 'package:applensys/models/principio.dart';
 import 'package:applensys/models/dimension.dart';
+import 'package:applensys/screens/tablas_screen.dart';
+import 'package:applensys/services/local/evaluacion_cache_service.dart';
 
 class EvaluacionChartData {
   static List<Dimension> buildDimensionesChartData(List<Map<String, dynamic>> dimensionesRaw) {
@@ -46,4 +48,35 @@ class EvaluacionChartData {
         .expand((p) => p.comportamientos)
         .toList();
   }
+Future<List<Map<String, dynamic>>> cargarPromediosSistemas() async {
+  // 1) Usamos EvaluacionCacheService en lugar de TablaDatos
+  final tabla = await EvaluacionCacheService().cargarTablas();
+  final Map<String, List<double>> acumulador = {};
+
+  tabla.forEach((_, submap) {
+    submap.values.expand((rows) => rows).forEach((item) {
+      // Asegúrate de que 'sistema' y 'valor' existan en cada item
+      final sistema = item['sistema'] as String? ?? '';
+      final raw     = item['valor'];
+
+      final valor = raw is num
+          ? raw.toDouble()
+          : double.tryParse(raw.toString()) ?? 0.0;
+
+      if (sistema.isNotEmpty) {
+        acumulador.putIfAbsent(sistema, () => []).add(valor);
+      }
+    });
+  });
+
+  return acumulador.entries.map((e) {
+    final lista    = e.value;
+    final suma     = lista.fold<double>(0, (a, b) => a + b);
+    final promedio = lista.isNotEmpty ? suma / lista.length : 0.0;
+    return {
+      'sistema': e.key,
+      'valor'  : promedio,
+    };
+  }).toList();
+}
 }
