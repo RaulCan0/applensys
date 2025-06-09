@@ -14,7 +14,7 @@ class EvaluacionChartData {
             promedioGerente: (comp['gerente'] ?? 0.0).toDouble(),
             promedioMiembro: (comp['miembro'] ?? 0.0).toDouble(),
             sistemas: List<String>.from(comp['sistemas'] ?? []),
-            cargo: comp['nivel'] ?? '',
+            cargo: comp['cargo'] ?? '',
           );
         }).toList();
 

@@ -60,7 +60,7 @@ class TablasDimensionScreen extends StatefulWidget {
       lista.add({
         'principio': principio,
         'comportamiento': comportamiento,
-        'cargo': cargo.trim().capitalize(),
+        'cargo': cargo,
         'valor': valor,
         'sistemas': sistemas,
         'dimension_id': dimensionId,
@@ -117,7 +117,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
     }
   }
 
-  String _normalizeNivel(String raw) {
+  String _normalizeCargo(String raw) {
     final lower = raw.toLowerCase();
     if (lower.contains('miembro')) return 'Miembro';
     if (lower.contains('gerente')) return 'Gerente';
@@ -126,7 +126,6 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
     dimensiones = dimensionInterna.keys.toList();
 
     return DefaultTabController(
@@ -199,9 +198,9 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
                           columns: const [
                             DataColumn(label: Text('Principio', style: TextStyle(color: Colors.white))),
                             DataColumn(label: Text('Comportamiento', style: TextStyle(color: Colors.white))),
-                            DataColumn(label: Text('Ejecutivo', style: TextStyle(color: Colors.white))),
-                            DataColumn(label: Text('Gerente', style: TextStyle(color: Colors.white))),
-                            DataColumn(label: Text('Miembro', style: TextStyle(color: Colors.white))),
+                            DataColumn(label: Text('Cargo Ejecutivo', style: TextStyle(color: Colors.white))),
+                            DataColumn(label: Text('Cargo Gerente', style: TextStyle(color: Colors.white))),
+                            DataColumn(label: Text('Cargo Miembro', style: TextStyle(color: Colors.white))),
                             DataColumn(label: Text('Ejecutivo Sistemas', style: TextStyle(color: Colors.white))),
                             DataColumn(label: Text('Gerente Sistemas', style: TextStyle(color: Colors.white))),
                             DataColumn(label: Text('Miembro Sistemas', style: TextStyle(color: Colors.white))),
@@ -229,30 +228,30 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
       final keyInterna = dimensionInterna[dim] ?? dim;
       final filas = TablasDimensionScreen.tablaDatos[keyInterna]?.values.expand((l) => l).toList() ?? [];
 
-      final sumasNivel = {'Ejecutivo': 0.0, 'Gerente': 0.0, 'Miembro': 0.0};
-      final conteosNivel = {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0};
+      final sumasCargo = {'Ejecutivo': 0.0, 'Gerente': 0.0, 'Miembro': 0.0};
+      final conteosCargo = {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0};
       final sistemasPromedio = SistemasPromedio();
 
       for (var f in filas) {
-        final nivel = _normalizeNivel(f['cargo_raw'] ?? '');
+        final cargo = _normalizeCargo(f['cargo'] ?? '');
         final valor = (f['valor'] ?? 0).toDouble();
         final sistemas = (f['sistemas'] as List?)?.whereType<String>().toList() ?? [];
-        sumasNivel[nivel] = sumasNivel[nivel]! + valor;
-        conteosNivel[nivel] = conteosNivel[nivel]! + 1;
-        sistemasPromedio.agregar(nivel, sistemas);
+        sumasCargo[cargo] = sumasCargo[cargo]! + valor;
+        conteosCargo[cargo] = conteosCargo[cargo]! + 1;
+        sistemasPromedio.agregar(cargo, sistemas);
       }
 
-      final promediosNivel = <String, double>{};
+      final promediosCargo = <String, double>{};
       double totalProm = 0;
-      sumasNivel.forEach((nivel, suma) {
-        final cnt = conteosNivel[nivel]!;
+      sumasCargo.forEach((cargo, suma) {
+        final cnt = conteosCargo[cargo]!;
         final prom = cnt > 0 ? suma / cnt : 0;
-        promediosNivel[nivel] = double.parse(prom.toStringAsFixed(2));
+        promediosCargo[cargo] = double.parse(prom.toStringAsFixed(2));
         totalProm += prom;
       });
-      promediosNivel['General'] = double.parse((totalProm / sumasNivel.length).toStringAsFixed(2));
-      promediosNivel['Sistemas'] = double.parse(sistemasPromedio.promedio().toStringAsFixed(2));
-      promediosPorDimension[dim] = promediosNivel;
+      promediosCargo['General'] = double.parse((totalProm / sumasCargo.length).toStringAsFixed(2));
+      promediosCargo['Sistemas'] = double.parse(sistemasPromedio.promedio().toStringAsFixed(2));
+      promediosPorDimension[dim] = promediosCargo;
     }
 
     Navigator.push(
@@ -273,12 +272,12 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
   List<DataRow> _buildRows(List<Map<String, dynamic>> filas) {
     final sumas = <String, Map<String, Map<String, int>>>{};
     final conteos = <String, Map<String, Map<String, int>>>{};
-    final sistemasPorNivel = <String, Map<String, Map<String, Set<String>>>>{};
+    final sistemasPorCargo = <String, Map<String, Map<String, Set<String>>>>{};
 
     for (var f in filas) {
       final principio = f['principio'] ?? '';
       final comportamiento = f['comportamiento'] ?? '';
-      final nivel = _normalizeNivel(f['cargo_raw'] ?? '');
+      final cargo = _normalizeCargo(f['cargo'] ?? '');  
       final int valor = ((f['valor'] ?? 0) as num).toInt();
       final sistemas = (f['sistemas'] as List?)?.whereType<String>().toList() ?? [];
 
@@ -286,17 +285,17 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
       sumas[principio]!.putIfAbsent(comportamiento, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
       conteos.putIfAbsent(principio, () => {});
       conteos[principio]!.putIfAbsent(comportamiento, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
-      sistemasPorNivel.putIfAbsent(principio, () => {});
-      sistemasPorNivel[principio]!.putIfAbsent(comportamiento, () => {
+      sistemasPorCargo.putIfAbsent(principio, () => {});
+      sistemasPorCargo[principio]!.putIfAbsent(comportamiento, () => {
         'Ejecutivo': <String>{},
         'Gerente': <String>{},
         'Miembro': <String>{},
       });
 
-      sumas[principio]![comportamiento]![nivel] = sumas[principio]![comportamiento]![nivel]! + valor;
-      conteos[principio]![comportamiento]![nivel] = conteos[principio]![comportamiento]![nivel]! + 1;
+      sumas[principio]![comportamiento]![cargo] = sumas[principio]![comportamiento]![cargo]! + valor;
+      conteos[principio]![comportamiento]![cargo] = conteos[principio]![comportamiento]![cargo]! + 1;
       for (var s in sistemas) {
-        sistemasPorNivel[principio]![comportamiento]![nivel]!.add(s);
+        sistemasPorCargo[principio]![comportamiento]![cargo]!.add(s);
       }
     }
 
@@ -304,18 +303,18 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
       final p = e.key;
       return e.value.entries.map((cEntry) {
         final c = cEntry.key;
-        final nivelVals = cEntry.value;
-        final niveles = ['Ejecutivo', 'Gerente', 'Miembro'];
+        final cargoVals = cEntry.value;
+        final cargos = ['Ejecutivo', 'Gerente', 'Miembro'];
         return DataRow(cells: [
           DataCell(Text(p, style: const TextStyle(color: Color(0xFF003056)))),
           DataCell(Text(c, style: const TextStyle(color: Color(0xFF003056)))),
-          ...niveles.map((n) {
-            final suma = nivelVals[n] ?? 0;
-            final count = conteos[p]![c]![n]!;
+          ...cargos.map((cg) {
+            final suma = cargoVals[cg] ?? 0;
+            final count = conteos[p]![c]![cg]!;
             return DataCell(Text(count > 0 ? (suma / count).toStringAsFixed(2) : '-', style: const TextStyle(color: Color(0xFF003056))));
           }),
-          ...niveles.map((n) {
-            final sistemas = sistemasPorNivel[p]![c]![n]!;
+          ...cargos.map((cg) {
+            final sistemas = sistemasPorCargo[p]![c]![cg]!;
             return DataCell(Text(sistemas.isEmpty ? '-' : sistemas.join(', '), style: const TextStyle(color: Color(0xFF003056))));
           }),
         ]);
@@ -323,25 +322,24 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
     }).toList();
   }
 }
-
 class SistemasPromedio {
-  final Map<String, Set<String>> _sistemasPorNivel = {
+  final Map<String, Set<String>> _sistemasPorCargo = {
     'Ejecutivo': <String>{},
     'Gerente': <String>{},
     'Miembro': <String>{},
   };
 
-  void agregar(String nivel, List<String> sistemas) {
-    final key = nivel.capitalize();
-    if (_sistemasPorNivel.containsKey(key)) {
-      _sistemasPorNivel[key]!.addAll(sistemas);
+  void agregar(String cargo, List<String> sistemas) {
+    final key = cargo.capitalize();
+    if (_sistemasPorCargo.containsKey(key)) {
+      _sistemasPorCargo[key]!.addAll(sistemas);
     }
   }
 
   double promedio() {
-    if (_sistemasPorNivel.isEmpty) return 0.0;
-    final totalSistemas = _sistemasPorNivel.values.fold<int>(0, (sum, set) => sum + set.length);
-    final nivelesConSistemas = _sistemasPorNivel.values.where((set) => set.isNotEmpty).length;
-    return nivelesConSistemas == 0 ? 0.0 : totalSistemas / _sistemasPorNivel.length;
+    if (_sistemasPorCargo.isEmpty) return 0.0;
+    final total = _sistemasPorCargo.values.fold<int>(0, (sum, set) => sum + set.length);
+    final nonEmpty = _sistemasPorCargo.values.where((s) => s.isNotEmpty).length;
+    return nonEmpty == 0 ? 0.0 : total / _sistemasPorCargo.length;
   }
 }

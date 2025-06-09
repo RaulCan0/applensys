@@ -437,14 +437,14 @@ class SupabaseService {
         .eq('empresa_id', empresaId);
 
     return (res as List).map((m) {
-      final nivel = (m['nivel'] as String? ?? '').trim(); // Manejar nulos
+      final cargo = (m['cargo'] as String? ?? '').trim(); // Manejar nulos
       final promedio = (m['promedio'] as num?)?.toDouble() ?? 0.0;
 
       double ejecutivo = 0.0;
       double gerente = 0.0;
       double miembro = 0.0;
 
-      switch (nivel.toLowerCase()) {
+      switch (cargo.toLowerCase()) {
         case 'ejecutivo':
           ejecutivo = promedio;
           break;
@@ -614,7 +614,7 @@ class SupabaseService {
       'id': uuid.v4(),
       'evaluacion_id': evaluacionId,
       'dimension': dimension,
-      'nivel': entry.key,
+      'cargo': entry.key,
       'promedio': entry.value,
       'created_at': now,
     }).toList();
@@ -622,7 +622,7 @@ class SupabaseService {
     await _client.from('resultados_dashboard').insert(data);
   }
 
-  /// Inserta conteo de sistemas por nivel en tabla promedios_sistemas
+  /// Inserta conteo de sistemas por cargo en tabla promedios_sistemas
   Future<void> insertarPromediosSistemas({
     required String evaluacionId,
     required String dimension,
@@ -635,7 +635,7 @@ class SupabaseService {
       'id': uuid.v4(),
       'evaluacion_id': evaluacionId,
       'dimension': dimension,
-      'nivel': entry.key,
+      'cargo': entry.key,
       'conteo_sistemas': entry.value,
       'created_at': now,
     }).toList();

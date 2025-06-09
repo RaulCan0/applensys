@@ -57,6 +57,10 @@ class EvaluationChartDataService {
       'Miembro': List.filled(28, 0),
     };
 
+    // NUEVO: Suma y conteo para promedios por sistema y cargo
+    final Map<String, Map<String, double>> sumaPorSistemaCargo = {};
+    final Map<String, Map<String, int>> conteoPorSistemaCargo = {};
+
     final List<String> principios = [
       'Respetar a cada individuo',
       'Liderar con humildad',
@@ -98,8 +102,18 @@ class EvaluationChartDataService {
                       : null;
           if (cargo == null) continue;
 
-          // Sistemas por cargo
+          final valor = (item['valor'] as num?)?.toDouble() ?? 0.0;
           final sistemas = (item['sistemas'] as List?)?.cast<String>() ?? [];
+
+          // Sumar y contar por sistema y cargo
+          for (final sistema in sistemas) {
+            sumaPorSistemaCargo.putIfAbsent(sistema, () => {'Ejecutivo': 0.0, 'Gerente': 0.0, 'Miembro': 0.0});
+            conteoPorSistemaCargo.putIfAbsent(sistema, () => {'Ejecutivo': 0, 'Gerente': 0, 'Miembro': 0});
+            sumaPorSistemaCargo[sistema]![cargo] = (sumaPorSistemaCargo[sistema]![cargo] ?? 0) + valor;
+            conteoPorSistemaCargo[sistema]![cargo] = (conteoPorSistemaCargo[sistema]![cargo] ?? 0) + 1;
+          }
+
+          // Sistemas por cargo
           for (final sistema in sistemas) {
             sistemasPorCargo.putIfAbsent(sistema, () => {
               'Ejecutivo': 0,
@@ -123,12 +137,26 @@ class EvaluationChartDataService {
       });
     }
 
+    // Calcular promedios por sistema y cargo
+    final Map<String, Map<String, double>> promedioPorSistemaCargo = {};
+    sumaPorSistemaCargo.forEach((sistema, cargos) {
+      promedioPorSistemaCargo[sistema] = {};
+      cargos.forEach((cargo, suma) {
+        final count = conteoPorSistemaCargo[sistema]![cargo]!;
+        promedioPorSistemaCargo[sistema]![cargo] = count > 0 ? suma / count : 0.0;
+      });
+    });
+
+    // Puedes retornar este mapa o usarlo en tus gráficos
+    // Ejemplo: print(promedioPorSistemaCargo);
+
     return ChartsDataModel(
       dimensionPromedios: dimensionPromedios,
       lineChartData: lineChartData,
       scatterData: scatterData,
       sistemasPorCargo: sistemasPorCargo,
       comportamientoPorCargo: comportamientoPorCargo,
+      // Si quieres, agrega promedioPorSistemaCargo como nuevo campo en ChartsDataModel
     );
   }
 

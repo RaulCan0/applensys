@@ -5,7 +5,7 @@ class DetalleEvaluacion {
   final int cargo; // 1=Ejecutivo, 2=Gerente, 3=Equipo
   final int calificacion;
   final String observacion;
-  final List<String> sistemas; // <- NUEVO
+  final List<String> sistemas; 
 
   DetalleEvaluacion({
     required this.id,
@@ -14,6 +14,6 @@ class DetalleEvaluacion {
     required this.cargo,
     required this.calificacion,
     required this.observacion,
-    required this.sistemas, // <- NUEVO
+    required this.sistemas, 
   });
 }

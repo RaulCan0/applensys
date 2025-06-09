@@ -20,7 +20,7 @@ class ScatterData {
     required this.x,
     required this.y,
     required this.radius,
-    required this.color,
+    required this.color, required String name, required double value,
   });
 }
 
@@ -33,7 +33,7 @@ class ScatterBubbleChart extends StatelessWidget {
   const ScatterBubbleChart({
     super.key,
     required this.data,
-    required this.title,
+    required this.title, required int maxX, required int minY, required double maxY, required int minX,
   });
 
   @override

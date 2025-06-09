@@ -8,7 +8,7 @@ class Asociado {
   final List<String> empleadosAsociados;
   final Map<String, double> progresoDimensiones;
   final Map<String, dynamic> comportamientosEvaluados;
-  final int antiguedad; // <<<<<<<<<<<<<<<<<<< 🔥 ESTE FALTABA
+  final int antiguedad;
 
   Asociado({
     required this.id,
@@ -36,7 +36,7 @@ class Asociado {
       comportamientosEvaluados: map['comportamientos_evaluados'] is String
           ? Map<String, dynamic>.from(jsonDecode(map['comportamientos_evaluados']))
           : Map<String, dynamic>.from(map['comportamientos_evaluados'] ?? {}),
-      antiguedad: map['antiguedad'] ?? 0, // <<<<<<<<<<<<<<<<<<< 🔥 AGREGADO
+      antiguedad: map['antiguedad'] ?? 0,
     );
   }
 

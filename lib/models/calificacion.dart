@@ -4,7 +4,7 @@ class Calificacion {
   final String id;
   final String idAsociado;
   final String idEmpresa;
-  final int idDimension; // INTEGER en la base de datos
+  final int idDimension; 
   final String comportamiento;
   final int puntaje;
   final DateTime fechaEvaluacion;

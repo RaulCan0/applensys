@@ -308,7 +308,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
         return Card(
           child: ListTile(
             title: Text("Asociado: ${calificacion['asociado_nombre']}"),
-            subtitle: Text("Nivel: ${calificacion['nivel']}"),
+            subtitle: Text("cargo: ${calificacion['cargo']}"),
             trailing: IconButton(
               icon: const Icon(Icons.arrow_drop_down),
               onPressed: () {
@@ -340,7 +340,7 @@ void _showCalificacionDetails(Map<String, dynamic> calificacion) {
         mainAxisSize: MainAxisSize.min, // evita que el Column expanda todo el espacio
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Nivel: ${calificacion['nivel']}"),
+          Text("cargo: ${calificacion['cargo']}"),
           Text("Calificación: ${calificacion['calificacion']}"),
           Text("Observación: ${calificacion['observacion'] ?? '—'}"),
           Text("Sistemas asociados: $sistemasText"),

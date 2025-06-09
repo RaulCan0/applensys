@@ -518,7 +518,7 @@ class _ComportamientoEvaluacionScreenState
           Text(desc, style: TextStyle(fontSize: 14 * scaleFactor)),
 
           const SizedBox(height: 16),
-           ElevatedButton.icon(
+          ElevatedButton.icon(
             icon: const Icon(Icons.remove_red_eye),
             label: Text('Ver lentes de madurez', style: TextStyle(fontSize: 14 * scaleFactor)),
             onPressed: _mostrarLentesRolDialog,
@@ -534,11 +534,30 @@ class _ComportamientoEvaluacionScreenState
             const SizedBox(height: 8),
             Text(
               sistemasRecomendadosPorComportamiento[widget.principio.benchmarkComportamiento.split(':').first.trim()]!.replaceAll('\\n', ', '),
+              style: TextStyle(
+                color: const Color.fromARGB(255, 0, 0, 0),
+                fontSize: 14 * scaleFactor,
+                fontFamily: 'Roboto',
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          
+          ],
+
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                controller: observacionController,
+                maxLines: 2,
+                enabled: !isSaving,
+                decoration: const InputDecoration(hintText: 'Observaciones...', border: OutlineInputBorder()),
+              ),
             ),
             const SizedBox(width: 8),
             IconButton(icon: const Icon(Icons.camera_alt, size: 28), onPressed: isSaving ? null : _takePhoto),
-          ],
-
+          ]),
 
           if (sistemasSeleccionados.isNotEmpty) ...[
             const SizedBox(height: 12),

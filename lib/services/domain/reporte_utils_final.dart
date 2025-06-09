@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 class ReporteComportamiento {
   final String comportamiento;
   final String definicion;
-  final String nivel;
+  final String cargo;
   final int calificacion;
   final List<String> sistemasAsociados;
   final String resultado;
@@ -17,7 +17,7 @@ class ReporteComportamiento {
   ReporteComportamiento({
     required this.comportamiento,
     required this.definicion,
-    required this.nivel,
+    required this.cargo,
     required this.calificacion,
     required this.sistemasAsociados,
     required this.resultado,
@@ -28,7 +28,7 @@ class ReporteComportamiento {
   Map<String, dynamic> toJson() => {
         'comportamiento': comportamiento,
         'definicion': definicion,
-        'nivel': nivel,
+        'cargo': cargo,
         'calificacion': calificacion,
         'sistemas_asociados': sistemasAsociados,
         'resultado': resultado,
@@ -49,7 +49,7 @@ class ReporteUtils {
 
     for (var dato in tablaDatos) {
       final String comportamiento = dato['comportamiento'];
-      final String nivel = dato['nivel'];
+      final String cargo = dato['cargo'];
       final String dimension = dato['dimension'].toString();
       final double calificacion = double.tryParse(dato['calificacion'].toString()) ?? 0.0;
       final int redondeada = (calificacion % 1) >= 0.5 ? calificacion.ceil() : calificacion.floor();
@@ -66,7 +66,7 @@ class ReporteUtils {
 
       final benchmarkData = fuente.firstWhere(
         (b) => b['BENCHMARK DE COMPORTAMIENTOS'].toString().trim().startsWith(comportamiento.trim()) &&
-               b['NIVEL'].toString().toLowerCase().contains(nivel.toLowerCase().split(' ')[0]),
+               b['CARGO'].toString().toLowerCase().contains(cargo.toLowerCase().split(' ')[0]),
         orElse: () => {},
       );
 
@@ -93,12 +93,12 @@ class ReporteUtils {
       }
 
       mapaGrafico.putIfAbsent(comportamiento, () => {});
-      mapaGrafico[comportamiento]![nivel] = calificacion;
+      mapaGrafico[comportamiento]![cargo] = calificacion;
 
       reporte.add(ReporteComportamiento(
         comportamiento: comportamiento,
         definicion: definicion,
-        nivel: nivel,
+cargo:cargo,
         calificacion: redondeada,
         sistemasAsociados: sistemas.toSet().toList(),
         resultado: resultado,
@@ -134,7 +134,7 @@ class ReporteUtils {
       buffer.writeln('<tr>');
       buffer.writeln('<td>${r.comportamiento}</td>');
       buffer.writeln('<td>${r.definicion}</td>');
-      buffer.writeln('<td>${r.nivel}</td>');
+      buffer.writeln('<td>${r.cargo}</td>');
       buffer.writeln('<td>${r.calificacion}</td>');
       buffer.writeln('<td>${r.resultado}</td>');
       buffer.writeln('<td>${r.benchmark}</td>');
