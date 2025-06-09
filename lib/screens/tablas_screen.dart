@@ -49,7 +49,7 @@ class TablasDimensionScreen extends StatefulWidget {
     final indiceExistente = lista.indexWhere((item) =>
         item['principio'] == principio &&
         item['comportamiento'] == comportamiento &&
-        item['cargo_raw'] == cargo &&
+        item['cargo'] == cargo &&
         item['dimension_id'] == dimensionId &&
         item['asociado_id'] == asociadoId);
 
@@ -61,7 +61,6 @@ class TablasDimensionScreen extends StatefulWidget {
         'principio': principio,
         'comportamiento': comportamiento,
         'cargo': cargo.trim().capitalize(),
-        'cargo_raw': cargo,
         'valor': valor,
         'sistemas': sistemas,
         'dimension_id': dimensionId,

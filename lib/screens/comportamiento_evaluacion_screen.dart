@@ -419,7 +419,7 @@ class _ComportamientoEvaluacionScreenState
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Benchmark text
           Text(
-            'Benchmark: ${widget.principio.benchmarkPorNivel}',
+            'Benchmark: ${widget.principio.benchmarkComportamiento}',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14 * scaleFactor),
           ),
           const SizedBox(height: 8),

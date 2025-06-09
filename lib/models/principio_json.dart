@@ -1,8 +1,8 @@
 class PrincipioJson {
   final String nombre;
   final String benchmarkComportamiento;
-  final String benchmarkPorNivel;
-  final String nivel;
+  final String benchmarkPorCargo;
+  final String cargo;
   final String preguntas;
   final Map<String, String> calificaciones;
   final List<String> comportamientos;
@@ -10,8 +10,8 @@ class PrincipioJson {
   PrincipioJson({
     required this.nombre,
     required this.benchmarkComportamiento,
-    required this.benchmarkPorNivel,
-    required this.nivel,
+    required this.benchmarkPorCargo,
+    required this.cargo,
     required this.preguntas,
     required this.calificaciones,
     required this.comportamientos,
@@ -19,24 +19,21 @@ class PrincipioJson {
 
   factory PrincipioJson.fromJson(Map<String, dynamic> json) {
     return PrincipioJson(
-      nombre: json['PRINCIPIOS'] ?? '',
-      benchmarkComportamiento: json['BENCHMARK DE COMPORTAMIENTOS'] ?? '',
-      benchmarkPorNivel: json['BENCHMARK POR NIVEL'] ?? '',
-      nivel: json['NIVEL'] ?? '',
-      preguntas: json['GUÍA DE PREGUNTAS'] ?? '',
+      nombre: json['PRINCIPIOS'] as String? ?? '',
+      benchmarkComportamiento: json['BENCHMARK DE COMPORTAMIENTOS'] as String? ?? '',
+      benchmarkPorCargo: json['BENCHMARK POR NIVEL'] as String? ?? '',
+      cargo: json['NIVEL'] as String? ?? '',
+      preguntas: json['GUÍA DE PREGUNTAS'] as String? ?? '',
       calificaciones: {
-        'C1': json['C1'] ?? '',
-        'C2': json['C2'] ?? '',
-        'C3': json['C3'] ?? '',
-        'C4': json['C4'] ?? '',
-        'C5': json['C5'] ?? '',
+        'C1': json['C1'] as String? ?? '',
+        'C2': json['C2'] as String? ?? '',
+        'C3': json['C3'] as String? ?? '',
+        'C4': json['C4'] as String? ?? '',
+        'C5': json['C5'] as String? ?? '',
       },
-      comportamientos:
-          json['comportamientos'] != null
-              ? List<String>.from(json['comportamientos'])
-              : [], // Si es null, asignamos una lista vacía
+      comportamientos: json['comportamientos'] != null
+          ? List<String>.from(json['comportamientos'] as List)
+          : <String>[],
     );
   }
-
-  
 }

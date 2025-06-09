@@ -1,4 +1,3 @@
-
 import 'package:applensys/charts/scatter_bubble_chart.dart';
 import 'package:applensys/models/comportamiento.dart';
 import 'package:applensys/models/principio.dart';
@@ -11,33 +10,40 @@ class EvaluacionChartData {
         List<Comportamiento> comportamientos = (pri['comportamientos'] as List).map((comp) {
           return Comportamiento(
             nombre: comp['nombre'],
-            promedioEjecutivo: comp['ejecutivo'] ?? 0.0,
-            promedioGerente: comp['gerente'] ?? 0.0,
-            promedioMiembro: comp['miembro'] ?? 0.0,
+            promedioEjecutivo: (comp['ejecutivo'] ?? 0.0).toDouble(),
+            promedioGerente: (comp['gerente'] ?? 0.0).toDouble(),
+            promedioMiembro: (comp['miembro'] ?? 0.0).toDouble(),
+            sistemas: List<String>.from(comp['sistemas'] ?? []),
+            cargo: comp['nivel'] ?? '',
           );
         }).toList();
 
         return Principio(
+          id: pri['id'] ?? '',
+          dimensionId: dim['id'] ?? '',
           nombre: pri['nombre'],
-          promedioGeneral: pri['promedio'] ?? 0.0,
-          comportamientos: comportamientos, id: '', dimensionId: '',
+          promedioGeneral: (pri['promedio'] ?? 0.0).toDouble(),
+          comportamientos: comportamientos,
         );
       }).toList();
 
       return Dimension(
         id: dim['id'].toString(),
         nombre: dim['nombre'],
-        promedioGeneral: dim['promedio'] ?? 0.0,
+        promedioGeneral: (dim['promedio'] ?? 0.0).toDouble(),
         principios: principios,
       );
     }).toList();
   }
 
-  static List extractPrincipios(List<Dimension> dimensiones) {
+  static List<Principio> extractPrincipios(List<Dimension> dimensiones) {
     return dimensiones.expand((d) => d.principios).toList();
   }
 
-  static List extractComportamientos(List<Dimension> dimensiones) {
-    return dimensiones.expand((d) => d.principios).expand((p) => p.comportamientos).toList();
+  static List<Comportamiento> extractComportamientos(List<Dimension> dimensiones) {
+    return dimensiones
+        .expand((d) => d.principios)
+        .expand((p) => p.comportamientos)
+        .toList();
   }
 }

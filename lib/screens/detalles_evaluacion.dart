@@ -324,30 +324,38 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
   List<Map<String, dynamic>> _getCalificacionesByDimension(String dimension) {
     return [];
   }
+void _showCalificacionDetails(Map<String, dynamic> calificacion) {
+  // Extraemos y formateamos la lista de sistemas
+  final sistemasRaw = calificacion['sistemas'];
+  final sistemasList = (sistemasRaw is List) ? sistemasRaw.cast<String>() : <String>[];
+  final sistemasText = sistemasList.isNotEmpty ? sistemasList.join(', ') : '—';
 
-  void _showCalificacionDetails(Map<String, dynamic> calificacion) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Detalles de la Calificación de ${calificacion['asociado_nombre']}"),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Nivel: ${calificacion['nivel']}"),
-              Text("Calificación: ${calificacion['calificacion']}"),
-              Text("Observación: ${calificacion['observacion']}"),
-              Text("Sistemas asociados: ${calificacion['sistemas_asociados']}"),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text(
+        "Detalles de la calificación de ${calificacion['asociado_nombre']}",
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min, // evita que el Column expanda todo el espacio
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Nivel: ${calificacion['nivel']}"),
+          Text("Calificación: ${calificacion['calificacion']}"),
+          Text("Observación: ${calificacion['observacion'] ?? '—'}"),
+          Text("Sistemas asociados: $sistemasText"),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cerrar'),
+        ),
+      ],
+    ),
+  );
 }
+
+ 
+  }
+

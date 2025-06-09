@@ -426,7 +426,7 @@ class SupabaseService {
       general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
                 ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
                 ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
-      nivel: '',
+      cargo: '', 
     )).toList();
   }
 
@@ -458,13 +458,13 @@ class SupabaseService {
 
       return LevelAverages(
         id: 0, // Considerar si se necesita un ID único aquí
-        nombre: nivel,
+        
         ejecutivo: ejecutivo,
         gerente: gerente,
         miembro: miembro,
         dimensionId: 0, // Considerar si se necesita un dimensionId aquí
-        general: promedio,
-        nivel: nivel,
+        general: promedio, cargo: '', nombre: '',
+      
       );
     }).toList();
   }
@@ -485,7 +485,7 @@ class SupabaseService {
       general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
                 ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
                 ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
-      nivel: '',
+       cargo: '',
     )).toList();
   }
 
@@ -504,8 +504,8 @@ class SupabaseService {
       dimensionId: 0, // Considerar si se necesita un dimensionId aquí
       general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
                 ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
-                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
-      nivel: '',
+                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3, cargo: '',
+   
     )).toList();
   }
 
@@ -524,8 +524,8 @@ class SupabaseService {
       dimensionId: 0, // Considerar si se necesita un dimensionId aquí
       general: (((m['ejecutivo'] as num?)?.toDouble() ?? 0.0) +
                 ((m['gerente'] as num?)?.toDouble() ?? 0.0) +
-                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3,
-      nivel: '',
+                ((m['miembro'] as num?)?.toDouble() ?? 0.0)) / 3, cargo: '',
+   
     )).toList();
   }
 

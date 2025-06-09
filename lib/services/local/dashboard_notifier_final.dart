@@ -1,4 +1,4 @@
-import 'package:applensys/services/dashboard_service.dart';
+import 'package:applensys/services/dashboard_service_final.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardNotifier extends StateNotifier<DashboardMetrics> {

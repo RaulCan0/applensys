@@ -1,7 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:applensys/services/helpers/chat_service.dart';
-import 'package:applensys/services/helpers/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/message.dart';
@@ -21,7 +20,6 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   late final String _myUserId;
-  List<Message> _previousMessages = [];
 
   final Color chatColor = Colors.teal;
   final Color receivedColor = Colors.grey.shade200;
@@ -119,17 +117,7 @@ class _ChatWidgetDrawerState extends State<ChatWidgetDrawer> {
                 final latestMessage = messages.isNotEmpty ? messages.last : null;
 
                 // Notificación solo si el último mensaje es de otro usuario y es nuevo
-                if (_previousMessages.length < messages.length &&
-                    latestMessage != null &&
-                    latestMessage.userId != _myUserId) {
-                  NotificationService.showNotification(
-                    'Nuevo mensaje',
-                    latestMessage.content.length > 50
-                        ? '${latestMessage.content.substring(0, 50)}...'
-                        : latestMessage.content,
-                  );
-                }
-                _previousMessages = List.from(messages);
+                
 
                 return ListView.builder(
                   controller: _scrollController,

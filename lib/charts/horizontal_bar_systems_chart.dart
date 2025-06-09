@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
-/// Gráfico de barras horizontales por sistema. Recibe:
-///  • data: `Map<sistema, { 'E': countE, 'G': countG, 'M': countM }>`
-///    Ejemplo: { "SisA": { "E": 3, "G": 4, "M": 2 }, "SisB": { "E": 1, "G": 5, "M": 3 }, … }
-///  • title: String (título encima del gráfico)
-///  • minX: double (mínimo del eje X, típicamente 0)
-///  • maxX: double (máximo del eje X, p.ej. 5 o 10)
 class HorizontalBarSystemsChart extends StatelessWidget {
   final Map<String, Map<String, int>> data;
   final String title;
@@ -18,7 +12,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
     required this.data,
     required this.title,
     required this.minX,
-    required this.maxX,
+    required this.maxX, required int maxY, required int minY,
   });
 
   @override

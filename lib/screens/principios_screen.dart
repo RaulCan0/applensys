@@ -63,7 +63,7 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
 
       final todosLosPrincipios = datosJson.map((e) => PrincipioJson.fromJson(e)).toList();
       final principiosFiltrados = todosLosPrincipios
-          .where((p) => p.nivel.toLowerCase().contains(widget.asociado.cargo.toLowerCase()))
+          .where((p) => p.cargo.toLowerCase().contains(widget.asociado.cargo.toLowerCase()))
           .toList();
 
       final agrupados = <String, List<PrincipioJson>>{};
