@@ -1,139 +1,92 @@
+
+// horizontal_bar_systems_chart.dart
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
+/// Gráfico de barras horizontales por sistemas.
 class HorizontalBarSystemsChart extends StatelessWidget {
-  final Map<String, Map<String, int>> data;
-  final String title;
-  final double minX;
-  final double maxX;
+final Map<String, Map<String, dynamic>> data;
+final String title;
+final double minX;
+final double maxX;
+final int maxY;
+final int minY;
 
-  const HorizontalBarSystemsChart({
-    super.key,
-    required this.data,
-    required this.title,
-    required this.minX,
-    required this.maxX, required int maxY, required int minY,
-  });
+const HorizontalBarSystemsChart({
+super.key,
+required this.data,
+required this.title,
+required this.minX,
+required this.maxX,
+required this.maxY,
+required this.minY,
+});
 
-  @override
-  Widget build(BuildContext context) {
-    // Lista de sistemas (claves del Map)
-    final sistemas = data.keys.toList();
+@override
+Widget build(BuildContext context) {
+final List<_SystemData> chartData = [];
 
-    // Convertir cada sistema y sus conteos en un objeto _SystemSeries
-    final List<_SystemSeries> seriesData = sistemas.map((sis) {
-      final counts = data[sis]!;
-      return _SystemSeries(
-        sistema: sis,
-        ejecutivo: (counts['E'] ?? 0).toDouble(),
-        gerente: (counts['G'] ?? 0).toDouble(),
-        miembro: (counts['M'] ?? 0).toDouble(),
-      );
-    }).toList();
+data.forEach((sistema, niveles) {
+  final eVal = niveles['E'];
+  final gVal = niveles['G'];
+  final mVal = niveles['M'];
+  final e = eVal is num ? eVal.toString() : double.tryParse(eVal.toDouble()) ?? 0.0;
+  final g = gVal is num ? gVal.toString() : double.tryParse(gVal.toDouble()) ?? 0.0;
+  final m = mVal is num ? mVal.toString() : double.tryParse(mVal.toDouble()) ?? 0.0;
+ 
+});
 
-    return Column(
-      children: [
-        // Título
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-
-        // El gráfico ocupa el espacio restante
-        Expanded(
-          child: SfCartesianChart(
-            primaryXAxis: NumericAxis(
-              minimum: minX,
-              maximum: maxX,
-              interval: 1,
-              majorGridLines: const MajorGridLines(
-                color: Colors.grey,
-                width: 0.5,
-              ),
-              axisLine: const AxisLine(color: Colors.black, width: 2),
-              labelStyle: const TextStyle(fontSize: 12),
-            ),
-            primaryYAxis: CategoryAxis(
-              majorGridLines: const MajorGridLines(color: Colors.grey, width: 0.5),
-              axisLine: const AxisLine(color: Colors.black, width: 2),
-              labelStyle: const TextStyle(fontSize: 12),
-            ),
-            legend: Legend(
-              isVisible: true,
-              position: LegendPosition.top,
-              overflowMode: LegendItemOverflowMode.wrap,
-            ),
-
-            series: <CartesianSeries<_SystemSeries, String>>[
-              // Serie para Ejecutivo (barras horizontales en azul)
-              BarSeries<_SystemSeries, String>(
-                dataSource: seriesData,
-                xValueMapper: (_SystemSeries d, _) => d.sistema,
-                yValueMapper: (_SystemSeries d, _) => d.ejecutivo,
-                pointColorMapper: (_SystemSeries d, _) => Colors.blue,
-                name: 'Ejecutivo',
-                isTrackVisible: false,
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(6),
-                  bottomRight: Radius.circular(6),
-                ),
-                spacing: 0.2,
-              ),
-
-              // Serie para Gerente (rojo)
-              BarSeries<_SystemSeries, String>(
-                dataSource: seriesData,
-                xValueMapper: (_SystemSeries d, _) => d.sistema,
-                yValueMapper: (_SystemSeries d, _) => d.gerente,
-                pointColorMapper: (_SystemSeries d, _) => Colors.red,
-                name: 'Gerente',
-                isTrackVisible: false,
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(6),
-                  bottomRight: Radius.circular(6),
-                ),
-                spacing: 0.2,
-              ),
-
-              // Serie para Miembro (verde)
-              BarSeries<_SystemSeries, String>(
-                dataSource: seriesData,
-                xValueMapper: (_SystemSeries d, _) => d.sistema,
-                yValueMapper: (_SystemSeries d, _) => d.miembro,
-                pointColorMapper: (_SystemSeries d, _) => Colors.green,
-                name: 'Miembro',
-                isTrackVisible: false,
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(6),
-                  bottomRight: Radius.circular(6),
-                ),
-                spacing: 0.2,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+if (chartData.isEmpty) {
+  return const Center(
+    child: Text('No hay datos disponibles', style: TextStyle(color: Colors.white, fontSize: 16)),
+  );
 }
 
-/// Clase interna para mapear cada sistema y sus conteos por nivel
-class _SystemSeries {
-  final String sistema;
-  final double ejecutivo;
-  final double gerente;
-  final double miembro;
+return SfCartesianChart(
+  title: ChartTitle(text: title, textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+  primaryXAxis: NumericAxis(
+    minimum: minX,
+    maximum: maxX,
+    interval: 1,
+    title: AxisTitle(text: 'Promedio de Uso', textStyle: const TextStyle(color: Colors.white)),
+    labelStyle: const TextStyle(color: Colors.white),
+  ),
+  primaryYAxis: CategoryAxis(
+    title: AxisTitle(text: 'Sistemas', textStyle: const TextStyle(color: Colors.white)),
+    labelStyle: const TextStyle(color: Colors.white),
+  ),
+  legend: const Legend(isVisible: true, textStyle: TextStyle(color: Colors.white)),
+  tooltipBehavior: TooltipBehavior(enable: true),
+  series: <CartesianSeries<_SystemData, String>>[
+    BarSeries<_SystemData, String>(
+      dataSource: chartData,
+      xValueMapper: (d, _) => d.sistema,
+      yValueMapper: (d, _) => d.e,
+      name: 'Ejecutivo',
+    ),
+    BarSeries<_SystemData, String>(
+      dataSource: chartData,
+      xValueMapper: (d, _) => d.sistema,
+      yValueMapper: (d, _) => d.g,
+      name: 'Gerente',
+    ),
+    BarSeries<_SystemData, String>(
+      dataSource: chartData,
+      xValueMapper: (d, _) => d.sistema,
+      yValueMapper: (d, _) => d.m,
+      name: 'Miembro',
+    ),
+  ],
+);
 
-  _SystemSeries({
-    required this.sistema,
-    required this.ejecutivo,
-    required this.gerente,
-    required this.miembro,
-  });
+}
+}
+
+class _SystemData {
+final String sistema;
+final double e;
+final double g;
+final double m;
+
+_SystemData(this.sistema, this.e, this.g, this.m);
 }

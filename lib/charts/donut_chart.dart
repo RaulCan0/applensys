@@ -1,200 +1,158 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-/// Gráfico de dona (PieChart) con leyenda a la derecha.
+/// Gráfico de dona (PieChart) con leyenda abajo.
 /// Recibe:
-///  • data: `Map<nombre_dimension, promedio>` (p. ej. { "Impulsores culturales": 4.2, "Mejora continua": 3.8, ... })
-///  • title: título que se muestra arriba del gráfico.
+///  • data: `Map<nombre_dimension, promedio>`
+///  • title: String (título encima del gráfico)
+///  • dataMap: opcional `Map<nombre_dimension, color>` para personalizar colores
 class DonutChart extends StatelessWidget {
   final Map<String, double> data;
   final String title;
+  final Map<String, Color>? dataMap;
+  final bool isDetail;
 
   const DonutChart({
     super.key,
     required this.data,
     required this.title,
+    this.dataMap,
+    this.isDetail = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final entries = data.entries.toList();
-    // Asigno un color fijo (por índice) a cada dimensión, rotando sobre colorsPrimaries.
-    final List<Color> sectionColors = List.generate(
-      entries.length,
-      (i) => Colors.primaries[i % Colors.primaries.length],
-    );
+    if (data.isEmpty) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No hay datos para mostrar',
+            style: TextStyle(color: Colors.white),
+          ),
+        ],
+      );
+    }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 1) Columna izq: título + dona
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              // Título del gráfico
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              // Espacio para el PieChart
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    centerSpaceRadius: 40,
-                    sectionsSpace: 2,
-                    sections: List.generate(entries.length, (index) {
-                      final value = entries[index].value;
-                      return PieChartSectionData(
-                        color: sectionColors[index],
-                        value: value,
-                        title: '',           // No mostramos texto dentro de la sección
-                        radius: 60,
-                      );
-                    }),
-                  ),
-                ),
-              ),
-            ],
+    final total = data.values.fold<double>(0.0, (sum, val) => sum + val);
+
+    final fallbackPalette = <Color>[
+      const Color(0xFFE63946), // rojo fuerte
+      const Color(0xFF2A9D8F), // verde agua
+      const Color(0xFFE9C46A), // amarillo suave
+    ];
+
+    final sections = <PieChartSectionData>[];
+    final keys = data.keys.toList();
+
+    for (var i = 0; i < keys.length; i++) {
+      final key = keys[i];
+      final value = data[key]!;
+      final color = dataMap?[key] ?? fallbackPalette[i % fallbackPalette.length];
+      sections.add(
+        PieChartSectionData(
+          value: value,
+          color: color,
+          radius: 50,
+          showTitle: false,
+        ),
+      );
+    }
+
+    List<Widget> children = [
+      const SizedBox(height: 8),
+      SizedBox(
+        height: 150,
+        child: PieChart(
+          PieChartData(
+            sectionsSpace: 2,
+            centerSpaceRadius: 30,
+            sections: sections,
           ),
         ),
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 8,
+        children: [
+          for (var i = 0; i < keys.length; i++)
+            _LegendItem(
+              color: dataMap?[keys[i]] ??
+                  fallbackPalette[i % fallbackPalette.length],
+              label: keys[i],
+              porcentaje: total > 0
+                  ? (data[keys[i]]! / total * 100).toStringAsFixed(1)
+                  : '0.0',
+            ),
+        ],
+      ),
+    ];
 
-        const SizedBox(width: 16),
-
-        // 2) Columna der: leyenda con color y texto
-        Expanded(
-          flex: 1,
-          child: ListView.builder(
-            itemCount: entries.length,
-            itemBuilder: (context, i) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    // Cuadro de color
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: sectionColors[i],
-                        shape: BoxShape.rectangle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Nombre de la dimensión
-                    Expanded(
-                      child: Text(
-                        entries[i].key,
-                        style: const TextStyle(fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+    if (title.isNotEmpty) {
+      children.insert(
+        0,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: isDetail ? 16 : 18,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
         ),
-      ],
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: children,
     );
   }
 }
 
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  final String porcentaje;
 
-// Puedes colocar este widget en tu clase V o donde lo necesites
-class DonutChartV extends StatelessWidget {
-  final Map<String, double> data;
-  final String title;
-
-  const DonutChartV({
-    super.key,
-    required this.data,
-    required this.title,
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.porcentaje,
   });
 
   @override
   Widget build(BuildContext context) {
-    final entries = data.entries.toList();
-    final List<Color> sectionColors = List.generate(
-      entries.length,
-      (i) => Colors.primaries[i % Colors.primaries.length],
-    );
-
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Columna izquierda: título + dona
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    centerSpaceRadius: 40,
-                    sectionsSpace: 2,
-                    sections: List.generate(entries.length, (index) {
-                      final value = entries[index].value;
-                      return PieChartSectionData(
-                        color: sectionColors[index],
-                        value: value,
-                        title: '',
-                        radius: 60,
-                      );
-                    }),
-                  ),
-                ),
-              ),
-            ],
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(width: 16),
-        // Columna derecha: leyenda
-        Expanded(
-          flex: 1,
-          child: ListView.builder(
-            itemCount: entries.length,
-            itemBuilder: (context, i) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: sectionColors[i],
-                        shape: BoxShape.rectangle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        entries[i].key,
-                        style: const TextStyle(fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+        const SizedBox(width: 4),
+        Text(
+          '$label ($porcentaje%)',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.white,
           ),
         ),
       ],
