@@ -179,7 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               nombre: compNombre,
               promedioEjecutivo: promEj,
               promedioGerente: promGe,
-              promedioMiembro: promMi,
+              promedioMiembro: promMi, sistemas: [], nivel: null, principioId: '', id: '', cargo: null,
             ),
           );
 
@@ -312,13 +312,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final double promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
 
       list.add(
-        ScatterData(x: promEj.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.red),
+        ScatterData(x: promEj.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.red, radius: 0),
       );
       list.add(
-        ScatterData(x: promGe.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.green),
+        ScatterData(x: promGe.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.green, radius: 0),
       );
       list.add(
-        ScatterData(x: promMi.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.blue),
+        ScatterData(x: promMi.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.blue, radius: 0),
       );
     }
 
@@ -341,29 +341,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   /// Datos para el gráfico de Barras Horizontales (conteo por Sistema y Nivel).
-  Map<String, Map<String, double>> _buildHorizontalBarsData() { // Cambiado el tipo de retorno
-    final Map<String, Map<String, double>> data = {}; // Cambiado el tipo del mapa
+  Map<String, Map<String, double>> _buildHorizontalBarsData() {
+    final Map<String, Map<String, double>> data = {};
+    // Define la lista de todos los sistemas que quieres que aparezcan
+    final sistemasQueDebenAparecer = [
+      'Ambiental',
+      'Comunicación',
+      'Desarrollo de personal',
+      'Despliegue de estrategia',
+      'Gestion visual',
+      'Involucramiento',
+      'Medicion',
+      'Mejora y alineamiento estratégico',
+      'Mejora y gestion visual',
+      'Planificacion',
+      'Programacion y de mejora',
+      'Reconocimiento',
+      'Seguridad',
+      'Sistemas de mejora',
+      'Solucion de problemas',
+      'Voz de cliente',
+      'Visitas al Gemba'
+    ];
 
+    // 1. Inicializa el mapa 'data' con todos los sistemas de 'sistemasQueDebenAparecer'
+    //    y valores cero para cada nivel.
+    for (final sistemaNombre in sistemasQueDebenAparecer) {
+      data[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+    }
+
+    // 2. Ahora, procesa '_dimensionesRaw' para actualizar los conteos
+    //    de los sistemas que sí tienen datos.
     for (final row in _dimensionesRaw) {
-      final listaSistemas = (row['sistemas'] as List<dynamic>?)
+      final listaSistemasEnFila = (row['sistemas'] as List<dynamic>?)
               ?.cast<String>()
               .map((s) => s.trim())
               .where((s) => s.isNotEmpty)
               .toList() ??
           <String>[];
 
-      final valEj = (row['ejecutivo'] as num?)?.toDouble() ?? 0.0;
-      final valGe = (row['gerente'] as num?)?.toDouble() ?? 0.0;
-      final valMi = (row['miembro'] as num?)?.toDouble() ?? 0.0;
+      // Asumiendo que 'ejecutivo', 'gerente', 'miembro' en _dimensionesRaw
+      // son los valores de calificación (0-5) o indicadores de participación.
+      // La lógica actual suma 1.0 si valEj > 0, lo que parece un conteo de participación.
+      final bool participoEj = ((row['ejecutivo'] as num?)?.toDouble() ?? 0.0) > 0;
+      final bool participoGe = ((row['gerente'] as num?)?.toDouble() ?? 0.0) > 0;
+      final bool participoMi = ((row['miembro'] as num?)?.toDouble() ?? 0.0) > 0;
 
-      for (final sis in listaSistemas) {
-        data.putIfAbsent(sis, () => {'E': 0.0, 'G': 0.0, 'M': 0.0}); // Inicializar con doubles
-        if (valEj > 0) data[sis]!['E'] = data[sis]!['E']! + 1.0; // Sumar como double
-        if (valGe > 0) data[sis]!['G'] = data[sis]!['G']! + 1.0; // Sumar como double
-        if (valMi > 0) data[sis]!['M'] = data[sis]!['M']! + 1.0; // Sumar como double
+      for (final sis in listaSistemasEnFila) {
+        // Solo actualiza si el sistema de la fila está en nuestra lista deseada
+        // y ya fue inicializado en el paso 1.
+        if (data.containsKey(sis)) {
+          if (participoEj) data[sis]!['E'] = data[sis]!['E']! + 1.0;
+          if (participoGe) data[sis]!['G'] = data[sis]!['G']! + 1.0;
+          if (participoMi) data[sis]!['M'] = data[sis]!['M']! + 1.0;
+        }
       }
     }
-
+    // debugPrint('Datos para HorizontalBarSystemsChart: $data');
     return data;
   }
 
@@ -544,7 +578,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   _buildChartContainer(
-                    color: const Color(0xFFE9D8A6),
+                    color: const Color.fromARGB(255, 231, 220, 187),
                     title: 'Distribución por Comportamiento y Nivel',
                     child: GroupedBarChart(
                       data: _buildGroupedBarData(),
@@ -568,14 +602,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   _buildChartContainer(
-                    color: const Color(0xFFEE9B00),
+                    color: const Color.fromARGB(255, 202, 208, 219),
                     title: 'Conteos por Sistema y Nivel',
                     child: HorizontalBarSystemsChart(
                       data: _buildHorizontalBarsData(),
                       title: 'Conteos por Sistema y Nivel',
-                      minX: 0,
-                      maxX: 10,
-                      isDetail: false,
+                      minY: 0,
+                      maxY: 5, minX: 0, maxX: 5,
+
                     ),
                   ),
 
@@ -584,8 +618,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-
-          // ► Lado derecho: Sidebar estrecho con íconos (ancho 56px)
           Container(
             width: 56, // ancho normal de sidebar
             color: const Color(0xFF003056), // mismo color del AppBar
@@ -596,7 +628,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 IconButton(
                   icon: const Icon(Icons.chat, color: Colors.white),
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                  tooltip: 'Chat interno',
+                  tooltip: 'Chat Interno',
                 ),
                 const SizedBox(height: 16),
 
@@ -705,41 +737,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Determinar chartData para validar si tiene datos
     dynamic chartData;
     switch (title) {
-      case 'Promedio por Dimensión':
+      case '':
         chartData = _buildDonutData();
-        break;
-      case 'Promedio por Principio':
-        chartData = _buildScatterData();
-        break;
-      case 'Distribución por Comportamiento y Nivel':
-        chartData = _buildGroupedBarData();
-        break;
-      case 'Conteos por Sistema y Nivel':
-        chartData = _buildHorizontalBarsData();
         break;
       default:
         chartData = null;
     }
 
-    return GestureDetector(
-      onTap: () {
-        final tieneDatos = (chartData is Map && chartData.isNotEmpty) ||
-            (chartData is List && chartData.isNotEmpty);
-        if (tieneDatos) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  _SlideDetailScreen(title: title, color: color, chartData: chartData),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No hay datos para mostrar en $title.')),
-          );
-        }
-      },
-      child: Container(
+    return Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         decoration: BoxDecoration(
           color: color,
@@ -755,15 +760,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              
             ),
 
             // Espacio para el gráfico (alto fijo de 240px)
@@ -776,113 +773,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );    
   }
-}
-
-/// Pantalla de detalle a tamaño completo (opcional) para cada gráfico.
-class _SlideDetailScreen extends StatelessWidget {
-  final String title;
-  final Color color;
-  final dynamic chartData;
-
-  const _SlideDetailScreen({
-    required this.title,
-    required this.color,
-    required this.chartData,
-  });
-
-  Widget _getChartForTitle(String title) {
-    switch (title) {
-      case 'Promedio por Dimensión':
-        return DonutChart(
-          data: chartData is Map<String, double> ? chartData : {},
-          title: 'Promedio por Dimensión',
-          dataMap: chartData is Map<String, double>
-              ? {
-                  'IMPULSORES CULTURALES': Colors.redAccent,
-                  'MEJORA CONTINUA': Colors.yellow,
-                  'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
-                }
-              : {},
-          isDetail: true,
-        );
-      case 'Promedio por Principio':
-        return ScatterBubbleChart(
-          data: chartData is List<ScatterData> ? chartData : [],
-          title: 'Promedio por Principio',
-          isDetail: true,
-        );
-      case 'Distribución por Comportamiento y Nivel':
-        return GroupedBarChart(
-          data: chartData is Map<String, List<double>> ? chartData : {},
-          title: 'Distribución por Comportamiento y Nivel',
-          minY: 0,
-          maxY: 5,
-          isDetail: true,
-        );
-      case 'Conteos por Sistema y Nivel':
-        // chartData ya debería ser Map<String, Map<String, double>>
-        final Map<String, Map<String, double>> dataForChart;
-
-        if (chartData is Map<String, Map<String, double>>) {
-          dataForChart = chartData;
-        } else if (chartData is Map) {
-          // Fallback por si chartData no es del tipo esperado (ej. Map<String, Map<String, int>>)
-          dataForChart = {};
-          chartData.forEach((key, value) {
-            if (value is Map) {
-              final Map<String, double> innerDoubleMap = {};
-              value.forEach((innerKey, innerValue) {
-                if (innerValue is num) {
-                  innerDoubleMap[innerKey.toString()] = innerValue.toDouble();
-                }
-              });
-              if (innerDoubleMap.isNotEmpty) {
-                dataForChart[key.toString()] = innerDoubleMap;
-              }
-            }
-          });
-        } else {
-          dataForChart = {}; // Default a mapa vacío si el tipo es completamente inesperado
-        }
-
-        return HorizontalBarSystemsChart(
-          data: dataForChart, // Ahora pasamos el tipo correcto
-          title: 'Conteos por Sistema y Nivel',
-          minX: 0,
-          maxX: 10,
-          isDetail: true,
-        );
-      default:
-        return const Center(
-          child: Text(
-            'No hay gráfico disponible.',
-            style: TextStyle(fontSize: 24, color: Colors.white),
-          ),
-        );
-    }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: color,
-      appBar: AppBar(
-        backgroundColor: color,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontSize: 22),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _getChartForTitle(title),
-      ),
-    );
-  }
-}

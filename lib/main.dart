@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:applensys/services/helpers/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,35 +14,17 @@ import 'package:applensys/screens/auth/register_screen.dart';
 import 'package:applensys/screens/auth/recoveru_screee.dart';
 import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/services/local/evaluacion_cache_service.dart';
-void main() {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
 
-    FlutterError.onError = (FlutterErrorDetails details) {
-      FlutterError.presentError(details);
-      Zone.current.handleUncaughtError(
-        details.exception,
-        details.stack ?? StackTrace.empty,
-      );
-    };
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: Configurations.mSupabaseUrl,
+    anonKey: Configurations.mSupabaseKey,
+  );
+  setupLocator();
+  await locator<EvaluacionCacheService>().init();
 
-    await Supabase.initialize(
-      url: Configurations.mSupabaseUrl,
-      anonKey: Configurations.mSupabaseKey,
-    );
-
-    bool notificationsInitialized = await NotificationService.init();
-    if (!notificationsInitialized) {
-      debugPrint("ALERTA: El servicio de notificaciones no pudo ser inicializado.");
-    }
-
-    setupLocator();
-    await locator<EvaluacionCacheService>().init();
-
-    runApp(const ProviderScope(child: MyApp()));
-  }, (error, stack) {
-    debugPrint('ERROR EN LA ZONA PRINCIPAL:\n$error\n$stack');
-  });
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
@@ -60,9 +41,13 @@ class MyApp extends ConsumerWidget {
       title: 'LensysApp',
       themeMode: themeMode,
       builder: (context, child) {
+        // Aplica la escala de texto correctamente usando textScaleFactor
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scaleFactor)),
-          child: child ?? const SizedBox.shrink(),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(scaleFactor),
+          ),
+          // child nunca debe ser nulo en MaterialApp
+          child: child!,
         );
       },
       theme: ThemeData(

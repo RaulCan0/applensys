@@ -2,7 +2,6 @@
 
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:applensys/screens/tabla_registros.dart';
 import 'package:applensys/services/domain/calificacion_service.dart';
 import 'package:applensys/services/remote/storage_service.dart';
 import 'package:flutter/material.dart';
@@ -547,24 +546,7 @@ class _ComportamientoEvaluacionScreenState
           const SizedBox(height: 16),
           if (sistemasSeleccionados.isNotEmpty) ...[
   const SizedBox(height: 16),
-  Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      const Icon(Icons.tips_and_updates_outlined, color: Color(0xFF003056)),
-      const SizedBox(width: 8),
-      Expanded(
-        child: Text(
-          'Sistemas recomendados: ${sistemasSeleccionados.join(", ")}',
-          style: TextStyle(
-            color: Color(0xFF003056),
-            fontWeight: FontWeight.w600,
-            fontSize: 14 * scaleFactor,
-          ),
-          textAlign: TextAlign.start,
-        ),
-      ),
-    ],
-  ),
+ 
 ],
 
           const SizedBox(height: 16),
@@ -613,25 +595,4 @@ class _ComportamientoEvaluacionScreenState
             ),
           ),
         ]),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TablasRegistrosScreen( 
-                evaluacionId: widget.evaluacionId,
-                empresaId: widget.empresaId, 
-                asociadoId: widget.asociadoId, 
-                dimensionId: widget.dimensionId,
-              ),
-            ),
-          );
-        },
-        backgroundColor: const Color(0xFF003056),
-        tooltip: 'Ver Registros',
-        child: const Icon(Icons.table_chart, color: Colors.white),
-      ),
-    );
-  }
-}
+      ),  );}}

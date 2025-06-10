@@ -50,7 +50,7 @@ class EvaluationChartDataService {
     final Map<String, double> dimensionPromedios = {};
     final List<LevelAverages> lineChartData = [];
     final List<ScatterData> scatterData = [];
-    final Map<String, Map<String, int>> sistemasPorNivel = {};
+    final Map<String, Map<String, double>> sistemasPorNivel = {};
     final Map<String, List<double>> comportamientoPorNivel = {
       'Ejecutivo': List.filled(28, 0),
       'Gerente': List.filled(28, 0),
@@ -69,6 +69,25 @@ class EvaluationChartDataService {
       'Crear constancia en el propósito',
       'Crear valor para el cliente'
     ];
+ final sistemasOrdenados = [
+      'Ambiental',
+      'Comunicación',
+      'Desarrollo de personal',
+      'Despliegue de estrategia',
+      'Gestion visual',
+      'Involucramiento',
+      'Medicion',
+      'Mejora y alineamiento estratégico',
+      'Mejora y gestion visual',
+      'Planificacion',
+      'Programacion y de mejora',
+      'Reconocimiento',
+      'Seguridad',
+      'Sistemas de mejora',
+      'Solucion de problemas',
+      'Voz de cliente',
+      'Visitas al Gemba'
+    ];
 
     // Cargar promedios por dimensión
     for (var dimension in tablaDatos.keys) {
@@ -83,9 +102,6 @@ class EvaluationChartDataService {
       });
       dimensionPromedios[dimension] = conteo > 0 ? suma / conteo : 0;
     }
-
-    // Preparar datos adicionales (este bloque se ampliará en los siguientes pasos)
-    // Normalizar los niveles: 'Miembro de equipo' -> 'Miembro'
     for (var dimension in tablaDatos.keys) {
       tablaDatos[dimension]?.forEach((_, lista) {
         for (var item in lista) {
@@ -95,9 +111,6 @@ class EvaluationChartDataService {
                       : rawNivel.contains('ejecutivo') ? 'Ejecutivo'
                       : null;
           if (nivel == null) continue;
-
-          // Aquí se pueden construir: lineChartData, scatterData, sistemasPorNivel, etc.
-          // Ejemplo para sistemas:
           final sistemas = (item['sistemas'] as List?)?.cast<String>() ?? [];
           for (final sistema in sistemas) {
             sistemasPorNivel.putIfAbsent(sistema, () => {
@@ -108,13 +121,9 @@ class EvaluationChartDataService {
             sistemasPorNivel[sistema]![nivel] =
               (sistemasPorNivel[sistema]![nivel] ?? 0) + 1;
           }
-
-          // Otros cálculos... (comportamientos, promedios, etc.)
-        }
+          }
       });
     }
-    // ...
-
     return ChartsDataModel(
       dimensionPromedios: dimensionPromedios,
       lineChartData: lineChartData,
@@ -125,7 +134,6 @@ class EvaluationChartDataService {
   }
 
   void limpiarDatos() {
-    // Implementar lógica para limpiar datos de caché o Supabase
   }
 }
 
@@ -133,7 +141,7 @@ class ChartsDataModel {
   final Map<String, double> dimensionPromedios;
   final List<LevelAverages> lineChartData;
   final List<ScatterData> scatterData;
-  final Map<String, Map<String, int>> sistemasPorNivel;
+  final Map<String, Map<String, double>> sistemasPorNivel;
   final Map<String, List<double>> comportamientoPorNivel;
 
   ChartsDataModel({

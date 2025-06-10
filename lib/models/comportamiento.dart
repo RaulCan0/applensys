@@ -8,6 +8,6 @@ class Comportamiento {
     required this.nombre,
     required this.promedioEjecutivo,
     required this.promedioGerente,
-    required this.promedioMiembro,
+    required this.promedioMiembro, required List<String> sistemas, required nivel, required String principioId, required String id, required cargo,
   });
 }

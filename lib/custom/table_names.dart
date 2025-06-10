@@ -8,7 +8,5 @@ class TableNames {
   static const String mensajes                 = 'mensajes';
   static const String resultadosDashboard      = 'resultados_dashboard';
   static const String promediosComportamientos = 'promedios_comportamientos';
-  static const String promediosSistemas        = 'promedios_sistemas';
-  // …añade aquí cualquier otra tabla que uses…
-  
+  static const String promediosSistemas        = 'promedios_sistemas';  
 }

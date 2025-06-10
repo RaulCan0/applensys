@@ -72,6 +72,27 @@ class DashboardService {
         );
   }
 
+  // BLINDAJE: método utilitario para forzar Map<String, Map<String, double>>
+  static Map<String, Map<String, double>> blindarSistemasPorNivel(Map data) {
+    final Map<String, Map<String, double>> result = {};
+    data.forEach((sistema, niveles) {
+      if (niveles is Map) {
+        final Map<String, double> inner = {};
+        niveles.forEach((nivel, valor) {
+          if (valor is double) {
+            inner[nivel.toString()] = valor;
+          } else if (valor is num) {
+            inner[nivel.toString()] = valor.toDouble();
+          } else {
+            inner[nivel.toString()] = double.tryParse(valor.toString()) ?? 0.0;
+          }
+        });
+        result[sistema.toString()] = inner;
+      }
+    });
+    return result;
+  }
+
   Future<void> _fetchAndNotify(DashboardListener onUpdate) async {
     // Obtiene todas las calificaciones de la empresa
     final datos = await _client

@@ -5,11 +5,13 @@ import 'package:fl_chart/fl_chart.dart';
 class ScatterData {
   final double x; // Promedio: 0.0 - 5.0
   final double y; // Índice del principio: 1 - 10
+  final double radius;
   final Color color;
 
   ScatterData({
     required this.x,
     required this.y,
+    required this.radius,
     required this.color,
   });
 }
@@ -18,12 +20,14 @@ class ScatterBubbleChart extends StatelessWidget {
   final List<ScatterData> data;
   final String title;
   final bool isDetail;
+  final double? yAxisLabelFontSize; // Nuevo parámetro
 
   const ScatterBubbleChart({
     super.key,
     required this.data,
     required this.title,
     this.isDetail = false,
+    this.yAxisLabelFontSize, // Inicializar nuevo parámetro
   });
 
   static const List<String> principles = [
@@ -50,23 +54,25 @@ class ScatterBubbleChart extends StatelessWidget {
 
     const double minX = 0;
     const double maxX = 5;
-    const double minY = 1;
+    const double minY = 0;
     const double maxY = 10;
     final double fixedRadius = isDetail ? 14 : 8;
 
     return Column(
       children: [
         // Título del gráfico
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+        if (title.isNotEmpty) ...{
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
+        },
 
         // Se usa Expanded para que el gráfico se ajuste al espacio disponible
         Expanded(
@@ -114,7 +120,9 @@ class ScatterBubbleChart extends StatelessWidget {
                           child: Text(
                             // Invertimos: value=10 → principles[0], value=1 → principles[9]
                             principles[10 - index],
-                            style: const TextStyle(fontSize: 10),
+                            style: TextStyle(
+                              fontSize: yAxisLabelFontSize ?? (isDetail ? 10 : 12), // Usar el parámetro o valor por defecto
+                            ),
                             textAlign: TextAlign.right,
                             overflow: TextOverflow.ellipsis,
                           ),

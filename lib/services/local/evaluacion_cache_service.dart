@@ -85,11 +85,31 @@ class EvaluacionCacheService {
   Future<void> limpiarEvaluacionCompleta() async {
     await init();
     await _prefs!.remove(_keyEvaluacionPendiente);
-    // Se omite eliminación automática de _keyTablaDatos para preservar tablas hasta que el usuario confirme
-    // await _prefs!.remove(_keyTablaDatos);
+    await _prefs!.remove(_keyTablaDatos);
     await _prefs!.remove(_keyEvaluacionAsociados);
     await _prefs!.remove(_keyEvaluacionPrincipios);
     await _prefs!.remove(_keyEvaluacionComportamientos);
     await _prefs!.remove(_keyEvaluacionDetalles);
   }
-}
+Future<List<Map<String, dynamic>>> cargarPromediosSistemas() async {
+    final tabla = await cargarTablas(); 
+    final Map<String, List<double>> acumulador = {};
+    tabla.forEach((_, submap) {
+      submap.values.expand((rows) => rows).forEach((item) {
+        final sistema = item['sistema'] as String? ?? '';
+        final raw = item['valor'];
+        final valor = raw is num
+            ? raw.toDouble()
+            : double.tryParse(raw.toString()) ?? 0.0;
+        if (sistema.isNotEmpty) {
+          acumulador.putIfAbsent(sistema, () => []).add(valor);
+        }
+      });
+    });
+    return acumulador.entries.map((e) {
+      final lista = e.value;
+      final suma = lista.fold<double>(0, (a, b) => a + b);
+      final promedio = lista.isNotEmpty ? suma / lista.length : 0.0;
+      return {'sistema': e.key, 'valor': promedio};
+    }).toList();
+  }}

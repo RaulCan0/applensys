@@ -180,7 +180,7 @@ class _TablasDimensionScreenState extends State<TablasDimensionScreen> with Tick
         body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(4),
               child: Center(
                 child: Builder(
                   builder: (innerContext) => ElevatedButton(
