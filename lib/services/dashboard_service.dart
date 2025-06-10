@@ -1,3 +1,5 @@
+// ignore_for_file: empty_constructor_bodies, curly_braces_in_flow_control_structures
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -7,10 +9,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DashboardMetrics {
   final Map<String, double> promedioPorDimension;
   final Map<String, int> conteoPorDimension;
+  final Map<String, Map<String, double>> sistemasPorNivel;
+  final Map<String, Map<String, double>> principiosPorNivel;
+  final Map<String, Map<String, double>> comportamientosPorNivel;
 
   DashboardMetrics({
     required this.promedioPorDimension,
-    required this.conteoPorDimension, required Map principiosPorNivel, required Map comportamientosPorNivel, required Map sistemasPorNivel,
+    required this.conteoPorDimension,
+    required this.sistemasPorNivel,
+    required this.principiosPorNivel,
+    required this.comportamientosPorNivel,
   });
 }
 
@@ -94,38 +102,61 @@ class DashboardService {
   }
 
   Future<void> _fetchAndNotify(DashboardListener onUpdate) async {
-    // Obtiene todas las calificaciones de la empresa
     final datos = await _client
         .from('calificaciones')
-        .select('id_dimension, puntaje')
+        .select('id_asociado, id_dimension, puntaje, sistemas, cargo_raw')
         .eq('id_empresa', empresaId);
 
-    // Agrupa puntajes por dimensión
-    final Map<String, List<double>> agrupados = {};
+    // Map para sumar puntajes por sistema‐nivel
+    final Map<String, Map<String, double>> sistemasSum = {};
+    // Map para contar cuántas evaluaciones por sistema‐nivel
+    final Map<String, Map<String, int>> sistemasCount = {};
+
     for (final rec in datos as List) {
-      final dim = rec['id_dimension']?.toString() ?? '0';
       final puntaje = (rec['puntaje'] as num?)?.toDouble() ?? 0.0;
-      agrupados.putIfAbsent(dim, () => []).add(puntaje);
+      // Determina nivel según cargo_raw (ejecutivo/gerente/miembro)
+      final cargo = (rec['cargo_raw'] as String?)?.toLowerCase() ?? '';
+      String? nivel;
+      if (cargo.contains('ejecutivo')) {
+        nivel = 'E';
+      } else if (cargo.contains('gerente')) nivel = 'G';
+      else if (cargo.contains('miembro')) nivel = 'M';
+      if (nivel == null) continue;
+
+      final sistemasRaw = (rec['sistemas'] as List?)?.cast<String>() ?? [];
+      for (final sis in sistemasRaw) {
+        final sistema = sis.trim();
+        // Inicializa sumas y contadores
+        sistemasSum.putIfAbsent(sistema, () => {'E':0, 'G':0, 'M':0});
+        sistemasCount.putIfAbsent(sistema, () => {'E':0, 'G':0, 'M':0});
+        // Acumula y cuenta
+        sistemasSum[sistema]![nivel] = sistemasSum[sistema]![nivel]! + puntaje;
+        sistemasCount[sistema]![nivel] = sistemasCount[sistema]![nivel]! + 1;
+      }
     }
 
-    // Calcula promedios y conteos
-    final Map<String, double> promedios = {};
-    final Map<String, int> conteos = {};
-    agrupados.forEach((dim, lista) {
-      final count = lista.length;
-      final avg = count > 0 ? lista.reduce((a, b) => a + b) / count : 0.0;
-      promedios[dim] = avg;
-      conteos[dim] = count;
+    // Calcula promedios por sistema‐nivel
+    final Map<String, Map<String, double>> sistemasPromedio = {};
+    sistemasSum.forEach((sistema, sumMap) {
+      final cntMap = sistemasCount[sistema]!;
+      sistemasPromedio[sistema] = {
+        'E': cntMap['E']! > 0 ? sumMap['E']! / cntMap['E']! : 0.0,
+        'G': cntMap['G']! > 0 ? sumMap['G']! / cntMap['G']! : 0.0,
+        'M': cntMap['M']! > 0 ? sumMap['M']! / cntMap['M']! : 0.0,
+      };
     });
 
-    // Notifica al listener
+    // Notifica usando el mapa de promedios, no de conteos
     onUpdate(DashboardMetrics(
-      promedioPorDimension: promedios,
-      conteoPorDimension: conteos, principiosPorNivel: {}, comportamientosPorNivel: {}, sistemasPorNivel: {},
+      promedioPorDimension: {},
+      conteoPorDimension: {},
+      sistemasPorNivel: sistemasPromedio,
+      principiosPorNivel: {}, 
+      comportamientosPorNivel: {},
     ));
 
     // Auto subir JSON por cada dimensión
-    for (final dim in promedios.keys) {
+    for (final dim in sistemasPromedio.keys) {
       await uploadDimensionJson(dim);
     }
   }

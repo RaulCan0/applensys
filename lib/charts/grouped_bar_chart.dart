@@ -22,11 +22,11 @@ class GroupedBarChart extends StatelessWidget {
     // 1) Lista completa de comportamientos
     final comportamientosOrdenados = [
       'Soporte',
-      'Reconocimiento',
+      'Reconocer',
       'Comunidad',
-      'Liderazgo de servidor',
+      'Liderazgo de Servidor',
       'Valorar',
-      'Empoderamiento',
+      'Empoderar',
       'Mentalidad',
       'Estructura',
       'Reflexionar',

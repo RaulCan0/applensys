@@ -2,9 +2,9 @@ import '../models/comportamiento.dart'; // Asegúrate que apunte bien
 
 final List<String> comportamientosClaves = [
   'Soporte',
-  'Reconocimiento',
+  'Reconocer',
   'Comunidad',
-  'Liderazgo de servidor',
+  'Liderazgo de Servidor',
   'Valorar',
   'Empoderamiento',
   'Mentalidad',

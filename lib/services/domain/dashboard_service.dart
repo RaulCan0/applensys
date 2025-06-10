@@ -11,8 +11,8 @@ class DashboardService {
   DashboardService() {
     final estructuraBase = {
       "IMPULSORES CULTURALES": {
-        "Respetar a Cada Individuo": ["Soporte", "Reconocimiento", "Comunidad"],
-        "Liderar con Humildad": ["Liderazgo de servidor", "Valorar", "Empoderamiento"]
+        "Respetar a Cada Individuo": ["Soporte", "Reconocer", "Comunidad"],
+        "Liderar con Humildad": ["Liderazgo de Servidor", "Valorar", "Empoderar"]
       },
       "MEJORA CONTINUA": {
         "Buscar la Perfección": ["Mentalidad", "Estructura"],

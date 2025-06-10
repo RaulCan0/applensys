@@ -4,19 +4,50 @@ import 'package:applensys/services/local/evaluacion_cache_service.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+
+
+
+class EvaluationChartDataService {
+
+  Future<ChartsDataModel> cargarDatosParaGraficas(String evaluacionId) async {
+    final evaluacionCacheService = EvaluacionCacheService();
+    final tablaDatos = await evaluacionCacheService.cargarTablas();
+
+    final Map<String, double> dimensionPromedios = {};
+    final List<LevelAverages> lineChartData = [];
+    final List<ScatterData> scatterData = [];
+    final Map<String, Map<String, double>> sistemasPorNivel = {};
+    final Map<String, List<double>> comportamientoPorNivel = {
+      'Ejecutivo': List.filled(28, 0),
+      'Gerente': List.filled(28, 0),
+      'Miembro': List.filled(28, 0),
+    };
 const List<String> dimensionesFijas = [
   'Impulsores culturales',
   'Mejora continua',
   'Alineamiento empresarial',
 ];
 
+    final List<String> principios = [
+      'Respetar a cada individuo',
+      'Liderar con humildad',
+      'Buscar la perfección',
+      'Abrazar el pensamiento científico',
+      'Enfocarse en el proceso',
+      'Asegurar la calidad en la fuente',
+      'Mejorar el flujo y jalón de valor',
+      'Pensar sistémicamente',
+      'Crear constancia en el propósito',
+      'Crear valor para el cliente'
+    ];
+    
 const List<String> comportamientosFijos = [
   'Soporte',
-  'Reconocimiento',
+  'Reconocer',
   'Comunidad',
-  'Liderazgo de servidor',
+  'Liderazgo de Servidor',
   'Valorar',
-  'Empoderamiento',
+  'Empoderar',
   'Mentalidad',
   'Estructura',
   'Reflexionar',
@@ -40,35 +71,6 @@ const List<String> comportamientosFijos = [
   'Valor',
   'Medida',
 ];
-
-class EvaluationChartDataService {
-
-  Future<ChartsDataModel> cargarDatosParaGraficas(String evaluacionId) async {
-    final evaluacionCacheService = EvaluacionCacheService();
-    final tablaDatos = await evaluacionCacheService.cargarTablas();
-
-    final Map<String, double> dimensionPromedios = {};
-    final List<LevelAverages> lineChartData = [];
-    final List<ScatterData> scatterData = [];
-    final Map<String, Map<String, double>> sistemasPorNivel = {};
-    final Map<String, List<double>> comportamientoPorNivel = {
-      'Ejecutivo': List.filled(28, 0),
-      'Gerente': List.filled(28, 0),
-      'Miembro': List.filled(28, 0),
-    };
-
-    final List<String> principios = [
-      'Respetar a cada individuo',
-      'Liderar con humildad',
-      'Buscar la perfección',
-      'Abrazar el pensamiento científico',
-      'Enfocarse en el proceso',
-      'Asegurar la calidad en la fuente',
-      'Mejorar el flujo y jalón de valor',
-      'Pensar sistémicamente',
-      'Crear constancia en el propósito',
-      'Crear valor para el cliente'
-    ];
  final sistemasOrdenados = [
       'Ambiental',
       'Comunicación',

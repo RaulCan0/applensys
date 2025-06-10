@@ -159,7 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final cargoRaw =
                 (row['cargo_raw'] as String?)?.toLowerCase().trim() ?? '';
             if (cargoRaw.contains('ejecutivo')) {
-              sumaEj += valor;
+              sumaEj += valor;    // Acumular puntaje
               countEj++;
             } else if (cargoRaw.contains('gerente')) {
               sumaGe += valor;
@@ -340,65 +340,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return data;
   }
 
-  /// Datos para el gráfico de Barras Horizontales (conteo por Sistema y Nivel).
+  /// Devuelve promedios de puntaje por sistema y nivel (E, G, M).
   Map<String, Map<String, double>> _buildHorizontalBarsData() {
-    final Map<String, Map<String, double>> data = {};
-    // Define la lista de todos los sistemas que quieres que aparezcan
-    final sistemasQueDebenAparecer = [
-      'Ambiental',
-      'Comunicación',
-      'Desarrollo de personal',
-      'Despliegue de estrategia',
-      'Gestion visual',
-      'Involucramiento',
-      'Medicion',
-      'Mejora y alineamiento estratégico',
-      'Mejora y gestion visual',
-      'Planificacion',
-      'Programacion y de mejora',
-      'Reconocimiento',
-      'Seguridad',
-      'Sistemas de mejora',
-      'Solucion de problemas',
-      'Voz de cliente',
-      'Visitas al Gemba'
-    ];
+    final sumas = <String, Map<String, double>>{};
+    final conteos = <String, Map<String, int>>{};
 
-    // 1. Inicializa el mapa 'data' con todos los sistemas de 'sistemasQueDebenAparecer'
-    //    y valores cero para cada nivel.
-    for (final sistemaNombre in sistemasQueDebenAparecer) {
-      data[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
-    }
-
-    // 2. Ahora, procesa '_dimensionesRaw' para actualizar los conteos
-    //    de los sistemas que sí tienen datos.
     for (final row in _dimensionesRaw) {
-      final listaSistemasEnFila = (row['sistemas'] as List<dynamic>?)
+      final puntaje = (row['valor'] as num?)?.toDouble() ?? 0.0;
+      final rawNivel = (row['cargo_raw'] as String?)?.toLowerCase() ?? '';
+      String? nivel = rawNivel.contains('ejecutivo')
+          ? 'E'
+          : rawNivel.contains('gerente')
+              ? 'G'
+              : rawNivel.contains('miembro')
+                  ? 'M'
+                  : null;
+      if (nivel == null) continue;
+
+      final sistemas = (row['sistemas'] as List<dynamic>?)
               ?.cast<String>()
               .map((s) => s.trim())
               .where((s) => s.isNotEmpty)
               .toList() ??
-          <String>[];
+          [];
 
-      // Asumiendo que 'ejecutivo', 'gerente', 'miembro' en _dimensionesRaw
-      // son los valores de calificación (0-5) o indicadores de participación.
-      // La lógica actual suma 1.0 si valEj > 0, lo que parece un conteo de participación.
-      final bool participoEj = ((row['ejecutivo'] as num?)?.toDouble() ?? 0.0) > 0;
-      final bool participoGe = ((row['gerente'] as num?)?.toDouble() ?? 0.0) > 0;
-      final bool participoMi = ((row['miembro'] as num?)?.toDouble() ?? 0.0) > 0;
-
-      for (final sis in listaSistemasEnFila) {
-        // Solo actualiza si el sistema de la fila está en nuestra lista deseada
-        // y ya fue inicializado en el paso 1.
-        if (data.containsKey(sis)) {
-          if (participoEj) data[sis]!['E'] = data[sis]!['E']! + 1.0;
-          if (participoGe) data[sis]!['G'] = data[sis]!['G']! + 1.0;
-          if (participoMi) data[sis]!['M'] = data[sis]!['M']! + 1.0;
-        }
+      for (final sis in sistemas) {
+        sumas.putIfAbsent(sis, () => {'E': 0.0, 'G': 0.0, 'M': 0.0});
+        conteos.putIfAbsent(sis, () => {'E': 0, 'G': 0, 'M': 0});
+        sumas[sis]![nivel] = sumas[sis]![nivel]! + puntaje;
+        conteos[sis]![nivel] = conteos[sis]![nivel]! + 1;
       }
     }
-    // debugPrint('Datos para HorizontalBarSystemsChart: $data');
-    return data;
+
+    final promedios = <String, Map<String, double>>{};
+    sumas.forEach((sis, sumaMap) {
+      final cntMap = conteos[sis]!;
+      promedios[sis] = {
+        'E': cntMap['E']! > 0 ? sumaMap['E']! / cntMap['E']! : 0.0,
+        'G': cntMap['G']! > 0 ? sumaMap['G']! / cntMap['G']! : 0.0,
+        'M': cntMap['M']! > 0 ? sumaMap['M']! / cntMap['M']! : 0.0,
+      };
+    });
+
+    const allSistemas = [
+      'Ambiental', 'Comunicación', 'Desarrollo de personal', 'Despliegue de estrategia',
+      'Gestion visual', 'Involucramiento', 'Medicion',
+      'Mejora y alineamiento estratégico', 'Mejora y gestion visual',
+      'Planificacion', 'Programacion y de mejora', 'Reconocimiento',
+      'Seguridad', 'Sistemas de mejora', 'Solucion de problemas',
+      'Voz de cliente', 'Visitas al Gemba',
+    ];
+    for (final sis in allSistemas) {
+      promedios.putIfAbsent(sis, () => {'E': 0.0, 'G': 0.0, 'M': 0.0});
+    }
+
+    return promedios;
   }
 
   /// Callback al presionar “Generar Excel/Word”
@@ -603,13 +599,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   _buildChartContainer(
                     color: const Color.fromARGB(255, 202, 208, 219),
-                    title: 'Conteos por Sistema y Nivel',
+                    title: 'Promedio por Sistema y Nivel',
                     child: HorizontalBarSystemsChart(
                       data: _buildHorizontalBarsData(),
-                      title: 'Conteos por Sistema y Nivel',
+                      title: 'Promedio por Sistema y Nivel',
                       minY: 0,
-                      maxY: 5, minX: 0, maxX: 5,
-
+                      maxY: 5,
+                      sistemasOrdenados: const [
+                        'Ambiental', 'Comunicación', 'Desarrollo de personal', 'Despliegue de estrategia', 'Gestion visual', 'Involucramiento', 'Medicion', 'Mejora y alineamiento estratégico', 'Mejora y gestion visual', 'Planificacion', 'Programacion y de mejora', 'Reconocimiento', 'Seguridad', 'Sistemas de mejora', 'Solucion de problemas', 'Voz de cliente', 'Visitas al Gemba'
+                      ],
                     ),
                   ),
 
