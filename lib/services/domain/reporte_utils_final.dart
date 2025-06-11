@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:excel/excel.dart'; // Importación para el paquete excel
 
 class ReporteComportamiento {
   final String comportamiento;
@@ -34,6 +35,7 @@ class ReporteUtils {
     'Miembro de equipo',
   ];
 
+  /// Genera lista de ReporteComportamiento a partir de tablas de datos y benchmarks.
   static Future<List<ReporteComportamiento>> generarReporteDesdeTablaDatos(
     List<Map<String, dynamic>> tablaDatos,
     List<Map<String, dynamic>> t1,
@@ -52,17 +54,23 @@ class ReporteUtils {
       final sistemas = List<String>.from(dato['sistemas_asociados'] ?? []).toSet().toList();
       final obs = dato['observacion']?.toString().trim() ?? '';
 
+      // seleccionar fuente de benchmark
       final fuente = dim == '1' ? t1 : (dim == '2' ? t2 : t3);
       final bench = fuente.firstWhere(
         (b) => b['BENCHMARK DE COMPORTAMIENTOS']
-                .toString().trim().startsWith(comp) &&
+                .toString()
+                .trim()
+                .startsWith(comp) &&
                b['NIVEL']
-                .toString().toLowerCase().contains(nivel.toLowerCase().split(' ')[0]),
-        orElse: () => <String, dynamic>{},
+                .toString()
+                .toLowerCase()
+                .contains(nivel.toLowerCase().split(' ')[0]),
+        orElse: () => {},
       );
       final definicion = bench['BENCHMARK DE COMPORTAMIENTOS'] ?? '';
       final bm = bench['BENCHMARK POR NIVEL'] ?? '';
 
+      // texto de interpretación según redondeo C1..C5
       String interpret = '';
       switch (redondeo) {
         case 1:
@@ -98,17 +106,25 @@ class ReporteUtils {
       ));
     }
 
+    // asignar datos de gráfico (no modificado)
     for (var r in reporte) {
       r.grafico.addAll({
         'Ejecutivo': mapaGrafico[r.comportamiento]?['Ejecutivo'] ?? 0,
         'Gerente': mapaGrafico[r.comportamiento]?['Gerente'] ?? 0,
-        'Miembro de equipo': mapaGrafico[r.comportamiento]?['Miembro de equipo'] ?? 0,
+        'Miembro de equipo': mapaGrafico[r.comportamiento]?['Miembro'] ??
+                                mapaGrafico[r.comportamiento]?['Equipo'] ?? 0,
       });
     }
 
     return reporte;
   }
 
+  /// Exporta un documento Word (.doc) basado en HTML.
+  /// Solo coloca COMPORTAMIENTO y DEFINICIÓN arriba de cada tabla.
+  /// La tabla fija 3 filas: Ejecutivo, Gerente, Miembro de equipo.
+  /// Columnas: Nivel | Resultado (calificación) | Sistemas Asociados |
+  /// Hallazgos Específicos | Interpretación del Comportamiento |
+  /// Benchmark | Gráfico
   static Future<String> exportReporteWordUnificado(
     List<Map<String, dynamic>> tablaDatos,
     List<Map<String, dynamic>> t1,
@@ -119,60 +135,147 @@ class ReporteUtils {
     final buffer = StringBuffer();
     buffer.writeln('<html><body>');
 
-    // Generar secciones por comportamiento
     final comps = reporte.map((r) => r.comportamiento).toSet();
     for (var comp in comps) {
       final filas = reporte.where((r) => r.comportamiento == comp).toList();
-      final defin = filas.first.definicion;
+      if (filas.isEmpty) continue; // Si no hay filas para este comportamiento, saltar.
+
+      final defin = filas.first.definicion; // Asumimos que la definición es la misma para todas las filas de un comportamiento.
       buffer.writeln('<h2>$comp</h2>');
       buffer.writeln('<p>$defin</p>');
       buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
-      buffer.writeln(
-          '<tr><th>Nivel</th><th>Resultado</th><th>Sistemas Asociados</th><th>Hallazgos Específicos</th><th>Interpretación</th><th>Benchmark</th><th>Evidencia</th></tr>');
+      buffer.writeln('<tr>'
+          '<th>Nivel</th>'
+          '<th>Resultado</th>'
+          '<th>Sistemas Asociados</th>'
+          '<th>Hallazgos Específicos</th>'
+          '<th>Interpretación del Comportamiento</th>'
+          '<th>Benchmark</th>'
+          '<th>Gráfico</th>'
+          '</tr>');
 
-      for (var nivel in _nivelesFijos) {
+      for (var nivelFijo in _nivelesFijos) {
         final rowData = filas.firstWhere(
-          (r) => r.nivel.toLowerCase().contains(nivel.toLowerCase().split(' ')[0]),
-          orElse: () => filas.first,
+          (r) => r.nivel.toLowerCase().contains(
+                    nivelFijo.toLowerCase().split(' ')[0] // Compara la primera palabra del nivel
+                  ),
+          // Si no se encuentra, crea un ReporteComportamiento vacío para esa fila de la tabla.
+          orElse: () => ReporteComportamiento(
+            comportamiento: comp,
+            definicion: defin, // Reutiliza la definición del comportamiento actual
+            nivel: nivelFijo,
+            calificacion: 0,
+            sistemasAsociados: [],
+            resultado: 'N/A',
+            benchmark: 'N/A',
+            observacion: 'N/A',
+            grafico: {},
+          ),
         );
         final sis = rowData.sistemasAsociados.join(', ');
+        final hall = rowData.observacion;
+        final interp = rowData.resultado;
+        final bm = rowData.benchmark;
+        // Aquí necesitarías una forma de generar y enlazar la imagen del gráfico.
+        // Por ahora, se deja como una celda vacía o con un placeholder.
+        final graficoHtml = rowData.grafico.isNotEmpty 
+            ? 'Datos disponibles' // Placeholder, idealmente aquí iría una imagen o un mini-gráfico HTML/SVG
+            : 'N/A';
+
         buffer.writeln('<tr>');
-        buffer.writeln('<td>$nivel</td>');
+        buffer.writeln('<td>${rowData.nivel}</td>'); // Usar rowData.nivel que puede ser el nivelFijo o el nivel original
         buffer.writeln('<td>${rowData.calificacion}</td>');
         buffer.writeln('<td>$sis</td>');
-        buffer.writeln('<td>${rowData.observacion}</td>');
-        buffer.writeln('<td>${rowData.resultado}</td>');
-        buffer.writeln('<td>${rowData.benchmark}</td>');
-        // Espacio para evidencia: se inserta la ruta de imagen
-        buffer.writeln('<td><img src="${rowData.grafico[nivel]?.toString() ?? ''}" width="100" height="100"/></td>');
+        buffer.writeln('<td>$hall</td>');
+        buffer.writeln('<td>$interp</td>');
+        buffer.writeln('<td>$bm</td>');
+        buffer.writeln('<td>$graficoHtml</td>'); // Celda para el gráfico
         buffer.writeln('</tr>');
       }
-
-      buffer.writeln('</table><br/>');
-    }
-
-    // Extras del reporte: 28 tablitas individuales con evidencia
-    buffer.writeln('<h2>Extras del Reporte</h2>');
-    final comportamientos = [
-      'Soporte','Reconocer','Comunidad','Liderazgo de Servidor','Valorar','Empoderamiento',
-      'Mentalidad','Estructura','Reflexionar','Análisis','Colaborar','Comprender','Diseño',
-      'Atribución','A prueba de error','Propiedad','Conectar','Ininterrumpido','Demanda',
-      'Eliminar','Optimizar','Impacto','Alinear','Aclarar','Comunicar','Relación','Medida','Valor',
-    ];
-    for (var comp in comportamientos) {
-      buffer.writeln('<h3>$comp</h3>');
-      buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
-      buffer.writeln('<tr><th>Nivel</th><th>Evidencia</th></tr>');
-      for (var nivel in _nivelesFijos) {
-        buffer.writeln('<tr><td>$nivel</td><td><img src="" width="100" height="100"/></td></tr>');
-      }
-      buffer.writeln('</table><br/>');
+      buffer.writeln('</table>');
     }
 
     buffer.writeln('</body></html>');
     final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/reporte_unificado.doc');
+    final filePath = '${dir.path}/reporte_unificado.doc';
+    final file = File(filePath);
     await file.writeAsString(buffer.toString(), encoding: Utf8Codec());
-    return file.path;
+    return filePath;
+  }
+
+  /// Exporta un reporte en formato CSV.
+  static Future<String> exportReporteExcelUnificado(
+    List<Map<String, dynamic>> tablaDatos,
+    List<Map<String, dynamic>> t1,
+    List<Map<String, dynamic>> t2,
+    List<Map<String, dynamic>> t3,
+  ) async {
+    final reporte = await generarReporteDesdeTablaDatos(tablaDatos, t1, t2, t3);
+    
+    var excel = Excel.createExcel(); 
+    Sheet sheetObject = excel['ReporteUnificado']; 
+
+    // Encabezados
+    List<CellValue> headers = [
+      TextCellValue('Comportamiento'), TextCellValue('Definicion'), TextCellValue('Nivel'), TextCellValue('Resultado (Calificacion)'),
+      TextCellValue('Sistemas Asociados'), TextCellValue('Hallazgos Especificos'), TextCellValue('Interpretacion del Comportamiento'),
+      TextCellValue('Benchmark'), TextCellValue('Grafico Ejecutivo'), TextCellValue('Grafico Gerente'), TextCellValue('Grafico Miembro de equipo')
+    ];
+    sheetObject.appendRow(headers);
+
+    final comps = reporte.map((r) => r.comportamiento).toSet();
+    for (var comp in comps) {
+      final filasDelComportamiento = reporte.where((r) => r.comportamiento == comp).toList();
+      if (filasDelComportamiento.isEmpty) continue;
+      
+      final definicionComportamiento = filasDelComportamiento.first.definicion;
+
+      for (var nivelFijo in _nivelesFijos) {
+        final rowData = filasDelComportamiento.firstWhere(
+          (r) => r.nivel.toLowerCase().contains(nivelFijo.toLowerCase().split(' ')[0]),
+          orElse: () => ReporteComportamiento(
+            comportamiento: comp,
+            definicion: definicionComportamiento,
+            nivel: nivelFijo,
+            calificacion: 0,
+            sistemasAsociados: [],
+            resultado: 'N/A',
+            benchmark: 'N/A',
+            observacion: 'N/A',
+            grafico: {'Ejecutivo': 0.0, 'Gerente': 0.0, 'Miembro de equipo': 0.0},
+          ),
+        );
+
+        final sistemas = rowData.sistemasAsociados.join('; ');
+        
+        List<CellValue?> rowValues = [
+          TextCellValue(rowData.comportamiento),
+          TextCellValue(rowData.definicion),
+          TextCellValue(rowData.nivel),
+          DoubleCellValue(rowData.calificacion.toDouble()), // Corregido: Usar DoubleCellValue
+          TextCellValue(sistemas),
+          TextCellValue(rowData.observacion),
+          TextCellValue(rowData.resultado),
+          TextCellValue(rowData.benchmark),
+          DoubleCellValue(rowData.grafico['Ejecutivo'] ?? 0.0), // Corregido: Usar DoubleCellValue
+          DoubleCellValue(rowData.grafico['Gerente'] ?? 0.0), // Corregido: Usar DoubleCellValue
+          DoubleCellValue(rowData.grafico['Miembro de equipo'] ?? 0.0) // Corregido: Usar DoubleCellValue
+        ];
+        sheetObject.appendRow(rowValues);
+      }
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final filePath = '${dir.path}/reporte_unificado.xlsx';
+    
+    var fileBytes = excel.save();
+    if (fileBytes != null) {
+      File(filePath)
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(fileBytes);
+      return filePath;
+    } else {
+      throw Exception("Error al guardar el archivo Excel.");
+    }
   }
 }
