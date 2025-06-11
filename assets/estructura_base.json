@@ -79,7 +79,7 @@
           ]
         },
         {
-          "nombre": "Crear constancia de Propósito",
+          "nombre": "Crear Constancia de Propósito",
           "comportamientos": [
             "Alinear",
             "Aclarar",
@@ -87,7 +87,7 @@
           ]
         },
         {
-          "nombre": "Crear valor para el cliente",
+          "nombre": "Crear Valor para el Cliente",
           "comportamientos": [
             "Relación",
             "Valor",

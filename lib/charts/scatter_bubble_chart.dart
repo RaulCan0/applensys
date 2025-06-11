@@ -5,14 +5,12 @@ import 'package:fl_chart/fl_chart.dart';
 class ScatterData {
   final double x; // Promedio: 0.0 - 5.0
   final double y; // Índice del principio: 1 - 10
-  final double radius;
   final Color color;
 
   ScatterData({
     required this.x,
     required this.y,
-    required this.radius,
-    required this.color,
+    required this.color, required int radius,
   });
 }
 
@@ -20,17 +18,15 @@ class ScatterBubbleChart extends StatelessWidget {
   final List<ScatterData> data;
   final String title;
   final bool isDetail;
-  final double? yAxisLabelFontSize; // Nuevo parámetro
 
   const ScatterBubbleChart({
     super.key,
     required this.data,
     required this.title,
     this.isDetail = false,
-    this.yAxisLabelFontSize, // Inicializar nuevo parámetro
   });
 
-  static const List<String> principles = [
+   static const List<String> principles = [
     'Respetar a Cada Individuo',
     'Liderar con Humildad',
     'Buscar la Perfección',
@@ -54,25 +50,23 @@ class ScatterBubbleChart extends StatelessWidget {
 
     const double minX = 0;
     const double maxX = 5;
-    const double minY = 1;
-    const double maxY = 10;
+    const double minY = 0;
+    const double maxY = 9;
     final double fixedRadius = isDetail ? 14 : 8;
 
     return Column(
       children: [
         // Título del gráfico
-        if (title.isNotEmpty) ...{
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        },
+        ),
 
         // Se usa Expanded para que el gráfico se ajuste al espacio disponible
         Expanded(
@@ -81,7 +75,7 @@ class ScatterBubbleChart extends StatelessWidget {
               scatterSpots: data.map((d) {
                 // Cada punto: x en [0..5], y en [1..10], invertido para que 1 esté arriba
                 final xPos = d.x.clamp(minX, maxX);
-                final yPos = (11 - d.y).clamp(minY, maxY);
+                final yPos = (10 - d.y).clamp(minY, maxY);
                 return ScatterSpot(
                   xPos,
                   yPos,
@@ -120,9 +114,7 @@ class ScatterBubbleChart extends StatelessWidget {
                           child: Text(
                             // Invertimos: value=10 → principles[0], value=1 → principles[9]
                             principles[10 - index],
-                            style: TextStyle(
-                              fontSize: yAxisLabelFontSize ?? (isDetail ? 10 : 12), // Usar el parámetro o valor por defecto
-                            ),
+                            style: const TextStyle(fontSize: 10),
                             textAlign: TextAlign.right,
                             overflow: TextOverflow.ellipsis,
                           ),

@@ -23,8 +23,8 @@ class DashboardService {
       },
       "ALINEAMIENTO EMPRESARIAL": {
         "Pensar Sistémicamente": ["Optimizar", "Impacto"],
-        "Crear constancia de Propósito": ["Alinear", "Aclarar", "Comunicar"],
-        "Crear valor para el cliente": ["Relación", "Valor", "Medida"]
+        "Crear Constancia de Propósito": ["Alinear", "Aclarar", "Comunicar"],
+        "Crear Valor para el Cliente": ["Relación", "Valor", "Medida"]
       }
     };
 

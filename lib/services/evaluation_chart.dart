@@ -166,10 +166,10 @@ class EvaluationChartDataService {
       'Abrazar el pensamiento científico',
       'Enfocarse en el proceso',
       'Asegurar la calidad en la fuente',
-      'Mejorar el flujo y jalón de valor',
-      'Pensar sistémicamente',
-      'Crear constancia en el propósito',
-      'Crear valor para el cliente'
+      'Mejorar el Flujo y Jalón de Valor',
+      'Pensar Sistémicamente',
+      'Crear Constancia de Propósito',
+      'Crear Valor para el Cliente',
     ];
 
     // Cargar promedios por dimensión
