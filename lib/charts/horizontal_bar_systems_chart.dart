@@ -20,7 +20,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chartData = sistemasOrdenados.map((s) {
-      final levels = data[s] ?? {'E': 0, 'G': 0, 'M': 0};
+      final levels = data[s] ?? {'E': 0.0, 'G': 0.0, 'M': 0.0};
       return _SystemData(
         s,
         levels['E'] ?? 0.0,
@@ -33,33 +33,49 @@ class HorizontalBarSystemsChart extends StatelessWidget {
       return const Center(child: Text('No hay datos'));
     }
 
-    return SfCartesianChart(
-      isTransposed: true, // horizontales
-      primaryXAxis: CategoryAxis(title: AxisTitle(text: 'Sistemas')),
-      primaryYAxis: NumericAxis(
-        minimum: minY,
-        maximum: maxY,
-        interval: 1,
-        title: AxisTitle(text: 'Promedio'),
+    return ScrollConfiguration(
+      behavior: const ScrollBehavior().copyWith(scrollbars: true),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: SizedBox(
+          height: chartData.length * 40.0,
+          child: SfCartesianChart(
+            primaryXAxis: CategoryAxis(
+              title: AxisTitle(text: 'Sistemas'),
+            ),
+            primaryYAxis: NumericAxis(
+              minimum: minY,
+              maximum: maxY,
+              interval: 1,
+              title: AxisTitle(text: 'Promedio'),
+            ),
+            series: <CartesianSeries<_SystemData, String>>[
+              BarSeries<_SystemData, String>(
+                name: 'Ejecutivo',
+                color: Colors.orange, // Ejecutivo → naranja
+                dataSource: chartData,
+                xValueMapper: (d, _) => d.sistema,
+                yValueMapper: (d, _) => d.e,
+              ),
+              BarSeries<_SystemData, String>(
+                name: 'Gerente',
+                color: Colors.green, // Gerente → verde
+                dataSource: chartData,
+                xValueMapper: (d, _) => d.sistema,
+                yValueMapper: (d, _) => d.g,
+              ),
+              BarSeries<_SystemData, String>(
+                name: 'Miembro',
+                color: Colors.blue, // Miembro → azul
+                dataSource: chartData,
+                xValueMapper: (d, _) => d.sistema,
+                yValueMapper: (d, _) => d.m,
+              ),
+            ],
+            legend: Legend(isVisible: true),
+          ),
+        ),
       ),
-      series: <CartesianSeries<_SystemData, String>>[
-        BarSeries(
-            dataSource: chartData,
-            xValueMapper: (d, _) => d.sistema,
-            yValueMapper: (d, _) => d.e,
-            name: 'Ejecutivo'),
-        BarSeries(
-            dataSource: chartData,
-            xValueMapper: (d, _) => d.sistema,
-            yValueMapper: (d, _) => d.g,
-            name: 'Gerente'),
-        BarSeries(
-            dataSource: chartData,
-            xValueMapper: (d, _) => d.sistema,
-            yValueMapper: (d, _) => d.m,
-            name: 'Miembro'),
-      ],
-      legend: Legend(isVisible: true),
     );
   }
 }

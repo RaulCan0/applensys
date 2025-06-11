@@ -480,7 +480,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       // Drawer izquierdo para chat (80% del ancho)
       drawer: SizedBox(
-        width: screenSize.width * 0.8,
         child: const ChatWidgetDrawer(),
       ),
 
@@ -551,7 +550,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   _buildChartContainer(
-                    color: const Color(0xFF0A9396),
+                    color: const Color.fromARGB(255, 230, 233, 233),
                     title: 'Promedio por Principio',
                     child: ScatterBubbleChart(
                       data: _buildScatterData(),
