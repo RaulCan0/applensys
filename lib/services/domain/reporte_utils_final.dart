@@ -2,16 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-//considerar la orientacion de la hoja
+
 class ReporteComportamiento {
   final String comportamiento;
   final String definicion;
   final String nivel;
-  final int calificacion;
+  final int calificacion;          // valor redondeado
   final List<String> sistemasAsociados;
-  final String resultado;
+  final String resultado;          // texto C1..C5
   final String benchmark;
-  //final string hallazgos
+  final String observacion;        // hallazgo específico
   final Map<String, double> grafico;
 
   ReporteComportamiento({
@@ -22,98 +22,87 @@ class ReporteComportamiento {
     required this.sistemasAsociados,
     required this.resultado,
     required this.benchmark,
-    //final string hallazgos
+    required this.observacion,
     required this.grafico,
   });
-
-  Map<String, dynamic> toJson() => {
-        'comportamiento': comportamiento,
-        'definicion': definicion,
-        'nivel': nivel,
-        'calificacion': calificacion,
-        'sistemas_asociados': sistemasAsociados,
-        'resultado': resultado,
-        'benchmark': benchmark,
-        'grafico': grafico,
-      };
 }
 
 class ReporteUtils {
+  static const List<String> _nivelesFijos = [
+    'Ejecutivo',
+    'Gerente',
+    'Miembro de equipo',
+  ];
+
   static Future<List<ReporteComportamiento>> generarReporteDesdeTablaDatos(
     List<Map<String, dynamic>> tablaDatos,
     List<Map<String, dynamic>> t1,
     List<Map<String, dynamic>> t2,
     List<Map<String, dynamic>> t3,
   ) async {
-    List<ReporteComportamiento> reporte = [];
-    Map<String, Map<String, double>> mapaGrafico = {};
+    final List<ReporteComportamiento> reporte = [];
+    final mapaGrafico = <String, Map<String, double>>{};
 
     for (var dato in tablaDatos) {
-      final String comportamiento = dato['comportamiento'];
-      final String nivel = dato['nivel'];
-      final String dimension = dato['dimension'].toString();
-      final double calificacion = double.tryParse(dato['calificacion'].toString()) ?? 0.0;
-      final int redondeada = (calificacion % 1) >= 0.5 ? calificacion.ceil() : calificacion.floor();
-      final List<String> sistemas = List<String>.from(dato['sistemas_asociados'] ?? []);
+      final comp = dato['comportamiento'].toString().trim();
+      final nivel = dato['nivel'].toString().trim();
+      final dim = dato['dimension'].toString();
+      final raw = double.tryParse(dato['calificacion'].toString()) ?? 0.0;
+      final redondeo = (raw % 1) >= 0.5 ? raw.ceil() : raw.floor();
+      final sistemas = List<String>.from(dato['sistemas_asociados'] ?? []).toSet().toList();
+      final obs = dato['observacion']?.toString().trim() ?? '';
 
-      List<Map<String, dynamic>> fuente = [];
-      if (dimension == "1") {
-        fuente = t1;
-      } else if (dimension == "2") {
-        fuente = t2;
-      } else if (dimension == "3") {
-        fuente = t3;
-      }
-
-      final benchmarkData = fuente.firstWhere(
-        (b) => b['BENCHMARK DE COMPORTAMIENTOS'].toString().trim().startsWith(comportamiento.trim()) &&
-               b['NIVEL'].toString().toLowerCase().contains(nivel.toLowerCase().split(' ')[0]),
-        orElse: () => {},
+      final fuente = dim == '1' ? t1 : (dim == '2' ? t2 : t3);
+      final bench = fuente.firstWhere(
+        (b) => b['BENCHMARK DE COMPORTAMIENTOS']
+                .toString().trim().startsWith(comp) &&
+               b['NIVEL']
+                .toString().toLowerCase().contains(nivel.toLowerCase().split(' ')[0]),
+        orElse: () => <String, dynamic>{},
       );
+      final definicion = bench['BENCHMARK DE COMPORTAMIENTOS'] ?? '';
+      final bm = bench['BENCHMARK POR NIVEL'] ?? '';
 
-      final String definicion = benchmarkData['BENCHMARK DE COMPORTAMIENTOS'] ?? '';
-      final String benchmark = benchmarkData['BENCHMARK POR NIVEL'] ?? '';
-
-      String resultado = '';
-      switch (redondeada) {
+      String interpret = '';
+      switch (redondeo) {
         case 1:
-          resultado = benchmarkData['C1'] ?? '';
+          interpret = bench['C1'] ?? '';
           break;
         case 2:
-          resultado = benchmarkData['C2'] ?? '';
+          interpret = bench['C2'] ?? '';
           break;
         case 3:
-          resultado = benchmarkData['C3'] ?? '';
+          interpret = bench['C3'] ?? '';
           break;
         case 4:
-          resultado = benchmarkData['C4'] ?? '';
+          interpret = bench['C4'] ?? '';
           break;
         case 5:
-          resultado = benchmarkData['C5'] ?? '';
+          interpret = bench['C5'] ?? '';
           break;
       }
 
-      mapaGrafico.putIfAbsent(comportamiento, () => {});
-      mapaGrafico[comportamiento]![nivel] = calificacion;
+      mapaGrafico.putIfAbsent(comp, () => {});
+      mapaGrafico[comp]![nivel] = raw;
 
       reporte.add(ReporteComportamiento(
-        comportamiento: comportamiento,
+        comportamiento: comp,
         definicion: definicion,
         nivel: nivel,
-        calificacion: redondeada,
-        sistemasAsociados: sistemas.toSet().toList(),
-        resultado: resultado,
-        benchmark: benchmark,
+        calificacion: redondeo,
+        sistemasAsociados: sistemas,
+        resultado: interpret,
+        benchmark: bm,
+        observacion: obs,
         grafico: {},
       ));
     }
 
     for (var r in reporte) {
       r.grafico.addAll({
-        'Ejecutivos': mapaGrafico[r.comportamiento]?['Ejecutivos'] ?? 0,
-        'Gerentes': mapaGrafico[r.comportamiento]?['Gerentes'] ?? 0,
-        'Equipo': mapaGrafico[r.comportamiento]?['Equipo'] ??
-                  mapaGrafico[r.comportamiento]?['Miembro'] ?? 0,
+        'Ejecutivo': mapaGrafico[r.comportamiento]?['Ejecutivo'] ?? 0,
+        'Gerente': mapaGrafico[r.comportamiento]?['Gerente'] ?? 0,
+        'Miembro de equipo': mapaGrafico[r.comportamiento]?['Miembro de equipo'] ?? 0,
       });
     }
 
@@ -128,39 +117,61 @@ class ReporteUtils {
   ) async {
     final reporte = await generarReporteDesdeTablaDatos(tablaDatos, t1, t2, t3);
     final buffer = StringBuffer();
-    buffer.writeln('<html><body><h1>Resumen de Comportamientos Evaluados</h1>');
-    buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
-    buffer.writeln('<tr><th>Comportamiento</th><th>Definición</th><th>Nivel</th><th>Calificación</th><th>Resultado</th><th>Benchmark</th><th>Sistemas Asociados</th></tr>');
-    for (var r in reporte) {
-      buffer.writeln('<tr>');
-      buffer.writeln('<td>${r.comportamiento}</td>');
-      buffer.writeln('<td>${r.definicion}</td>');
-      buffer.writeln('<td>${r.nivel}</td>');
-      buffer.writeln('<td>${r.calificacion}</td>');
-      buffer.writeln('<td>${r.resultado}</td>');
-      buffer.writeln('<td>${r.benchmark}</td>');
-      buffer.writeln('<td>${r.sistemasAsociados.join(", ")}</td>');
-      buffer.writeln('</tr>');
-    }
-    buffer.writeln('</table>');
+    buffer.writeln('<html><body>');
 
-    buffer.writeln('<h2>Detalles de Evaluación</h2>');
-    buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
-    buffer.writeln('<tr><th>Asociado</th><th>Dimensión</th><th>Principio</th><th>Comportamiento</th><th>Observaciones</th><th>Sistemas Asociados</th></tr>');
-    for (var dato in tablaDatos) {
-      buffer.writeln('<tr>');
-      buffer.writeln('<td>${dato['asociado_nombre'] ?? ''}</td>');
-      buffer.writeln('<td>${dato['dimension'] ?? ''}</td>');
-      buffer.writeln('<td>${dato['principio'] ?? ''}</td>');
-      buffer.writeln('<td>${dato['comportamiento'] ?? ''}</td>');
-      buffer.writeln('<td>${dato['observacion'] ?? ''}</td>');
-      buffer.writeln('<td>${(dato['sistemas_asociados'] ?? []).join(", ")}</td>');
-      buffer.writeln('</tr>');
-    }
-    buffer.writeln('</table></body></html>');
+    // Generar secciones por comportamiento
+    final comps = reporte.map((r) => r.comportamiento).toSet();
+    for (var comp in comps) {
+      final filas = reporte.where((r) => r.comportamiento == comp).toList();
+      final defin = filas.first.definicion;
+      buffer.writeln('<h2>$comp</h2>');
+      buffer.writeln('<p>$defin</p>');
+      buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
+      buffer.writeln(
+          '<tr><th>Nivel</th><th>Resultado</th><th>Sistemas Asociados</th><th>Hallazgos Específicos</th><th>Interpretación</th><th>Benchmark</th><th>Evidencia</th></tr>');
 
+      for (var nivel in _nivelesFijos) {
+        final rowData = filas.firstWhere(
+          (r) => r.nivel.toLowerCase().contains(nivel.toLowerCase().split(' ')[0]),
+          orElse: () => filas.first,
+        );
+        final sis = rowData.sistemasAsociados.join(', ');
+        buffer.writeln('<tr>');
+        buffer.writeln('<td>$nivel</td>');
+        buffer.writeln('<td>${rowData.calificacion}</td>');
+        buffer.writeln('<td>$sis</td>');
+        buffer.writeln('<td>${rowData.observacion}</td>');
+        buffer.writeln('<td>${rowData.resultado}</td>');
+        buffer.writeln('<td>${rowData.benchmark}</td>');
+        // Espacio para evidencia: se inserta la ruta de imagen
+        buffer.writeln('<td><img src="${rowData.grafico[nivel]?.toString() ?? ''}" width="100" height="100"/></td>');
+        buffer.writeln('</tr>');
+      }
+
+      buffer.writeln('</table><br/>');
+    }
+
+    // Extras del reporte: 28 tablitas individuales con evidencia
+    buffer.writeln('<h2>Extras del Reporte</h2>');
+    final comportamientos = [
+      'Soporte','Reconocer','Comunidad','Liderazgo de Servidor','Valorar','Empoderamiento',
+      'Mentalidad','Estructura','Reflexionar','Análisis','Colaborar','Comprender','Diseño',
+      'Atribución','A prueba de error','Propiedad','Conectar','Ininterrumpido','Demanda',
+      'Eliminar','Optimizar','Impacto','Alinear','Aclarar','Comunicar','Relación','Medida','Valor',
+    ];
+    for (var comp in comportamientos) {
+      buffer.writeln('<h3>$comp</h3>');
+      buffer.writeln('<table border="1" cellspacing="0" cellpadding="4">');
+      buffer.writeln('<tr><th>Nivel</th><th>Evidencia</th></tr>');
+      for (var nivel in _nivelesFijos) {
+        buffer.writeln('<tr><td>$nivel</td><td><img src="" width="100" height="100"/></td></tr>');
+      }
+      buffer.writeln('</table><br/>');
+    }
+
+    buffer.writeln('</body></html>');
     final dir = await getApplicationDocumentsDirectory();
-    final file = File('\${dir.path}/reporte_unificado.doc');
+    final file = File('${dir.path}/reporte_unificado.doc');
     await file.writeAsString(buffer.toString(), encoding: Utf8Codec());
     return file.path;
   }

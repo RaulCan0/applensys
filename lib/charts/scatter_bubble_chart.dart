@@ -50,8 +50,8 @@ class ScatterBubbleChart extends StatelessWidget {
 
     const double minX = 0;
     const double maxX = 5;
-    const double minY = 0;
-    const double maxY = 9;
+    const double minY = 1;
+    const double maxY = 10;
     final double fixedRadius = isDetail ? 14 : 8;
 
     return Column(
@@ -75,7 +75,7 @@ class ScatterBubbleChart extends StatelessWidget {
               scatterSpots: data.map((d) {
                 // Cada punto: x en [0..5], y en [1..10], invertido para que 1 esté arriba
                 final xPos = d.x.clamp(minX, maxX);
-                final yPos = (10 - d.y).clamp(minY, maxY);
+                final yPos = (11 - d.y).clamp(minY, maxY);
                 return ScatterSpot(
                   xPos,
                   yPos,
