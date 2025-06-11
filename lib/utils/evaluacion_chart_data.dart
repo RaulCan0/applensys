@@ -65,8 +65,8 @@ class EvaluacionChartData {
       return ScatterData(
         x: principio.promedioGeneral,
         y: (index + 1).toDouble(), // 1 al 10
-        radius: 10,
-        color: const Color(0xFF2196F3), seriesName: '', principleName: '',
+
+        color: const Color(0xFF2196F3), seriesName: '', principleName: '', radius: 5,
       );
     }).toList();
   }

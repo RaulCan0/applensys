@@ -276,86 +276,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Crear Valor para el Cliente',     // y=10.0
     ];
 
-    // Extrae todos los principios que SÍ tienen datos procesados.
-    final List<Principio> principiosConDatos = EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
+    final principiosProcesados = EvaluacionChartData
+        .extractPrincipios(_dimensiones)
+        .cast<Principio>();
 
     final List<ScatterData> list = [];
+    final principios =
+        EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
 
-    // Itera sobre la lista canónica 'allPrinciples' para asegurar que los 10 se procesen.
-    for (var i = 0; i < allPrinciples.length; i++) {
-      final String nombrePrincipioActual = allPrinciples[i];
-      final int yIndex = i + 1; // y va de 1 a 10
+    // Cada Principio tendrá índice Y fijo de 1 a 10
+    for (var i = 0; i < principios.length; i++) {
+      final Principio pri = principios[i];
+      final yIndex = i + 1; // 1..10
 
-      // Busca el principio actual en los datos procesados.
-      Principio? principioEncontrado;
-      try {
-        principioEncontrado = principiosConDatos.firstWhere(
-          (p) => p.nombre == nombrePrincipioActual,
-        );
-      } catch (e) {
-        principioEncontrado = null; // No se encontró, se usarán promedios de 0.0
-      }
+      // Calcular promedio de niveles dentro del Principio
+      double sumaEj = 0, sumaGe = 0, sumaMi = 0;
+      int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
 
-      double promEj = 0.0;
-      double promGe = 0.0;
-      double promMi = 0.0;
-
-      if (principioEncontrado != null) {
-        // Si se encontró el principio, calcular sus promedios por nivel.
-        double sumaEj = 0, sumaGe = 0, sumaMi = 0;
-        int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
-
-        for (final comp in principioEncontrado.comportamientos) {
-          if (comp.promedioEjecutivo > 0) { // Considerar solo si hay datos reales
-            sumaEj += comp.promedioEjecutivo;
-            cuentaEj++;
-          }
-          if (comp.promedioGerente > 0) {
-            sumaGe += comp.promedioGerente;
-            cuentaGe++;
-          }
-          if (comp.promedioMiembro > 0) {
-            sumaMi += comp.promedioMiembro;
-            cuentaMi++;
-          }
+      for (final comp in pri.comportamientos) {
+        if (comp.promedioEjecutivo > 0) {
+          sumaEj += comp.promedioEjecutivo;
+          cuentaEj++;
         }
-        promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
-        promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
-        promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
+        if (comp.promedioGerente > 0) {
+          sumaGe += comp.promedioGerente;
+          cuentaGe++;
+        }
+        if (comp.promedioMiembro > 0) {
+          sumaMi += comp.promedioMiembro;
+          cuentaMi++;
+        }
       }
 
-      // Añadir ScatterData para cada nivel, usando promedios 0.0 si no hay datos.
+      final double promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
+      final double promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
+      final double promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
+
       list.add(
-        ScatterData(
-          x: promEj.clamp(0.0, 5.0),
-          y: yIndex.toDouble(),
-          color: Colors.orange, // Puedes cambiar el color si x es 0.0 para distinguirlo
-          // radius: 0, // El parámetro radius ya no se usa para el tamaño visual
-          seriesName: 'Ejecutivo',
-          principleName: nombrePrincipioActual, radius: 8,
-        ),
+        ScatterData(x: promEj.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.orange, radius: 0, seriesName: '', principleName: ''),
       );
       list.add(
-        ScatterData(
-          x: promGe.clamp(0.0, 5.0),
-          y: yIndex.toDouble(),
-          color: Colors.green,
-          // radius: 0,
-          seriesName: 'Gerente',
-          principleName: nombrePrincipioActual, radius: 8,
-        ),
+        ScatterData(x: promGe.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.green, radius: 0, seriesName: '', principleName: ''),
       );
       list.add(
-        ScatterData(
-          x: promMi.clamp(0.0, 5.0),
-          y: yIndex.toDouble(),
-          color: Colors.blue,
-          // radius: 0,
-          seriesName: 'Miembro',
-          principleName: nombrePrincipioActual, radius:8,
-        ),
+        ScatterData(x: promMi.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.blue, radius: 0, seriesName: '', principleName: ''),
       );
     }
+
     return list;
   }
 

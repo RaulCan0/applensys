@@ -19,34 +19,34 @@ import '../providers/text_size_provider.dart';
 
 // Mapa de sistemas recomendados por comportamiento
 const Map<String, String> sistemasRecomendadosPorComportamiento = {
-  "Soporte": "Desarrollo de personal",
-  "Reconocer": "Medicion\nInvolucramiento\nReconocimiento",
-  "Comunidad": "Seguridad, Ambiental",
-  "Liderazgo de servidor": "Desarrollo de Personal",
-  "Valorar": "Desarrollo de Personal, Involucramiento",
-  "Empoderamiento": "Desarrollo de Personal",
-  "Mentalidad": "Solución de Problemas",
-  "Estructura": "Gestión Visual",
-  "Reflexionar": "Solución de Problemas, Gestión Visual",
-  "Análisis": "Mejora y Gestión Visual",
-  "Colaborar": "Voz del Cliente",
-  "Comprender": "Mejora, Solución de Problemas",
-  "Diseño": "Sistemas de Mejora",
-  "Atribución": "Planificación, Programación y de Mejora",
-  "A prueba de error": "Planificación, Programación",
-  "Propiedad": "Propiedad de Resultados",
-  "Conectar": "Comunicación Interna",
-  "Ininterrumpido": "Mejora y Alineamiento Estratégico",
-  "Demanda": "Planificación de la Demanda",
-  "Eliminar": "Despliegue de Estrategia",
-  "Optimizar": "Comunicación, Despliegue de Estrategia",
-  "Impacto": "Voz de cliente",
-  "Alinear": "Voz de cliente, Comunicación, Medición, Despliegue de Estrategia, Reconocimiento",
-  "Aclarar": "Gestión Estratégica",
-  "Comunicar": "Comunicación Organizacional",
-  "Relación": "Gestión de Clientes",
-  "Valor": "Entrega de Valor",
-  "Medida": "Medición de Resultados",
+  "Soporte": "Desarrollo de personas, Medición, Reconocimiento",
+  "Reconocer": "Medición, Involucramiento, Reconocimiento, Desarrollo de Personas",
+  "Comunidad": "Seguridad, Ambiental, EHS, Compromiso, Desarrollo de Personas",
+  "Liderazgo de servidor": "Desarrollo de Personas",
+  "Valorar": "Desarrollo de Personas, Involucramiento",
+  "Empoderar": "Medición, Reconocimiento, Desarrollo de Personas",
+  "Mentalidad": "Sistemas de Mejora",
+  "Estructura": "Sistemas de Mejora",
+  "Reflexionar": "Solución de Problemas",
+  "Análisis": "Solución de Problemas",
+  "Colaborar": "Solución de Problemas",
+  "Comprender": "Solución de Problemas, Gestión Visual",
+  "Diseño": "Sistemas de Mejora, Gestión Visual",
+  "Atribución": "Sistemas de Mejora, Solución de Problemas",
+  "A prueba de error": "Sistemas de Mejora, Solución de Problemas",
+  "Propiedad": "Sistemas de Mejora, Solución de Problemas",
+  "Conectar": "Sistemas de Mejora",
+  "Ininterrumpido": "Planificación y Programación, Sistemas de Mejora",
+  "Demanda": "Planificación y Programación",
+  "Eliminar": "Voz de cliente, Sistemas de Mejora",
+  "Optimizar": "Sistemas de Mejora, Despliegue de Estrategia",
+  "Impacto": "Sistemas de Mejora",
+  "Alinear": "Despliegue de Estrategia",
+  "Aclarar": "Comunicación, Despliegue de Estrategia",
+  "Comunicar": "Comunicación, Despliegue de Estrategia",
+  "Relación": "Voz del Cliente",
+  "Valor": "Voz del Cliente",
+  "Medida": "Despliegue de Estrategia, Medición, Voz del Cliente, Recompensas, Reconocimientos",
 };
 
 // Modificada para devolver la clave interna que TablasDimensionScreen espera.
@@ -107,7 +107,8 @@ class _ComportamientoEvaluacionScreenState
       sistemasSeleccionados = List<String>.from(widget.calificacionExistente!.sistemas);
       evidenciaUrl = widget.calificacionExistente!.evidenciaUrl;
     } else {
-      calificacion = 0;//aqui se inicia en el numero 0 siempre y cuando no haya evaluación existente
+      calificacion = 0; // Inicialización predeterminada
+      sistemasSeleccionados = []; // Asegurar que la lista esté inicializada
     }
   }
 
@@ -546,7 +547,13 @@ class _ComportamientoEvaluacionScreenState
           const SizedBox(height: 16),
           if (sistemasSeleccionados.isNotEmpty) ...[
   const SizedBox(height: 16),
- 
+  Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+     
+      
+    ],
+  ),
 ],
 
           const SizedBox(height: 16),
