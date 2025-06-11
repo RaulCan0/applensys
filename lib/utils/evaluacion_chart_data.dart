@@ -17,9 +17,9 @@ class EvaluacionChartData {
             promedioMiembro: (comp['miembro'] ?? 0.0).toDouble(),
             sistemas: List<String>.from(comp['sistemas'] ?? []),
             cargo: comp['cargo'] ?? '',
-            nivel: null,
+            
             principioId: '',
-            id: '',
+            id: '', nivel: null,
           );
         }).toList();
 

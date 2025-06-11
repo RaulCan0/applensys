@@ -22,6 +22,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:applensys/services/shared/excel_exporter.dart';
 import 'package:applensys/services/domain/reporte_utils_final.dart';
 import 'package:applensys/models/level_averages.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Asegúrate de importar Riverpod
+import 'package:applensys/services/local/dashboard_notifier.dart'; // Importa tu provider
 
 class DashboardScreen extends StatefulWidget {
   final String evaluacionId;
@@ -159,7 +161,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final cargoRaw =
                 (row['cargo_raw'] as String?)?.toLowerCase().trim() ?? '';
             if (cargoRaw.contains('ejecutivo')) {
-              sumaEj += valor;    // Acumular puntaje
+              sumaEj += valor;
               countEj++;
             } else if (cargoRaw.contains('gerente')) {
               sumaGe += valor;
@@ -556,7 +558,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       data: _buildScatterData(),
                       title: 'Promedio por Principio',
                      
-                      isDetail: false,
+                    
                     ),
                   ),
 
@@ -734,8 +736,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Determinar chartData para validar si tiene datos
     dynamic chartData;
     switch (title) {
-      case '':
+      case 'Promedio por Dimensión':
         chartData = _buildDonutData();
+        break;
+      case 'Promedio por Principio':
+        chartData = _buildScatterData();
+        break;
+      case 'Distribución por Comportamiento y Nivel':
+        chartData = _buildGroupedBarData();
+        break;
+      case 'Conteos por Sistema y Nivel':
+        chartData = _buildHorizontalBarsData();
         break;
       default:
         chartData = null;
