@@ -6,11 +6,16 @@ class ScatterData {
   final double x; // Promedio: 0.0 - 5.0
   final double y; // Índice del principio: 1 - 10
   final Color color;
+  final String seriesName;
+  final String principleName;
 
   ScatterData({
     required this.x,
     required this.y,
-    required this.color, required int radius,
+    required this.color,
+    // required int radius, // ELIMINAR ESTA LÍNEA
+    required this.seriesName,
+    required this.principleName, required int radius,
   });
 }
 

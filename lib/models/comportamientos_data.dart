@@ -27,6 +27,6 @@ final List<String> comportamientosClaves = [
   'Aclarar',
   'Comunicar',
   'Relación',
-   'Medida',
+  'Medida',
   'Valor',
 ];

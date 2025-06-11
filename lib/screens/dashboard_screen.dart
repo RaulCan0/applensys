@@ -260,66 +260,102 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Construye ScatterData solo con promedios > 0 y usando orElse que
   /// devuelve un Principio vacío en lugar de null.
   List<ScatterData> _buildScatterData() {
+    // Esta es la lista canónica que define el orden y los nombres de los principios en el gráfico.
+    // El primer elemento (índice 0) corresponderá a y=1.0 en ScatterData,
+    // y se mostrará en la parte superior del gráfico según la lógica de ScatterBubbleChart.
     const List<String> allPrinciples = [
-      'Respetar a Cada Individuo',
-      'Liderar con Humildad',
-      'Buscar la Perfección',
-      'Abrazar el Pensamiento Científico',
-      'Enfocarse en el Proceso',
-      'Asegurar la Calidad en la Fuente',
-      'Mejorar el Flujo y Jalón de Valor',
-      'Pensar Sistémicamente',
-      'Crear Constancia de Propósito',
-      'Crear Valor para el Cliente',
+      'Respetar a Cada Individuo',       // y=1.0
+      'Liderar con Humildad',            // y=2.0
+      'Buscar la Perfección',            // y=3.0
+      'Abrazar el Pensamiento Científico', // y=4.0
+      'Enfocarse en el Proceso',         // y=5.0
+      'Asegurar la Calidad en la Fuente',// y=6.0
+      'Mejorar el Flujo y Jalón de Valor', // y=7.0
+      'Pensar Sistémicamente',           // y=8.0
+      'Crear Constancia de Propósito',   // y=9.0
+      'Crear Valor para el Cliente',     // y=10.0
     ];
 
-    final principiosProcesados = EvaluacionChartData
-        .extractPrincipios(_dimensiones)
-        .cast<Principio>();
+    // Extrae todos los principios que SÍ tienen datos procesados.
+    final List<Principio> principiosConDatos = EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
 
     final List<ScatterData> list = [];
-    final principios =
-        EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
 
-    // Cada Principio tendrá índice Y fijo de 1 a 10
-    for (var i = 0; i < principios.length; i++) {
-      final Principio pri = principios[i];
-      final yIndex = i + 1; // 1..10
+    // Itera sobre la lista canónica 'allPrinciples' para asegurar que los 10 se procesen.
+    for (var i = 0; i < allPrinciples.length; i++) {
+      final String nombrePrincipioActual = allPrinciples[i];
+      final int yIndex = i + 1; // y va de 1 a 10
 
-      // Calcular promedio de niveles dentro del Principio
-      double sumaEj = 0, sumaGe = 0, sumaMi = 0;
-      int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
-
-      for (final comp in pri.comportamientos) {
-        if (comp.promedioEjecutivo > 0) {
-          sumaEj += comp.promedioEjecutivo;
-          cuentaEj++;
-        }
-        if (comp.promedioGerente > 0) {
-          sumaGe += comp.promedioGerente;
-          cuentaGe++;
-        }
-        if (comp.promedioMiembro > 0) {
-          sumaMi += comp.promedioMiembro;
-          cuentaMi++;
-        }
+      // Busca el principio actual en los datos procesados.
+      Principio? principioEncontrado;
+      try {
+        principioEncontrado = principiosConDatos.firstWhere(
+          (p) => p.nombre == nombrePrincipioActual,
+        );
+      } catch (e) {
+        principioEncontrado = null; // No se encontró, se usarán promedios de 0.0
       }
 
-      final double promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
-      final double promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
-      final double promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
+      double promEj = 0.0;
+      double promGe = 0.0;
+      double promMi = 0.0;
 
+      if (principioEncontrado != null) {
+        // Si se encontró el principio, calcular sus promedios por nivel.
+        double sumaEj = 0, sumaGe = 0, sumaMi = 0;
+        int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
+
+        for (final comp in principioEncontrado.comportamientos) {
+          if (comp.promedioEjecutivo > 0) { // Considerar solo si hay datos reales
+            sumaEj += comp.promedioEjecutivo;
+            cuentaEj++;
+          }
+          if (comp.promedioGerente > 0) {
+            sumaGe += comp.promedioGerente;
+            cuentaGe++;
+          }
+          if (comp.promedioMiembro > 0) {
+            sumaMi += comp.promedioMiembro;
+            cuentaMi++;
+          }
+        }
+        promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
+        promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
+        promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
+      }
+
+      // Añadir ScatterData para cada nivel, usando promedios 0.0 si no hay datos.
       list.add(
-        ScatterData(x: promEj.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.orange, radius: 0),
+        ScatterData(
+          x: promEj.clamp(0.0, 5.0),
+          y: yIndex.toDouble(),
+          color: Colors.orange, // Puedes cambiar el color si x es 0.0 para distinguirlo
+          // radius: 0, // El parámetro radius ya no se usa para el tamaño visual
+          seriesName: 'Ejecutivo',
+          principleName: nombrePrincipioActual, radius: 8,
+        ),
       );
       list.add(
-        ScatterData(x: promGe.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.green, radius: 0),
+        ScatterData(
+          x: promGe.clamp(0.0, 5.0),
+          y: yIndex.toDouble(),
+          color: Colors.green,
+          // radius: 0,
+          seriesName: 'Gerente',
+          principleName: nombrePrincipioActual, radius: 8,
+        ),
       );
       list.add(
-        ScatterData(x: promMi.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.blue, radius: 0),
+        ScatterData(
+          x: promMi.clamp(0.0, 5.0),
+          y: yIndex.toDouble(),
+          color: Colors.blue,
+          // radius: 0,
+          seriesName: 'Miembro',
+          principleName: nombrePrincipioActual, radius:8,
+        ),
       );
     }
-
     return list;
   }
 

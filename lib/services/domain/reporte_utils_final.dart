@@ -233,17 +233,7 @@ class ReporteUtils {
       for (var nivelFijo in _nivelesFijos) {
         final rowData = filasDelComportamiento.firstWhere(
           (r) => r.nivel.toLowerCase().contains(nivelFijo.toLowerCase().split(' ')[0]),
-          orElse: () => ReporteComportamiento(
-            comportamiento: comp,
-            definicion: definicionComportamiento,
-            nivel: nivelFijo,
-            calificacion: 0,
-            sistemasAsociados: [],
-            resultado: 'N/A',
-            benchmark: 'N/A',
-            observacion: 'N/A',
-            grafico: {'Ejecutivo': 0.0, 'Gerente': 0.0, 'Miembro de equipo': 0.0},
-          ),
+         
         );
 
         final sistemas = rowData.sistemasAsociados.join('; ');
