@@ -1,15 +1,16 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:applensys/services/domain/evaluacion_service.dart';
-import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:applensys/screens/shingo_result.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:applensys/screens/asociado_screen.dart';
+import 'package:applensys/screens/empresas_screen.dart';
+import 'package:applensys/screens/tablas_screen.dart';
+import 'package:applensys/widgets/chat_screen.dart';
+import 'package:applensys/widgets/drawer_lensys.dart';
+import 'package:applensys/services/local/evaluacion_cache_service.dart';
+import 'package:applensys/services/domain/evaluacion_service.dart';
 import '../models/empresa.dart';
-import '../widgets/chat_screen.dart';
-import '../widgets/drawer_lensys.dart';
-import 'asociado_screen.dart';
-import 'empresas_screen.dart';
-import 'tablas_screen.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -108,161 +109,73 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: dimensiones.length + 2, // Modificado para incluir la nueva tarjeta
+              itemCount: 5,
               itemBuilder: (context, index) {
                 if (index < dimensiones.length) {
                   final dimension = dimensiones[index];
-                  return Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: screenSize.height * 0.01,
-                      horizontal: screenSize.width * 0.05,
-                    ),
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AsociadoScreen(
-                                empresa: widget.empresa,
-                                dimensionId: dimension['id'],
-                                evaluacionId: widget.evaluacionId,
-                              ),
+                  return _buildCard(
+                    icon: dimension['icono'],
+                    color: dimension['color'],
+                    title: dimension['nombre'],
+                    child: FutureBuilder<double>(
+                      future: evaluacionService.obtenerProgresoDimension(
+                        widget.empresa.id,
+                        dimension['id'],
+                      ),
+                      builder: (context, snapshot) {
+                        final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LinearProgressIndicator(
+                              value: progreso,
+                              minHeight: 8,
+                              backgroundColor: Colors.grey[300],
+                              color: dimension['color'],
                             ),
-                          );
-                          setState(() {});
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(dimension['icono'], color: dimension['color'], size: 36),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      dimension['nombre'],
-                                      style: const TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              FutureBuilder<double>(
-                                future: evaluacionService.obtenerProgresoDimension(
-                                  widget.empresa.id,
-                                  dimension['id'],
-                                ),
-                                initialData: 0.0,
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.waiting) {
-                                    return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: const [
-                                        LinearProgressIndicator(),
-                                        SizedBox(height: 4),
-                                        Text('Cargando progreso...', style: TextStyle(fontSize: 12)),
-                                      ],
-                                    );
-                                  }
-                                  if (snapshot.hasError) {
-                                    return const Text(
-                                      'Error al cargar progreso',
-                                      style: TextStyle(fontSize: 12, color: Colors.red),
-                                    );
-                                  }
-                                  final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
-                                  return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      LinearProgressIndicator(
-                                        value: progreso,
-                                        minHeight: 8,
-                                        backgroundColor: Colors.grey[300],
-                                        color: dimension['color'],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${(progreso * 100).toStringAsFixed(1)}% completado',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ],
+                            const SizedBox(height: 4),
+                            Text(
+                              '${(progreso * 100).toStringAsFixed(1)}% completado',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AsociadoScreen(
+                            empresa: widget.empresa,
+                            dimensionId: dimension['id'],
+                            evaluacionId: widget.evaluacionId,
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                      setState(() {});
+                    },
                   );
-                } else if (index == dimensiones.length) { // Tarjeta de Resultados Próximamente
-                  return Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: screenSize.height * 0.01,
-                      horizontal: screenSize.width * 0.05,
-                    ),
-                    child: Card(
-                      elevation: 2,
-                      color: Colors.grey.shade200,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.insert_chart_outlined, color: Colors.grey, size: 36), // Icono modificado levemente para diferenciar
-                            SizedBox(width: 20),
-                            Expanded(
-                              child: Text(
-                                'Resultados (próximamente)',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                } else if (index == 3) {
+                  return _buildCard(
+                    icon: Icons.insert_chart,
+                    color: Colors.orange,
+                    title: 'Resultados',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ShingoResultSheet()),
+                      );
+                    },
                   );
-                } else { // Nueva Tarjeta de Evaluacion Final Próximamente
-                  return Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: screenSize.height * 0.01,
-                      horizontal: screenSize.width * 0.05,
-                    ),
-                    child: Card(
-                      elevation: 6,
-                      color: Colors.grey.shade200,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.assignment_turned_in_outlined, color: Colors.grey, size: 36), // Icono para evaluacion final
-                            SizedBox(width: 20),
-                            Expanded(
-                              child: Text(
-                                'Evaluación Final (próximamente)',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                } else {
+                  return _buildCard(
+                    icon: Icons.assignment_turned_in,
+                    color: Colors.blue,
+                    title: 'Evaluación Final',
+                    onTap: () {
+                      // Aquí puedes implementar funcionalidad si quieres
+                    },
                   );
                 }
               },
@@ -291,17 +204,13 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.check_circle, color: Colors.white),
-                  label: const Text(
-                    'Finalizar evaluación',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  label: const Text('Finalizar evaluación'),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                   onPressed: () async {
                     try {
                       final cache = EvaluacionCacheService();
                       await cache.eliminarPendiente();
                       await cache.limpiarCacheTablaDatos();
-
                       TablasDimensionScreen.tablaDatos.clear();
                       TablasDimensionScreen.dataChanged.value =
                           !TablasDimensionScreen.dataChanged.value;
@@ -332,6 +241,54 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    Widget? child,
+    required VoidCallback onTap,
+  }) {
+    final screenSize = MediaQuery.of(context).size;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: screenSize.height * 0.01,
+        horizontal: screenSize.width * 0.05,
+      ),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: color, size: 36),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                if (child != null) ...[
+                  const SizedBox(height: 10),
+                  child,
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

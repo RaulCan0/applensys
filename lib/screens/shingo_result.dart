@@ -11,22 +11,21 @@ class ShingoResultSheet extends StatefulWidget {
 
 class _ShingoResultSheetState extends State<ShingoResultSheet> {
   final Map<String, String> campos = {
-    'Título del Métrico': '',
     'Cómo se calcula': '',
     'Cómo se mide': '',
     'Por qué es importante': '',
     'Sistemas usados para mejorar': '',
     'Explicación de desviaciones': '',
-    'Cambios en la medición': '',
+    'Cambios en 3 años': '',
     'Cómo se definen metas': '',
   };
 
-  File? imagenGrafico;
+  File? imagen;
   int calificacion = 0;
 
   Future<void> editarCampo(String titulo) async {
     final controller = TextEditingController(text: campos[titulo] ?? '');
-    final resultado = await showDialog<String>(
+    final result = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(titulo),
@@ -37,8 +36,8 @@ class _ShingoResultSheetState extends State<ShingoResultSheet> {
         ],
       ),
     );
-    if (resultado != null) {
-      setState(() => campos[titulo] = resultado);
+    if (result != null) {
+      setState(() => campos[titulo] = result);
     }
   }
 
@@ -46,25 +45,22 @@ class _ShingoResultSheetState extends State<ShingoResultSheet> {
     final picker = ImagePicker();
     final archivo = await picker.pickImage(source: ImageSource.gallery);
     if (archivo != null) {
-      setState(() {
-        imagenGrafico = File(archivo.path);
-      });
+      setState(() => imagen = File(archivo.path));
     }
   }
 
-  Widget campoEditable(String titulo) {
-    return GestureDetector(
+  Widget cajaEditable(String titulo) {
+    return InkWell(
       onTap: () => editarCampo(titulo),
       child: Container(
-        width: double.infinity,
         margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.black26),
-          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.black),
+          color: Colors.grey.shade100,
         ),
         child: Text(
-          campos[titulo]!.isEmpty ? "Tocar para editar: $titulo" : "$titulo:\n${campos[titulo]}",
+          campos[titulo]!.isEmpty ? 'Tocar para escribir $titulo' : '${campos[titulo]}',
           style: const TextStyle(fontSize: 14),
         ),
       ),
@@ -86,44 +82,33 @@ class _ShingoResultSheetState extends State<ShingoResultSheet> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Hoja de Resultado")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
+      appBar: AppBar(title: const Text('Hoja de Resultado')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Sección: Calidad | Métrica: First Pass Yield", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            const Text("Página 9 de 12", style: TextStyle(fontSize: 12)),
-
-            const SizedBox(height: 10),
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    image: imagenGrafico != null
-                        ? DecorationImage(image: FileImage(imagenGrafico!), fit: BoxFit.cover)
-                        : null,
-                  ),
-                  child: imagenGrafico == null
-                      ? const Center(child: Text("Tocar para insertar imagen del gráfico"))
+            GestureDetector(
+              onTap: seleccionarImagen,
+              child: Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                  color: Colors.grey.shade200,
+                  image: imagen != null
+                      ? DecorationImage(image: FileImage(imagen!), fit: BoxFit.cover)
                       : null,
                 ),
-                Positioned.fill(
-                  child: Material(color: Colors.transparent, child: InkWell(onTap: seleccionarImagen)),
-                ),
-              ],
+                child: imagen == null
+                    ? const Center(child: Text('Tocar para agregar imagen del gráfico'))
+                    : null,
+              ),
             ),
-
-            const SizedBox(height: 16),
-            ...campos.keys.map(campoEditable),
+            const SizedBox(height: 10),
+            ...campos.keys.map(cajaEditable),
             const SizedBox(height: 20),
-            const Center(child: Text("Calificación (1 a 5)", style: TextStyle(fontSize: 16))),
+            const Text('Calificación (1-5)', style: TextStyle(fontSize: 16)),
             calificacionWidget(),
-            const SizedBox(height: 30),
           ],
         ),
       ),

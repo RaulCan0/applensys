@@ -68,8 +68,10 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
 
       final agrupados = <String, List<PrincipioJson>>{};
       for (var p in principiosFiltrados) {
-        agrupados.putIfAbsent(p.nombre, () => []).add(p);
+        agrupados.putIfAbsent(p.nombre.trim(), () => []).add(p);
       }
+      // Elimina principios con lista vacía
+      agrupados.removeWhere((key, value) => value.isEmpty);
 
       // Cargar calificaciones existentes usando el método disponible y filtrando
       final todasLasCalificacionesDelAsociado = await _supabaseService.getCalificacionesPorAsociado(widget.asociado.id);
@@ -137,12 +139,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                 MaterialPageRoute(
                   builder: (_) => tablas_screen.TablasDimensionScreen(
                     empresa: widget.empresa, // Pasando la empresa completa
-                    evaluacionId: widget.asociado.id, // REVISAR: ¿Debería ser un ID de evaluación específico o el ID del asociado como identificador único para la tabla?
-                                                      // Si tienes un ID de evaluación global para la sesión, úsalo aquí.
-                                                      // Por ahora, uso widget.asociado.id asumiendo que cada asociado tiene su propia "evaluación" en este contexto de tabla.
-                    asociadoId: widget.asociado.id, // Pasando el ID del asociado actual
                     empresaId: widget.empresa.id, // Pasando el ID de la empresa
-                    dimension: nombreDimensionInternaActual, // Pasando el nombre interno de la dimensión actual
+                    dimension: nombreDimensionInternaActual, evaluacionId: '', asociadoId: '', // Pasando el nombre interno de la dimensión actual
                   ),
                 ),
               );
@@ -198,8 +196,8 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     color: Color.lerp(const Color.fromARGB(255, 184, 179, 179), const Color.fromARGB(255, 154, 218, 156), progreso),
                                      border: Border.all(
-    color: const Color.fromARGB(255, 0, 0, 0), // color del contorno
-    width: 2,),
+                                      color: const Color.fromARGB(255, 0, 0, 0), // color del contorno
+                                       width: 2,),
                                     boxShadow: [
                                       // ignore: deprecated_member_use
                                       BoxShadow(color: const Color.fromARGB(255, 199, 194, 194).withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3)),

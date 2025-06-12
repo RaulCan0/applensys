@@ -282,7 +282,6 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
           toY: y,
           width: 40,
           color: color,
-          borderRadius: BorderRadius.circular(8),
         ),
       ],
     );
