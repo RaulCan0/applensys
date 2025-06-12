@@ -47,7 +47,7 @@ class GroupedBarChart extends StatelessWidget {
   'Aclarar',
   'Comunicar',
   'Relación',
-   'Medida',
+  'Medida',
   'Valor',
 ];
     final labels = comportamientosOrdenados;

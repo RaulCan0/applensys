@@ -79,7 +79,18 @@ class ScatterBubbleChart extends StatelessWidget {
             ScatterChartData(
               scatterSpots: data.map((d) {
                 // Cada punto: x en [0..5], y en [1..10], invertido para que 1 esté arriba
-                final xPos = d.x.clamp(minX, maxX);
+                final baseX = d.x.clamp(minX, maxX);
+                // Desplazamientos para evitar superposición: Ejecutivo a la izquierda, Gerente centrado, Miembro a la derecha
+                const double offset = 0.2;
+                double xPos;
+                if (d.seriesName == 'Ejecutivo') {
+                  xPos = (baseX - offset).clamp(minX, maxX);
+                } else if (d.seriesName == 'Miembro') {
+                  xPos = (baseX + offset).clamp(minX, maxX);
+                } else {
+                  xPos = baseX;
+                }
+
                 final yPos = (11 - d.y).clamp(minY, maxY);
                 return ScatterSpot(
                   xPos,
