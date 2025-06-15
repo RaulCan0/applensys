@@ -191,13 +191,13 @@ class _PrincipiosScreenState extends State<PrincipiosScreen> {
                                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    color: Color.lerp(const Color.fromARGB(255, 0, 0, 0), const Color.fromARGB(255, 154, 218, 156), progreso),
+                                    color: Color.lerp(const Color.fromARGB(255, 179, 174, 174), const Color.fromARGB(255, 154, 218, 156), progreso),
                                      border: Border.all(
     color: const Color.fromARGB(255, 0, 0, 0), // color del contorno
     width: 2,),
                                     boxShadow: [
                                       // ignore: deprecated_member_use
-                                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3)),
+                                      BoxShadow(color: const Color.fromARGB(255, 179, 170, 170).withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3)),
                                     ],
                                   ),
                                   child: ExpansionTile(

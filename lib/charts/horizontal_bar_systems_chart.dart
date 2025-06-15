@@ -5,7 +5,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 /// Gráfico de barras horizontales por sistemas.
 class HorizontalBarSystemsChart extends StatelessWidget {
 final Map<String, Map<String, dynamic>> data;
-final String title;
+
 final double minX;
 final double maxX;
 final int maxY;
@@ -14,7 +14,7 @@ final int minY;
 const HorizontalBarSystemsChart({
 super.key,
 required this.data,
-required this.title,
+
 required this.minX,
 required this.maxX,
 required this.maxY,
