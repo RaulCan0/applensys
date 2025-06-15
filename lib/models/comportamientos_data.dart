@@ -6,7 +6,7 @@ final List<String> comportamientosClaves = [
   'Comunidad',
   'Liderazgo de Servidor',
   'Valorar',
-  'Empoderamiento',
+  'Empoderar',
   'Mentalidad',
   'Estructura',
   'Reflexionar',

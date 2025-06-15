@@ -26,7 +26,7 @@ class GroupedBarChart extends StatelessWidget {
   'Comunidad',
   'Liderazgo de Servidor',
   'Valorar',
-  'Empoderamiento',
+  'Empoderar',
   'Mentalidad',
   'Estructura',
   'Reflexionar',

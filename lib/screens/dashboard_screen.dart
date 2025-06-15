@@ -269,9 +269,18 @@ List<ScatterData> _buildScatterData() {
 
   final List<ScatterData> list = [];
 
-  for (var i = 0; i < principios.length; i++) {
-    final Principio pri = principios[i];
-    final double yIndex = (i + 1).toDouble(); // 1..10
+  for (var pri in principios) { // Cambiado el bucle para no depender de 'i' directamente para yIndex
+    // Encontrar el índice del principio actual en la lista de nombres del gráfico
+    int yRawIndex = ScatterBubbleChart.principleName.indexOf(pri.nombre);
+
+    // Si el principio no está en la lista de nombres del gráfico, lo omitimos.
+    // Podrías manejar esto de otra manera si es necesario (ej. log, error, valor por defecto).
+    if (yRawIndex == -1) {
+      debugPrint('Principio "${pri.nombre}" no encontrado en ScatterBubbleChart.principleName. Omitiendo del gráfico.');
+      continue;
+    }
+    
+    final double yIndex = (yRawIndex + 1).toDouble(); // El índice base 0 se convierte a base 1 para el gráfico
 
     // Calcular promedios por nivel
     double sumaEj = 0, sumaGe = 0, sumaMi = 0;
@@ -301,7 +310,7 @@ List<ScatterData> _buildScatterData() {
       list.add(
         ScatterData(
           x: promEj.clamp(0.0, 5.0),
-          y: yIndex,
+          y: yIndex, // Usar el yIndex calculado
           color: Colors.orange,
           radius: dotRadius,
           seriesName: 'Ejecutivo',
@@ -313,7 +322,7 @@ List<ScatterData> _buildScatterData() {
       list.add(
         ScatterData(
           x: promGe.clamp(0.0, 5.0),
-          y: yIndex,
+          y: yIndex, // Usar el yIndex calculado
           color: Colors.green,
           radius: dotRadius,
           seriesName: 'Gerente',
@@ -325,7 +334,7 @@ List<ScatterData> _buildScatterData() {
       list.add(
         ScatterData(
           x: promMi.clamp(0.0, 5.0),
-          y: yIndex,
+          y: yIndex, // Usar el yIndex calculado
           color: Colors.blue,
           radius: dotRadius,
           seriesName: 'Miembro',

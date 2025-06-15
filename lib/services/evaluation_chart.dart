@@ -16,7 +16,7 @@ const List<String> comportamientosFijos = [
   'Comunidad',
   'Liderazgo de servidor',
   'Valorar',
-  'Empoderamiento',
+  'Empoderar',
   'Mentalidad',
   'Estructura',
   'Reflexionar',
@@ -159,13 +159,13 @@ class EvaluationChartDataService {
       'Miembro': List.filled(28, 0),
     };
 
-    final List<String> principios = [
+    final List<String> principleNames = [
       'Respetar a cada individuo',
       'Liderar con humildad',
       'Buscar la perfección',
       'Abrazar el pensamiento científico',
       'Enfocarse en el proceso',
-      'Asegurar la calidad en la fuente',
+      'Asegurar la calidad en la Fuente',
       'Mejorar el Flujo y Jalón de Valor',
       'Pensar Sistémicamente',
       'Crear Constancia de Propósito',
@@ -248,10 +248,10 @@ class ChartsDataModel {
 }
 
 class ScatterData {
-  final String principio;
+  final String principleName;
   final double valor;
   final String nivel;
 
-  ScatterData(this.principio, this.valor, this.nivel);
+  ScatterData(this.principleName, this.valor, this.nivel);
 }
 

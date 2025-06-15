@@ -10,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:applensys/models/calificacion.dart';
-
 import '../models/principio_json.dart';
 import '../screens/tablas_screen.dart';
 import '../widgets/sistema_selector.dart';

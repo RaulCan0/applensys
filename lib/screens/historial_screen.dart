@@ -1,7 +1,7 @@
-import 'dart:convert';
-import 'package:applensys/services/domain/empresa_service.dart';
 import 'package:flutter/material.dart';
-import '../models/empresa.dart';
+import 'package:applensys/services/domain/empresa_service.dart';
+import 'package:applensys/models/empresa.dart';
+import 'resultados_historial_screen.dart';
 
 class HistorialScreen extends StatefulWidget {
   const HistorialScreen({super.key, required List<Empresa> empresas, required List empresasHistorial});
@@ -24,16 +24,18 @@ class _HistorialScreenState extends State<HistorialScreen> {
   Future<void> _cargarEmpresas() async {
     try {
       final data = await empresaService.getEmpresas();
-      setState(() {
-        empresas = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error al cargar empresas: $e')));
+        setState(() {
+          empresas = data;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar empresas: \$e')),
+        );
       }
     }
   }
@@ -57,74 +59,64 @@ class _HistorialScreenState extends State<HistorialScreen> {
           ),
         ],
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : empresas.isEmpty
-              ? const Center(child: Text('No hay empresas registradas.'))
-              : ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: empresas.length,
-                itemBuilder: (context, index) {
-                  final empresa = empresas[index];
-                  return ExpansionTile(
-                    leading: const Icon(Icons.business, color: Color(0xFF003056)),
-                    title: Text(
-                      empresa.nombre,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _infoRow('Tamaño', empresa.tamano),
-                            _infoRow('Sector', empresa.sector),
-                            _infoRow('Unidades', empresa.unidades),
-                            _infoRow('Áreas', empresa.areas.toString()),
-                            _infoRow(
-                              'Empleados',
-                              empresa.empleadosTotal.toString(),
-                            ),
-                            const SizedBox(height: 8),
-                           
-                          
-                                 Column(
-                                  children:
-                                      empresa.empleadosAsociados
-                                          .map(
-                                            (empleado) => Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 8.0,
-                                                top: 4.0,
-                                              ),
-                                              child: Text('• $empleado'),
-                                            ),
-                                          )
-                                          .toList(),
-                                ),
-                            const SizedBox(height: 8),
-                          ],
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: empresas.length,
+              itemBuilder: (context, index) {
+                final empresa = empresas[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ResultadosHistorialScreen(
+                          empresaId: empresa.id,
+                          empresaNombre: empresa.nombre, empresa: {},
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
-    );
-  }
-
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value)),
-        ],
-      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            empresa.nombre,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('Asociados: \${empresa.empleadosAsociados.length}'),
+                            Text('Empleados: \${empresa.empleadosTotal}'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
