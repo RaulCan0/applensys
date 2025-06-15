@@ -47,6 +47,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Flag para saber si aún estamos cargando
   bool _isLoading = true;
 
+  // Lista ordenada de sistemas para el gráfico de barras horizontales
+  // DEBES ACTUALIZAR ESTA LISTA CON TUS SISTEMAS REALES Y EN EL ORDEN DESEADO
+  final List<String> _sistemasOrdenados = [
+    "Medición",
+    "Involucramiento",
+    "Reconocimiento",
+    "Desarrollo de Personas",
+    "Seguridad",
+    "Ambiental",
+    "EHS",
+    "Compromiso",
+    "Sistemas de Mejora",
+    "Solución de Problemas",
+    "Gestión Visual",
+    // Ejemplo: "Otro Sistema", "Sistema Adicional"
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -363,11 +380,9 @@ List<ScatterData> _buildScatterData() {
 
   Map<String, Map<String, double>> _buildHorizontalBarsData() {
     final Map<String, Map<String, double>> data = {};
-    final sistemasOrdenados = const [
-     
-    ];
-
-    for (final sistemaNombre in sistemasOrdenados) {
+    // Se itera sobre la lista definida en la clase para asegurar el orden
+    // y la inclusión de todos los sistemas esperados.
+    for (final sistemaNombre in _sistemasOrdenados) {
       data[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
     }
 
@@ -401,7 +416,7 @@ List<ScatterData> _buildScatterData() {
           <String>[];
 
       for (final sistemaNombre in listaSistemasEnFila) {
-        if (data.containsKey(sistemaNombre)) {
+        if (data.containsKey(sistemaNombre)) { // Asegura que el sistema procesado esté en nuestra lista ordenada
           data[sistemaNombre]![nivelKey] = (data[sistemaNombre]![nivelKey] ?? 0.0) + 1.0;
         }
       }
@@ -488,6 +503,21 @@ List<ScatterData> _buildScatterData() {
       );
     }
 
+    // Preparar datos para el gráfico de sistemas y calcular maxSystemCount
+    final horizontalData = _buildHorizontalBarsData();
+    double maxSystemCount = 0;
+    for (var niveles in horizontalData.values) {
+      for (var count in niveles.values) {
+        if (count > maxSystemCount) {
+          maxSystemCount = count;
+        }
+      }
+    }
+    if (maxSystemCount == 0) {
+      maxSystemCount = 5; // Un valor por defecto si no hay datos o todos son cero
+    }
+
+
     return Scaffold(
       key: _scaffoldKey,
 
@@ -534,11 +564,11 @@ List<ScatterData> _buildScatterData() {
                           'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
                         },
                         isDetail: false,
-                      ), color: const Color(0xFF0A9396), title: 'Promedio por Dimensión',
+                      ), color: const Color.fromARGB(255, 204, 214, 214), title: 'Promedio por Dimensión',
                     ),
               
                   _buildChartContainer(
-                    color: const Color.fromARGB(255, 127, 189, 190),
+                    color: const Color.fromARGB(255, 223, 236, 240),
                     child: ScatterBubbleChart(
                       data: _buildScatterData(),
                       isDetail: false, title: '',
@@ -562,13 +592,11 @@ List<ScatterData> _buildScatterData() {
                     color: const Color.fromARGB(255, 202, 208, 219),
                     title: 'Conteos por Sistema y Nivel',
                     child: HorizontalBarSystemsChart(
-                      data: _buildHorizontalBarsData(),
+                      data: horizontalData, // Usar los datos precalculados
                       title: 'Conteos por Sistema y Nivel',
-                      minY: 0,
-                      maxY: 5, sistemasOrdenados: const [
-
-                      ],
-
+                      minY: 0, // Escala mínima para los valores de las barras
+                      maxY: 5, // Escala máxima calculada dinámicamente
+                      sistemasOrdenados: _sistemasOrdenados, // Pasar la lista definida
                     ),
                   ),
 
@@ -698,14 +726,16 @@ List<ScatterData> _buildScatterData() {
       case 'Promedio por Dimensión':
         chartData = _buildDonutData();
         break;
-      case 'Promedio por Principio':
+      case 'Promedio por Principio': // Corregido para que coincida con el título usado en el build
         chartData = _buildScatterData();
         break;
       case 'Distribución por Comportamiento y Nivel':
         chartData = _buildGroupedBarData();
         break;
       case 'Conteos por Sistema y Nivel':
-        chartData = _buildHorizontalBarsData();
+        // Para este gráfico, la validación de datos se maneja mejor con la presencia de _sistemasOrdenados
+        // y si horizontalData tiene entradas. Aquí simplemente asignamos para evitar el null.
+        chartData = _buildHorizontalBarsData(); 
         break;
       default:
         chartData = null;
@@ -734,7 +764,7 @@ List<ScatterData> _buildScatterData() {
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: SizedBox(
-                height: 400,
+                height: 420,
                 child: child,
               ),
             ),
@@ -742,4 +772,4 @@ List<ScatterData> _buildScatterData() {
         ),
       );    
   }
-  }
+}

@@ -18,18 +18,14 @@ class ScatterData {
   });
 }
 
-/// Widget que muestra un gráfico de burbujas dispersas (scatter)
 class ScatterBubbleChart extends StatelessWidget {
   final List<ScatterData> data;
   final bool isDetail;
-
   const ScatterBubbleChart({
     super.key,
     required this.data,
     this.isDetail = false, required String title,
   });
-
-  /// Lista de títulos de eje Y en orden natural:
   static const List<String> principleName= [
     'Respetar a Cada Individuo',
     'Liderar con Humildad',
@@ -82,7 +78,7 @@ class ScatterBubbleChart extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               interval: 1,
-              reservedSize: 100,
+              reservedSize: 120,
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
                 if (index >= 1 && index <= principleName.length) {
@@ -90,7 +86,7 @@ class ScatterBubbleChart extends StatelessWidget {
                     padding: const EdgeInsets.only(right: 4.0),
                     child: Text(
                       principleName[index - 1],
-                      style: const TextStyle(fontSize: 10),
+                      style: const TextStyle(fontSize: 11),
                       textAlign: TextAlign.right,
                       overflow: TextOverflow.ellipsis,
                     ),

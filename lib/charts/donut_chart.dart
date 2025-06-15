@@ -1,131 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-/// Gráfico de dona (PieChart) con leyenda abajo.
-/// Recibe:
-///  • data: `Map<nombre_dimension, promedio>`
-///  • title: String (título encima del gráfico)
-///  • dataMap: opcional `Map<nombre_dimension, color>` para personalizar colores
+/// Gráfico de dona (PieChart) con título arriba, leyenda intermedia y porcentajes dentro.
 class DonutChart extends StatelessWidget {
+  /// Datos: clave → valor (promedio).
   final Map<String, double> data;
-  final Map<String, Color>? dataMap;
+  /// Colores a usar para cada clave (debe tener tantas entradas como items en data).
+  final Map<String, Color> dataMap;
+  /// Si es detalle, aumenta tamaños.
   final bool isDetail;
+  /// Título que aparece encima de leyenda y gráfico.
+  final String title;
 
   const DonutChart({
     super.key,
     required this.data,
-    this.dataMap,
-    this.isDetail = false, required String title,
+    required this.dataMap,
+    this.isDetail = false,
+    required this.title,
   });
 
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-         
-          
-          const SizedBox(height: 16),
-          const Text(
-            'No hay datos para mostrar',
-            style: TextStyle(color: Colors.white),
+      return Center(
+        child: Text(
+          'No hay datos para mostrar',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isDetail ? 18 : 14,
           ),
-        ],
+          textAlign: TextAlign.center,
+        ),
       );
     }
 
-    final total = data.values.fold<double>(0.0, (sum, val) => sum + val);
-
-    final fallbackPalette = <Color>[
-      const Color(0xFFE63946), // rojo fuerte
-      const Color(0xFF2A9D8F), // verde agua
-      const Color(0xFFE9C46A), // amarillo suave
-    ];
-
-    final sections = <PieChartSectionData>[];
+    final total = data.values.fold<double>(0, (sum, v) => sum + v);
     final keys = data.keys.toList();
 
-    for (var i = 0; i < keys.length; i++) {
-      final key = keys[i];
+    // Tamaños ajustables
+    final double chartSize = isDetail ? 250 : 200;
+    final double radius = isDetail ? 80 : 60;
+    final double centerSpace = isDetail ? 50 : 40;
+
+    // Construcción de secciones con porcentaje interno
+    final sections = <PieChartSectionData>[];
+    for (var key in keys) {
       final value = data[key]!;
-      final color = dataMap?[key] ?? fallbackPalette[i % fallbackPalette.length];
+      final percent = total > 0 ? (value / total * 100) : 0;
       sections.add(
         PieChartSectionData(
           value: value,
-          color: color,
-          radius: 50,
-          showTitle: false,
+          color: dataMap[key]!,
+          radius: radius,
+          showTitle: true,
+          title: '${percent.toStringAsFixed(1)}%',
+          titleStyle: TextStyle(
+            fontSize: isDetail ? 16 : 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       );
     }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-      
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 150,
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 2,
-              centerSpaceRadius: 30,
-              sections: sections,
-            ),
+        // Título centrado
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: isDetail ? 22 : 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
+        // Leyenda: solo los 3 colores y etiquetas bajo título
         Wrap(
           alignment: WrapAlignment.center,
-          spacing: 12,
+          spacing: 16,
           runSpacing: 8,
-          children: [
-            for (var i = 0; i < keys.length; i++)
-              _LegendItem(
-                color: dataMap?[keys[i]] ??
-                    fallbackPalette[i % fallbackPalette.length],
-                label: keys[i],
-                porcentaje: total > 0
-                    ? (data[keys[i]]! / total * 100).toStringAsFixed(1)
-                    : '0.0',
+          children: keys.map((key) {
+            final percent = total > 0 ? (data[key]! / total * 100).toStringAsFixed(1) : '0.0';
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: isDetail ? 18 : 14,
+                  height: isDetail ? 18 : 14,
+                  decoration: BoxDecoration(
+                    color: dataMap[key],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$key ($percent%)',
+                  style: TextStyle(
+                    fontSize: isDetail ? 14 : 12,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        // Gráfico centrado y más grande
+        Center(
+          child: SizedBox(
+            width: chartSize,
+            height: chartSize,
+            child: PieChart(
+              PieChartData(
+                sections: sections,
+                centerSpaceRadius: centerSpace,
+                sectionsSpace: 4,
               ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-  final String porcentaje;
-
-  const _LegendItem({
-    required this.color,
-    required this.label,
-    required this.porcentaje,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '$label ($porcentaje%)',
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.white,
+            ),
           ),
         ),
       ],

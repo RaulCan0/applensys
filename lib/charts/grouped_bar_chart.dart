@@ -87,25 +87,25 @@ class GroupedBarChart extends StatelessWidget {
                             BarChartRodData(
                               toY: valores[0],
                               color: Colors.orange,
-                              width: 12,
+                              width: 16,
                               borderRadius: BorderRadius.zero,
                             ),
                             BarChartRodData(
                               toY: valores[1],
                               color: Colors.green,
-                              width: 12,
+                              width: 16,
                               borderRadius: BorderRadius.zero,
                             ),
                             BarChartRodData(
                               toY: valores[2],
                               color: Colors.blue,
-                              width: 12,
+                              width: 16,
                               borderRadius: BorderRadius.zero,
                             ),
                           ],
                         );
                       }),
-                      groupsSpace: 20,
+                      groupsSpace: 16,
                       titlesData: FlTitlesData(
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
@@ -123,7 +123,7 @@ class GroupedBarChart extends StatelessWidget {
                                   width: 70,
                                   child: Text(
                                     labels[index],
-                                    style: const TextStyle(fontSize: 10),
+                                    style: const TextStyle(fontSize: 12),
                                     textAlign: TextAlign.center,
                                     overflow: TextOverflow.visible,
                                     softWrap: true,
