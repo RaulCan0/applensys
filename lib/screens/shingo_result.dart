@@ -85,31 +85,33 @@ class _ShingoResultSheetState extends State<ShingoResultSheet> {
       appBar: AppBar(title: const Text('Hoja de Resultado')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: seleccionarImagen,
-              child: Container(
-                height: 180,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black),
-                  color: Colors.grey.shade200,
-                  image: imagen != null
-                      ? DecorationImage(image: FileImage(imagen!), fit: BoxFit.cover)
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: seleccionarImagen,
+                child: Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black),
+                    color: Colors.grey.shade200,
+                    image: imagen != null
+                        ? DecorationImage(image: FileImage(imagen!), fit: BoxFit.cover)
+                        : null,
+                  ),
+                  child: imagen == null
+                      ? const Center(child: Text('Tocar para agregar imagen del gráfico'))
                       : null,
                 ),
-                child: imagen == null
-                    ? const Center(child: Text('Tocar para agregar imagen del gráfico'))
-                    : null,
               ),
-            ),
-            const SizedBox(height: 10),
-            ...campos.keys.map(cajaEditable),
-            const SizedBox(height: 20),
-            const Text('Calificación (1-5)', style: TextStyle(fontSize: 16)),
-            calificacionWidget(),
-          ],
+              const SizedBox(height: 10),
+              ...campos.keys.map(cajaEditable),
+              const SizedBox(height: 20),
+              const Text('Calificación (1-5)', style: TextStyle(fontSize: 16)),
+              calificacionWidget(),
+            ],
+          ),
         ),
       ),
     );

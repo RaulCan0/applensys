@@ -74,6 +74,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
     final screenSize = MediaQuery.of(context).size;
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
+    // Define una altura constante para todas las cards
+    const double cardHeight = 150; // Puedes ajustar este valor
+
     return Scaffold(
       key: scaffoldKey,
       drawer: SizedBox(width: 300, child: const ChatWidgetDrawer()),
@@ -111,26 +114,28 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
             child: ListView.builder(
               itemCount: 5,
               itemBuilder: (context, index) {
+                Widget cardItem;
                 if (index < dimensiones.length) {
                   final dimension = dimensiones[index];
-                  return _buildCard(
+                  cardItem = _buildCard(
                     icon: dimension['icono'],
                     color: dimension['color'],
                     title: dimension['nombre'],
                     child: FutureBuilder<double>(
                       future: evaluacionService.obtenerProgresoDimension(
-                        widget.empresa.id,
-                        dimension['id'],
+                        widget.empresa.id, // Asumiendo que widget.empresa.id es String
+                        dimension['id'],   // Asumiendo que dimension['id'] es String
                       ),
                       builder: (context, snapshot) {
                         final progreso = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min, // Para que la columna no intente expandirse innecesariamente
                           children: [
                             LinearProgressIndicator(
                               value: progreso,
                               minHeight: 8,
-                              backgroundColor: Colors.grey[300],
+                              backgroundColor: const Color.fromARGB(255, 156, 156, 156),
                               color: dimension['color'],
                             ),
                             const SizedBox(height: 4),
@@ -153,11 +158,13 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                           ),
                         ),
                       );
-                      setState(() {});
+                      if (mounted) { // Buena práctica verificar 'mounted' después de un await
+                        setState(() {});
+                      }
                     },
                   );
                 } else if (index == 3) {
-                  return _buildCard(
+                  cardItem = _buildCard(
                     icon: Icons.insert_chart,
                     color: Colors.orange,
                     title: 'Resultados',
@@ -168,16 +175,22 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                       );
                     },
                   );
-                } else {
-                  return _buildCard(
+                } else { // index == 4
+                  cardItem = _buildCard(
                     icon: Icons.assignment_turned_in,
                     color: Colors.blue,
                     title: 'Evaluación Final',
                     onTap: () {
                       // Aquí puedes implementar funcionalidad si quieres
+                      debugPrint("Evaluación Final Tapped");
                     },
                   );
                 }
+                // Envolver la cardItem con SizedBox para darle una altura fija
+                return SizedBox(
+                  height: cardHeight,
+                  child: cardItem,
+                );
               },
             ),
           ),
@@ -191,7 +204,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                   label: const Text('Continuar más tarde'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF003056),
-                    foregroundColor: Colors.white,
+                    foregroundColor: const Color.fromARGB(255, 212, 209, 209),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: () async {
@@ -204,8 +217,8 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.check_circle, color: Colors.white),
-                  label: const Text('Finalizar evaluación'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    label: const Text('Finalizar evaluación', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 94, 156, 96)),
                   onPressed: () async {
                     try {
                       final cache = EvaluacionCacheService();
@@ -252,12 +265,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
     Widget? child,
     required VoidCallback onTap,
   }) {
-    final screenSize = MediaQuery.of(context).size;
+    // final screenSize = MediaQuery.of(context).size; // No se usa aquí
     return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: screenSize.height * 0.01,
-        horizontal: screenSize.width * 0.05,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Reducido el padding vertical para mejor ajuste con altura fija
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -268,6 +278,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              // Asegurar que la columna se centre o se expanda si es necesario dentro de la Card
+              // dependiendo del diseño deseado. Por ahora, se deja como está.
+              // mainAxisAlignment: MainAxisAlignment.center, // Podrías usar esto para centrar verticalmente el contenido
               children: [
                 Row(
                   children: [
@@ -283,6 +296,9 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                 ),
                 if (child != null) ...[
                   const SizedBox(height: 10),
+                  // Si el child puede crecer, y quieres que la card se expanda,
+                  // considera envolver el child con Expanded si la Column está dentro de otra Column/Row flexible.
+                  // Aquí, como la Card tiene altura fija por el SizedBox externo, el child se adaptará o cortará.
                   child,
                 ],
               ],

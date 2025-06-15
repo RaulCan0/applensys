@@ -41,12 +41,10 @@ class MyApp extends ConsumerWidget {
       title: 'LensysApp',
       themeMode: themeMode,
       builder: (context, child) {
-        // Aplica la escala de texto correctamente usando textScaleFactor
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(scaleFactor),
           ),
-          // child nunca debe ser nulo en MaterialApp
           child: child!,
         );
       },

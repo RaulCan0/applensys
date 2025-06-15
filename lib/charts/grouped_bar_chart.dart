@@ -20,8 +20,8 @@ class GroupedBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final comportamientosOrdenados = [
-      'Soporte',
+  final comportamientosOrdenados = [
+  'Soporte',
   'Reconocer',
   'Comunidad',
   'Liderazgo de Servidor',

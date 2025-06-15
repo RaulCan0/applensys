@@ -8,16 +8,14 @@ import 'package:fl_chart/fl_chart.dart';
 ///  • dataMap: opcional `Map<nombre_dimension, color>` para personalizar colores
 class DonutChart extends StatelessWidget {
   final Map<String, double> data;
-  final String title;
   final Map<String, Color>? dataMap;
   final bool isDetail;
 
   const DonutChart({
     super.key,
     required this.data,
-    required this.title,
     this.dataMap,
-    this.isDetail = false,
+    this.isDetail = false, required String title,
   });
 
   @override
@@ -26,14 +24,8 @@ class DonutChart extends StatelessWidget {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
+         
+          
           const SizedBox(height: 16),
           const Text(
             'No hay datos para mostrar',
@@ -70,14 +62,7 @@ class DonutChart extends StatelessWidget {
 
     return Column(
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+      
         const SizedBox(height: 8),
         SizedBox(
           height: 150,

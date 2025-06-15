@@ -1,5 +1,7 @@
+import 'dart:math';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
 class HorizontalBarSystemsChart extends StatelessWidget {
   final Map<String, Map<String, double>> data;
@@ -19,69 +21,94 @@ class HorizontalBarSystemsChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chartData = sistemasOrdenados.map((s) {
-      final levels = data[s] ?? {'E': 0.0, 'G': 0.0, 'M': 0.0};
-      return _SystemData(
-        s,
-        levels['E'] ?? 0.0,
-        levels['G'] ?? 0.0,
-        levels['M'] ?? 0.0,
-      );
-    }).toList();
-
-    if (chartData.isEmpty) {
-      return const Center(child: Text('No hay datos'));
-    }
-
-    return ScrollConfiguration(
-      behavior: const ScrollBehavior().copyWith(scrollbars: true),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SizedBox(
-          height: chartData.length * 40.0,
-          child: SfCartesianChart(
-            primaryXAxis: CategoryAxis(
-              title: AxisTitle(text: 'Sistemas'),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
-            primaryYAxis: NumericAxis(
-              minimum: minY,
-              maximum: maxY,
-              interval: 1,
-              title: AxisTitle(text: 'Promedio'),
-            ),
-            series: <CartesianSeries<_SystemData, String>>[
-              BarSeries<_SystemData, String>(
-                name: 'Ejecutivo',
-                color: Colors.orange, // Ejecutivo → naranja
-                dataSource: chartData,
-                xValueMapper: (d, _) => d.sistema,
-                yValueMapper: (d, _) => d.e,
-              ),
-              BarSeries<_SystemData, String>(
-                name: 'Gerente',
-                color: Colors.green, // Gerente → verde
-                dataSource: chartData,
-                xValueMapper: (d, _) => d.sistema,
-                yValueMapper: (d, _) => d.g,
-              ),
-              BarSeries<_SystemData, String>(
-                name: 'Miembro',
-                color: Colors.blue, // Miembro → azul
-                dataSource: chartData,
-                xValueMapper: (d, _) => d.sistema,
-                yValueMapper: (d, _) => d.m,
-              ),
-            ],
-            legend: Legend(isVisible: true),
           ),
         ),
-      ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final chartHeight = max(sistemasOrdenados.length * 50.0, constraints.maxHeight);
+              return ScrollConfiguration(
+                behavior: const ScrollBehavior().copyWith(scrollbars: true),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: SizedBox(
+                    height: chartHeight,
+                    child: BarChart(
+                      BarChartData(
+                        minY: minY,
+                        maxY: maxY,
+                        barGroups: List.generate(sistemasOrdenados.length, (i) {
+                          final sistema = sistemasOrdenados[i];
+                          final valores = data[sistema] ?? {};
+                          final e = valores['E'] ?? 0.0;
+                          final g = valores['G'] ?? 0.0;
+                          final m = valores['M'] ?? 0.0;
+                          return BarChartGroupData(
+                            x: i,
+                            barRods: [
+                              BarChartRodData(toY: e, width: 12, color: Colors.orange),
+                              BarChartRodData(toY: g, width: 12, color: Colors.green),
+                              BarChartRodData(toY: m, width: 12, color: Colors.blue),
+                            ],
+                            barsSpace: 4,
+                          );
+                        }),
+                        groupsSpace: 18,
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                final index = value.toInt();
+                                if (index >= 0 && index < sistemasOrdenados.length) {
+                                  return SideTitleWidget(
+                                    space: 8,
+                                    meta: meta,
+                                    child: Text(
+                                      sistemasOrdenados[index],
+                                      style: const TextStyle(fontSize: 10),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                              reservedSize: 100,
+                            ),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        ),
+                        gridData: FlGridData(
+                          show: true,
+                          getDrawingHorizontalLine: (value) => FlLine(
+                            // ignore: deprecated_member_use
+                            color: Colors.grey.withOpacity(0.3),
+                            strokeWidth: 1,
+                          ),
+                        ),
+                        barTouchData: BarTouchData(enabled: true),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
-}
-
-class _SystemData {
-  final String sistema;
-  final double e, g, m;
-  _SystemData(this.sistema, this.e, this.g, this.m);
 }

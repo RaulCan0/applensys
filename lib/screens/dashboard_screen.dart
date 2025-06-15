@@ -259,74 +259,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Construye ScatterData solo con promedios > 0 y usando orElse que
   /// devuelve un Principio vacío en lugar de null.
-  List<ScatterData> _buildScatterData() {
-    // Esta es la lista canónica que define el orden y los nombres de los principios en el gráfico.
-    // El primer elemento (índice 0) corresponderá a y=1.0 en ScatterData,
-    // y se mostrará en la parte superior del gráfico según la lógica de ScatterBubbleChart.
-    const List<String> allPrinciples = [
-      'Respetar a Cada Individuo',       // y=1.0
-      'Liderar con Humildad',            // y=2.0
-      'Buscar la Perfección',            // y=3.0
-      'Abrazar el Pensamiento Científico', // y=4.0
-      'Enfocarse en el Proceso',         // y=5.0
-      'Asegurar la Calidad en la Fuente',// y=6.0
-      'Mejorar el Flujo y Jalón de Valor', // y=7.0
-      'Pensar Sistémicamente',           // y=8.0
-      'Crear Constancia de Propósito',   // y=9.0
-      'Crear Valor para el Cliente',     // y=10.0
-    ];
+List<ScatterData> _buildScatterData() {
+  // Radio fijo para cada punto
+  const double dotRadius = 8.0;
 
-    final principiosProcesados = EvaluacionChartData
-        .extractPrincipios(_dimensiones)
-        .cast<Principio>();
+  // Extraemos la lista de Principio en orden natural
+  final principios =
+      EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
 
-    final List<ScatterData> list = [];
-    final principios =
-        EvaluacionChartData.extractPrincipios(_dimensiones).cast<Principio>();
+  final List<ScatterData> list = [];
 
-    // Cada Principio tendrá índice Y fijo de 1 a 10
-    for (var i = 0; i < principios.length; i++) {
-      final Principio pri = principios[i];
-      final yIndex = i + 1; // 1..10
+  for (var i = 0; i < principios.length; i++) {
+    final Principio pri = principios[i];
+    final double yIndex = (i + 1).toDouble(); // 1..10
 
-      // Calcular promedio de niveles dentro del Principio
-      double sumaEj = 0, sumaGe = 0, sumaMi = 0;
-      int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
+    // Calcular promedios por nivel
+    double sumaEj = 0, sumaGe = 0, sumaMi = 0;
+    int cuentaEj = 0, cuentaGe = 0, cuentaMi = 0;
 
-      for (final comp in pri.comportamientos) {
-        if (comp.promedioEjecutivo > 0) {
-          sumaEj += comp.promedioEjecutivo;
-          cuentaEj++;
-        }
-        if (comp.promedioGerente > 0) {
-          sumaGe += comp.promedioGerente;
-          cuentaGe++;
-        }
-        if (comp.promedioMiembro > 0) {
-          sumaMi += comp.promedioMiembro;
-          cuentaMi++;
-        }
+    for (final comp in pri.comportamientos) {
+      if (comp.promedioEjecutivo > 0) {
+        sumaEj += comp.promedioEjecutivo;
+        cuentaEj++;
       }
-
-      final double promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
-      final double promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
-      final double promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
-
-      list.add(
-        ScatterData(x: promEj.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.orange, radius: 0, seriesName: '', principleName: ''),
-      );
-      list.add(
-        ScatterData(x: promGe.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.green, radius: 0, seriesName: '', principleName: ''),
-      );
-      list.add(
-        ScatterData(x: promMi.clamp(0.0, 5.0), y: yIndex.toDouble(), color: Colors.blue, radius: 0, seriesName: '', principleName: ''),
-      );
+      if (comp.promedioGerente > 0) {
+        sumaGe += comp.promedioGerente;
+        cuentaGe++;
+      }
+      if (comp.promedioMiembro > 0) {
+        sumaMi += comp.promedioMiembro;
+        cuentaMi++;
+      }
     }
 
-    return list;
+    final double promEj = (cuentaEj > 0) ? (sumaEj / cuentaEj) : 0.0;
+    final double promGe = (cuentaGe > 0) ? (sumaGe / cuentaGe) : 0.0;
+    final double promMi = (cuentaMi > 0) ? (sumaMi / cuentaMi) : 0.0;
+
+    // Añadimos un ScatterData por cada serie, si tiene valor > 0
+    if (promEj > 0) {
+      list.add(
+        ScatterData(
+          x: promEj.clamp(0.0, 5.0),
+          y: yIndex,
+          color: Colors.orange,
+          radius: dotRadius,
+          seriesName: 'Ejecutivo',
+          principleName: pri.nombre,
+        ),
+      );
+    }
+    if (promGe > 0) {
+      list.add(
+        ScatterData(
+          x: promGe.clamp(0.0, 5.0),
+          y: yIndex,
+          color: Colors.green,
+          radius: dotRadius,
+          seriesName: 'Gerente',
+          principleName: pri.nombre,
+        ),
+      );
+    }
+    if (promMi > 0) {
+      list.add(
+        ScatterData(
+          x: promMi.clamp(0.0, 5.0),
+          y: yIndex,
+          color: Colors.blue,
+          radius: dotRadius,
+          seriesName: 'Miembro',
+          principleName: pri.nombre,
+        ),
+      );
+    }
   }
 
-  /// Datos para el gráfico de Barras Agrupadas (promedios de Comportamientos).
+  return list;
+}
+
   Map<String, List<double>> _buildGroupedBarData() {
     final Map<String, List<double>> data = {};
     final comps =
@@ -341,27 +352,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return data;
   }
 
-  /// Datos para el gráfico de Barras Horizontales (conteo por Sistema y Nivel).
   Map<String, Map<String, double>> _buildHorizontalBarsData() {
     final Map<String, Map<String, double>> data = {};
-    final sistemasOrdenados = [
-      'Ambiental',
-      'Comunicación',
-      'Desarrollo de personal',
-      'Despliegue de estrategia',
-      'Gestion visual',
-      'Involucramiento',
-      'Medicion',
-      'Mejora y alineamiento estratégico',
-      'Mejora y gestion visual',
-      'Planificacion',
-      'Programacion y de mejora',
-      'Reconocimiento',
-      'Seguridad',
-      'Sistemas de mejora',
-      'Solucion de problemas',
-      'Voz de cliente',
-      'Visitas al Gemba'
+    final sistemasOrdenados = const [
+     
     ];
 
     for (final sistemaNombre in sistemasOrdenados) {
@@ -519,23 +513,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 children: [
-                  // 1) Título “Dimensiones” en blanco, luego contenedor verde con su gráfico
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      'Dimensiones',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                    _buildChartContainer(
-                    color: const Color(0xFF005F73),
-                    title: 'Promedio por Dimensión',
-                    child: Center( // <- Añadir Center aquí
                       child: DonutChart(
                         data: _buildDonutData(),
                         title: 'Promedio por Dimensión',
@@ -545,44 +525,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
                         },
                         isDetail: false,
-                      ),
+                      ), color: const Color(0xFF0A9396), title: 'Promedio por Dimensión',
                     ),
-                  ),
-                  // 2) Título “Principios” en blanco, luego contenedor turquesa con su gráfico
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      'Principios',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+              
                   _buildChartContainer(
-                    color: const Color(0xFF0A9396),
-                    title: 'Promedio por Principio',
+                    color: const Color.fromARGB(255, 127, 189, 190),
                     child: ScatterBubbleChart(
                       data: _buildScatterData(),
-                      title: 'Promedio por Principio',
-                     
-                      isDetail: false,
-                    ),
+                      isDetail: false, title: '',
+                    ), title: 'promedio por Principio', 
                   ),
 
-                  // 3) Título “Comportamientos” en blanco, luego contenedor amarillo con su gráfico
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      'Comportamientos',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                   _buildChartContainer(
                     color: const Color.fromARGB(255, 231, 220, 187),
                     title: 'Distribución por Comportamiento y Nivel',
@@ -595,18 +548,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
 
-                  // 4) Título “Sistemas” en blanco, luego contenedor naranja con su gráfico
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      'Sistemas',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+               
                   _buildChartContainer(
                     color: const Color.fromARGB(255, 202, 208, 219),
                     title: 'Conteos por Sistema y Nivel',
@@ -615,23 +557,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       title: 'Conteos por Sistema y Nivel',
                       minY: 0,
                       maxY: 5, sistemasOrdenados: const [
-                        'Ambiental',
-                        'Comunicación',
-                        'Desarrollo de personal',
-                        'Despliegue de estrategia',
-                        'Gestion visual',
-                        'Involucramiento',
-                        'Medicion',
-                        'Mejora y alineamiento estratégico',
-                        'Mejora y gestion visual',
-                        'Planificacion',
-                        'Programacion y de mejora',
-                        'Reconocimiento',
-                        'Seguridad',
-                        'Sistemas de mejora',
-                        'Solucion de problemas',
-                        'Voz de cliente',
-                        'Visitas al Gemba'
+
                       ],
 
                     ),
@@ -654,7 +580,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   tooltip: 'Chat Interno',
                 ),
-                const SizedBox(height: 16),
 
                 // Generar Excel/Word
                 IconButton(
