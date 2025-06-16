@@ -49,20 +49,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Lista ordenada de sistemas para el gráfico de barras horizontales
   // DEBES ACTUALIZAR ESTA LISTA CON TUS SISTEMAS REALES Y EN EL ORDEN DESEADO
-  final List<String> _sistemasOrdenados = [
-    "Medición",
-    "Involucramiento",
-    "Reconocimiento",
-    "Desarrollo de Personas",
-    "Seguridad",
-    "Ambiental",
-    "EHS",
-    "Compromiso",
-    "Sistemas de Mejora",
-    "Solución de Problemas",
-    "Gestión Visual",
-    // Ejemplo: "Otro Sistema", "Sistema Adicional"
-  ];
+ 
+ final List<String> _sistemasOrdenados = [
+  'Medición',
+  'Involucramiento',
+  'Reconocimiento',
+  'Desarrollo de Personas',
+  'Seguridad',
+  'Ambiental',
+  'EHS',
+  'Compromiso',
+  'Sistemas de Mejora',
+  'Solución de Problemas',
+  'Gestión Visual',
+  'Comunicación',
+  'Desarrollo de personal',
+  'Despliegue de estrategia',
+  'Gestion visual',
+  'Medicion',
+  'Mejora y alineamiento estratégico',
+  'Mejora y gestion visual',
+  'Planificacion',
+  'Programacion y de mejora',
+  'Voz de cliente',
+  'Visitas al Gemba',
+];
 
   @override
   void initState() {
@@ -379,11 +390,14 @@ List<ScatterData> _buildScatterData() {
   }
 
   Map<String, Map<String, double>> _buildHorizontalBarsData() {
-    final Map<String, Map<String, double>> data = {};
-    // Se itera sobre la lista definida en la clase para asegurar el orden
-    // y la inclusión de todos los sistemas esperados.
+    // Mapas para acumular sumas y conteos
+    final Map<String, Map<String, double>> sumasPorSistemaNivel = {};
+    final Map<String, Map<String, int>> conteosPorSistemaNivel = {};
+
+    // Inicializar mapas para todos los sistemas ordenados y niveles
     for (final sistemaNombre in _sistemasOrdenados) {
-      data[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+      sumasPorSistemaNivel[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+      conteosPorSistemaNivel[sistemaNombre] = {'E': 0, 'G': 0, 'M': 0};
     }
 
     for (final row in _dimensionesRaw) {
@@ -405,9 +419,12 @@ List<ScatterData> _buildScatterData() {
       }
 
       if (nivelKey == null) {
-        // Si no se puede determinar el nivel, saltar esta fila para el conteo de sistemas
+        // Si no se puede determinar el nivel, saltar esta fila
         continue;
       }
+
+      // Obtener el valor de la calificación para este row
+      final double valorCalificacion = (row['valor'] as num?)?.toDouble() ?? 0.0;
 
       final listaSistemasEnFila = (row['sistemas'] as List<dynamic>?)
               ?.map((s) => s.toString().trim())
@@ -416,13 +433,35 @@ List<ScatterData> _buildScatterData() {
           <String>[];
 
       for (final sistemaNombre in listaSistemasEnFila) {
-        if (data.containsKey(sistemaNombre)) { // Asegura que el sistema procesado esté en nuestra lista ordenada
-          data[sistemaNombre]![nivelKey] = (data[sistemaNombre]![nivelKey] ?? 0.0) + 1.0;
+        // Asegura que el sistema procesado esté en nuestra lista ordenada
+        // y por lo tanto en los mapas de sumas y conteos.
+        if (sumasPorSistemaNivel.containsKey(sistemaNombre) && conteosPorSistemaNivel.containsKey(sistemaNombre)) {
+          // Acumular suma
+          sumasPorSistemaNivel[sistemaNombre]![nivelKey] =
+              (sumasPorSistemaNivel[sistemaNombre]![nivelKey] ?? 0.0) + valorCalificacion;
+          // Incrementar conteo
+          conteosPorSistemaNivel[sistemaNombre]![nivelKey] =
+              (conteosPorSistemaNivel[sistemaNombre]![nivelKey] ?? 0) + 1;
         }
       }
     }
-    // debugPrint('Datos para HorizontalBarSystemsChart: $data');
-    return data;
+
+    // Calcular promedios
+    final Map<String, Map<String, double>> promediosData = {};
+    for (final sistemaNombre in _sistemasOrdenados) {
+      promediosData[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+      for (final nivelKey in ['E', 'G', 'M']) {
+        final double suma = sumasPorSistemaNivel[sistemaNombre]![nivelKey]!;
+        final int conteo = conteosPorSistemaNivel[sistemaNombre]![nivelKey]!;
+        if (conteo > 0) {
+          promediosData[sistemaNombre]![nivelKey] = suma / conteo;
+        } else {
+          promediosData[sistemaNombre]![nivelKey] = 0.0;
+        }
+      }
+    }
+    // debugPrint('Datos de PROMEDIOS para HorizontalBarSystemsChart: $promediosData');
+    return promediosData;
   }
 
   /// Callback al presionar “Generar Excel/Word”
@@ -503,20 +542,9 @@ List<ScatterData> _buildScatterData() {
       );
     }
 
-    // Preparar datos para el gráfico de sistemas y calcular maxSystemCount
+    // Preparar datos para el gráfico de sistemas
     final horizontalData = _buildHorizontalBarsData();
-    double maxSystemCount = 0;
-    for (var niveles in horizontalData.values) {
-      for (var count in niveles.values) {
-        if (count > maxSystemCount) {
-          maxSystemCount = count;
-        }
-      }
-    }
-    if (maxSystemCount == 0) {
-      maxSystemCount = 5; // Un valor por defecto si no hay datos o todos son cero
-    }
-
+    // La variable maxSystemCount ya no es necesaria aquí si maxY es fijo (0-5 para promedios)
 
     return Scaffold(
       key: _scaffoldKey,
@@ -590,13 +618,13 @@ List<ScatterData> _buildScatterData() {
                
                   _buildChartContainer(
                     color: const Color.fromARGB(255, 202, 208, 219),
-                    title: 'Conteos por Sistema y Nivel',
+                    title: 'Promedios por Sistema y Nivel', // Título actualizado
                     child: HorizontalBarSystemsChart(
-                      data: horizontalData, // Usar los datos precalculados
-                      title: 'Conteos por Sistema y Nivel',
-                      minY: 0, // Escala mínima para los valores de las barras
-                      maxY: 5, // Escala máxima calculada dinámicamente
-                      sistemasOrdenados: _sistemasOrdenados, // Pasar la lista definida
+                      data: horizontalData, 
+                      title: 'Promedios por Sistema y Nivel', // Título actualizado
+                      minY: 0, 
+                      maxY: 5, // Adecuado para promedios en escala 0-5
+                      sistemasOrdenados: _sistemasOrdenados, 
                     ),
                   ),
 
@@ -732,9 +760,7 @@ List<ScatterData> _buildScatterData() {
       case 'Distribución por Comportamiento y Nivel':
         chartData = _buildGroupedBarData();
         break;
-      case 'Conteos por Sistema y Nivel':
-        // Para este gráfico, la validación de datos se maneja mejor con la presencia de _sistemasOrdenados
-        // y si horizontalData tiene entradas. Aquí simplemente asignamos para evitar el null.
+      case 'Promedios por Sistema y Nivel': // Título actualizado para coincidir
         chartData = _buildHorizontalBarsData(); 
         break;
       default:

@@ -160,17 +160,17 @@ class EvaluationChartDataService {
     };
 
     final List<String> principleNames = [
-      'Respetar a cada individuo',
-      'Liderar con humildad',
-      'Buscar la perfección',
-      'Abrazar el pensamiento científico',
-      'Enfocarse en el proceso',
-      'Asegurar la calidad en la Fuente',
-      'Mejorar el Flujo y Jalón de Valor',
-      'Pensar Sistémicamente',
-      'Crear Constancia de Propósito',
-      'Crear Valor para el Cliente',
-    ];
+    'Respetar a Cada Individuo',
+    'Liderar con Humildad',
+    'Buscar la Perfección',
+    'Abrazar el Pensamiento Científico',
+    'Enfocarse en el Proceso',
+    'Asegurar la Calidad en la Fuente',
+    'Mejorar el Flujo y Jalón de Valor',
+    'Pensar Sistémicamente',
+    'Crear Constancia de Propósito',
+    'Crear Valor para el Cliente',
+  ];
 
     // Cargar promedios por dimensión
     for (var dimension in tablaDatos.keys) {

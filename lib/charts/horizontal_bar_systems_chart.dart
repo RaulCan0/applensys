@@ -33,19 +33,53 @@ class HorizontalBarSystemsChart extends StatelessWidget {
       return const Center(child: Text('No hay datos'));
     }
 
+    // Configuración del Tooltip
+    final TooltipBehavior tooltipBehavior = TooltipBehavior(
+      enable: true,
+       // Se activa al tocar
+      // El builder permite personalizar el contenido del tooltip
+      builder: (dynamic data, dynamic point, dynamic series, int pointIndex, int seriesIndex) {
+        final _SystemData systemData = data as _SystemData;
+        final String seriesName = series.name ?? 'Nivel'; // Nombre de la serie (Ejecutivo, Gerente, Miembro)
+        double value = 0.0;
+
+        // Determinar el valor basado en la serie que se tocó
+        if (seriesName == 'Ejecutivo') {
+          value = systemData.e;
+        } else if (seriesName == 'Gerente') {
+          value = systemData.g;
+        } else if (seriesName == 'Miembro') {
+          value = systemData.m;
+        }
+        
+        return Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            // ignore: deprecated_member_use
+            color: Colors.black.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            'Sistema: ${systemData.sistema}\n$seriesName: ${value.toStringAsFixed(2)}',
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+        );
+      }
+    );
+
     return ScrollConfiguration(
       behavior: const ScrollBehavior().copyWith(scrollbars: true),
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: SizedBox(
-          height: chartData.length * 60.0,
+          height: chartData.length * 40.0, 
           child: SfCartesianChart(
             primaryXAxis: CategoryAxis(
             ),
             primaryYAxis: NumericAxis(
               minimum: minY,
               maximum: maxY,
-              interval: 1,
+              interval: 0.5, // Ajusta el intervalo si es necesario para promedios (ej. 0.5 o 1)
             ),
             series: <CartesianSeries<_SystemData, String>>[
               BarSeries<_SystemData, String>(
@@ -60,7 +94,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
                 color: Colors.green, // Gerente → verde
                 dataSource: chartData,
                 xValueMapper: (d, _) => d.sistema,
-                yValueMapper: (d, _) => d.g,
+                yValueMapper: (d, _) => d.g, // Corregido: debería ser d.g para Gerente
               ),
               BarSeries<_SystemData, String>(
                 name: 'Miembro',
@@ -71,6 +105,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
               ),
             ],
             legend: Legend(isVisible: true),
+            tooltipBehavior: tooltipBehavior, // <-- Añadir esta línea
           ),
         ),
       ),

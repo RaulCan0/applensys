@@ -16,8 +16,8 @@ class DashboardService {
       },
       "MEJORA CONTINUA": {
         "Buscar la Perfección": ["Mentalidad", "Estructura"],
-        "Abrazar el pensamiento Cientifico": ["Reflexionar", "Análisis", "Colaborar"],
-        "Enfocarse en el proceso": ["Comprender", "Diseño", "Atribución"],
+        "Abrazar el Pensamiento Científico": ["Reflexionar", "Análisis", "Colaborar"],
+        "Enfocarse en el Proceso": ["Comprender", "Diseño", "Atribución"],
         "Asegurar la Calidad en la Fuente": ["A prueba de error", "Propiedad", "Conectar"],
         "Mejorar el Flujo y Jalón de Valor": ["Ininterrumpido", "Demanda", "Eliminar"]
       },

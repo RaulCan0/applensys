@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+
+/// Datos individuales de cada burbuja
 class ScatterData {
   final double x; // Promedio: 0.0 - 5.0
   final double y; // Índice del principio: 1 - 10
@@ -14,19 +16,22 @@ class ScatterData {
     required this.color,
     required this.seriesName,
     required this.principleName,
-    required this.radius, 
+    required this.radius,
   });
 }
 
+/// Gráfico de burbujas (scatter) con interacción táctil
 class ScatterBubbleChart extends StatelessWidget {
   final List<ScatterData> data;
   final bool isDetail;
+
   const ScatterBubbleChart({
     super.key,
     required this.data,
     this.isDetail = false, required String title,
   });
-  static const List<String> principleName= [
+
+  static const List<String> principleName = [
     'Respetar a Cada Individuo',
     'Liderar con Humildad',
     'Buscar la Perfección',
@@ -50,12 +55,12 @@ class ScatterBubbleChart extends StatelessWidget {
       );
     }
 
-    const double minX = 0;
-    const double maxX = 5;
-    const double minY = 1;
-    const double maxY = 10;
-    final double fixedRadius = isDetail ? 14 : 8;
-    const double offset = 0.2;
+    const minX = 0.0;
+    const maxX = 5.0;
+    const minY = 1.0;
+    const maxY = 10.0;
+    const offset = 0.2;
+    final dotRadius = isDetail ? 12.0 : 8.0;
 
     return ScatterChart(
       ScatterChartData(
@@ -80,12 +85,12 @@ class ScatterBubbleChart extends StatelessWidget {
               interval: 1,
               reservedSize: 120,
               getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-                if (index >= 1 && index <= principleName.length) {
+                final idx = value.toInt();
+                if (idx >= 1 && idx <= principleName.length) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 4.0),
                     child: Text(
-                      principleName[index - 1],
+                      principleName[idx - 1],
                       style: const TextStyle(fontSize: 11),
                       textAlign: TextAlign.right,
                       overflow: TextOverflow.ellipsis,
@@ -100,12 +105,10 @@ class ScatterBubbleChart extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               interval: 0.5,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toStringAsFixed(1),
-                  style: const TextStyle(fontSize: 10),
-                );
-              },
+              getTitlesWidget: (value, meta) => Text(
+                value.toStringAsFixed(1),
+                style: const TextStyle(fontSize: 10),
+              ),
             ),
           ),
           topTitles:    AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -119,17 +122,28 @@ class ScatterBubbleChart extends StatelessWidget {
           } else if (d.seriesName == 'Miembro') {
             xPos = (d.x + offset).clamp(minX, maxX);
           }
-
           return ScatterSpot(
             xPos,
-            d.y, // se usa el valor de Y directamente
+            d.y,
             dotPainter: FlDotCirclePainter(
-              radius: d.radius, // usa el radius definido
+              radius: d.radius > 0 ? d.radius : dotRadius,
               color: d.color,
               strokeWidth: 0,
             ),
           );
         }).toList(),
+        scatterTouchData: ScatterTouchData(
+          enabled: true,
+          handleBuiltInTouches: true,
+          touchTooltipData: ScatterTouchTooltipData(
+            getTooltipItems: (ScatterSpot touchedSpot) {
+              return ScatterTooltipItem(
+                'Valor: ${touchedSpot.x.toStringAsFixed(2)}',
+                textStyle: const TextStyle(color: Colors.white),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
