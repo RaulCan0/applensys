@@ -18,7 +18,7 @@ class DashboardService {
         "Buscar la Perfección": ["Mentalidad", "Estructura"],
         "Abrazar el Pensamiento Científico": ["Reflexionar", "Análisis", "Colaborar"],
         "Enfocarse en el Proceso": ["Comprender", "Diseño", "Atribución"],
-        "Asegurar la Calidad en la Fuente": ["A prueba de error", "Propiedad", "Conectar"],
+        "Asegurar la Calidad en la Fuente": ["A Prueba de Errores", "Propiedad", "Conectar"],
         "Mejorar el Flujo y Jalón de Valor": ["Ininterrumpido", "Demanda", "Eliminar"]
       },
       "ALINEAMIENTO EMPRESARIAL": {

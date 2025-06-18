@@ -1,6 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
+
 import 'package:applensys/screens/shingo_result.dart';
+import 'package:applensys/screens/tabla_resumen_global.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:applensys/screens/asociado_screen.dart';
@@ -175,17 +177,24 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                       );
                     },
                   );
-                } else { // index == 4
-                  cardItem = _buildCard(
-                    icon: Icons.assignment_turned_in,
-                    color: Colors.blue,
-                    title: 'Evaluación Final',
-                    onTap: () {
-                      // Aquí puedes implementar funcionalidad si quieres
-                      debugPrint("Evaluación Final Tapped");
-                    },
-                  );
-                }
+                } // index == 4
+                 else { // index == 4
+  cardItem = _buildCard(
+    icon: Icons.assignment_turned_in,
+    color: Colors.blue,
+    title: 'Evaluación Final',
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TablaScoreGlobal(empresa: widget.empresa, detalles: [], evaluaciones: [],),
+        ),  
+
+      );
+    },
+  );
+} 
+                
                 // Envolver la cardItem con SizedBox para darle una altura fija
                 return SizedBox(
                   height: cardHeight,

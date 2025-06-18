@@ -292,7 +292,8 @@ class _AsociadoScreenState extends State<AsociadoScreen> with SingleTickerProvid
                           builder: (_) => PrincipiosScreen(
                             empresa: widget.empresa,
                             asociado: asociado,
-                            dimensionId: widget.dimensionId, evaluacionId: '',
+                            dimensionId: widget.dimensionId, 
+                            evaluacionId: widget.evaluacionId, // Corregido: Usar el evaluacionId del widget actual
                           ),
                         ),
                       ).then((_) => _cargarAsociados());

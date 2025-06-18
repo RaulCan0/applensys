@@ -28,7 +28,7 @@ class ScatterBubbleChart extends StatelessWidget {
   const ScatterBubbleChart({
     super.key,
     required this.data,
-    this.isDetail = false, required String title,
+    this.isDetail = false, 
   });
 
   static const List<String> principleName = [
@@ -62,89 +62,128 @@ class ScatterBubbleChart extends StatelessWidget {
     const offset = 0.2;
     final dotRadius = isDetail ? 12.0 : 8.0;
 
-    return ScatterChart(
-      ScatterChartData(
-        minX: minX,
-        maxX: maxX,
-        minY: minY,
-        maxY: maxY,
-        gridData: FlGridData(show: true),
-        borderData: FlBorderData(
-          show: true,
-          border: const Border(
-            bottom: BorderSide(color: Colors.black, width: 2),
-            left:   BorderSide(color: Colors.black, width: 2),
-            right:  BorderSide(color: Colors.transparent),
-            top:    BorderSide(color: Colors.transparent),
+    return Column(
+      children: [
+        // Leyenda de colores
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLegendItem(Colors.blue, 'Miembro de equipo'),
+              const SizedBox(width: 16),
+              _buildLegendItem(Colors.green, 'Gerente'),
+              const SizedBox(width: 16),
+              _buildLegendItem(Colors.orange, 'Ejecutivo'),
+            ],
           ),
         ),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 1,
-              reservedSize: 120,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx >= 1 && idx <= principleName.length) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: Text(
-                      principleName[idx - 1],
-                      style: const TextStyle(fontSize: 11),
-                      textAlign: TextAlign.right,
-                      overflow: TextOverflow.ellipsis,
+        Expanded(
+          child: ScatterChart(
+            ScatterChartData(
+              minX: minX,
+              maxX: maxX,
+              minY: minY,
+              maxY: maxY,
+              gridData: FlGridData(show: true),
+              borderData: FlBorderData(
+                show: true,
+                border: const Border(
+                  bottom: BorderSide(color: Colors.black, width: 2),
+                  left:   BorderSide(color: Colors.black, width: 2),
+                  right:  BorderSide(color: Colors.transparent),
+                  top:    BorderSide(color: Colors.transparent),
+                ),
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: 1,
+                    reservedSize: 120,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx >= 1 && idx <= principleName.length) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4.0),
+                          child: Text(
+                            principleName[idx - 1],
+                            style: const TextStyle(fontSize: 11),
+                            textAlign: TextAlign.right,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: 0.5,
+                    getTitlesWidget: (value, meta) => Text(
+                      value.toStringAsFixed(1),
+                      style: const TextStyle(fontSize: 10),
                     ),
-                  );
+                  ),
+                ),
+                topTitles:    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              scatterSpots: data.map((d) {
+                // Desplazamiento horizontal según serie
+                double xPos = d.x;
+                if (d.seriesName == 'Ejecutivo') {
+                  xPos = (d.x - offset).clamp(minX, maxX);
+                } else if (d.seriesName == 'Miembro') {
+                  xPos = (d.x + offset).clamp(minX, maxX);
                 }
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 0.5,
-              getTitlesWidget: (value, meta) => Text(
-                value.toStringAsFixed(1),
-                style: const TextStyle(fontSize: 10),
+                return ScatterSpot(
+                  xPos,
+                  d.y,
+                  dotPainter: FlDotCirclePainter(
+                    radius: d.radius > 0 ? d.radius : dotRadius,
+                    color: d.color,
+                    strokeWidth: 0,
+                  ),
+                );
+              }).toList(),
+              scatterTouchData: ScatterTouchData(
+                enabled: true,
+                handleBuiltInTouches: true,
+                touchTooltipData: ScatterTouchTooltipData(
+                  getTooltipItems: (ScatterSpot touchedSpot) {
+                    return ScatterTooltipItem(
+                      'Valor: ${touchedSpot.x.toStringAsFixed(2)}',
+                      textStyle: const TextStyle(color: Colors.white),
+                    );
+                  },
+                ),
               ),
             ),
           ),
-          topTitles:    AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:  AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        scatterSpots: data.map((d) {
-          // Desplazamiento horizontal según serie
-          double xPos = d.x;
-          if (d.seriesName == 'Ejecutivo') {
-            xPos = (d.x - offset).clamp(minX, maxX);
-          } else if (d.seriesName == 'Miembro') {
-            xPos = (d.x + offset).clamp(minX, maxX);
-          }
-          return ScatterSpot(
-            xPos,
-            d.y,
-            dotPainter: FlDotCirclePainter(
-              radius: d.radius > 0 ? d.radius : dotRadius,
-              color: d.color,
-              strokeWidth: 0,
-            ),
-          );
-        }).toList(),
-        scatterTouchData: ScatterTouchData(
-          enabled: true,
-          handleBuiltInTouches: true,
-          touchTooltipData: ScatterTouchTooltipData(
-            getTooltipItems: (ScatterSpot touchedSpot) {
-              return ScatterTooltipItem(
-                'Valor: ${touchedSpot.x.toStringAsFixed(2)}',
-                textStyle: const TextStyle(color: Colors.white),
-              );
-            },
+      ],
+    );
+  }
+
+  /// Widget auxiliar para la leyenda de colores
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.black12),
           ),
         ),
-      ),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
     );
   }
 }

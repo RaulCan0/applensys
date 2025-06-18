@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:applensys/services/domain/empresa_service.dart';
 import 'package:applensys/models/empresa.dart';
-import 'resultados_historial_screen.dart';
 
 class HistorialScreen extends StatefulWidget {
   const HistorialScreen({super.key, required List<Empresa> empresas, required List empresasHistorial});
@@ -68,15 +67,7 @@ class _HistorialScreenState extends State<HistorialScreen> {
                 final empresa = empresas[index];
                 return GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ResultadosHistorialScreen(
-                          empresaId: empresa.id,
-                          empresaNombre: empresa.nombre, empresa: {},
-                        ),
-                      ),
-                    );
+                  
                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),

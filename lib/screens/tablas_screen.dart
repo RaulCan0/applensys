@@ -77,10 +77,7 @@ class TablasDimensionScreen extends StatefulWidget {
     dataChanged.value = !dataChanged.value;
   }
 
-  static Future<void> limpiarDatos() async {
-    tablaDatos.clear();
-    dataChanged.value = false;
-  }
+  
 
   @override
   State<TablasDimensionScreen> createState() => _TablasDimensionScreenState();

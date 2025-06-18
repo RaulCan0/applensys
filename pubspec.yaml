@@ -53,6 +53,12 @@ dependencies:
   dio: ^5.8.0+1
   permission_handler: ^12.0.0+1
   syncfusion_flutter_xlsio: ^29.2.8
+  syncfusion_flutter_pdf: ^29.2.10
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  screenshot: ^3.0.0
+  docx_template: ^0.4.0
+  open_file_plus: ^3.4.1+1
   
 
 dev_dependencies:
@@ -68,5 +74,6 @@ flutter:
     - assets/t3.json
     - assets/logo.webp
     - assets/logoblanco.webp
-    - assets/correlacion shingo.xlsx
+    - assets/portada.webp
+    - assets/plantilla_prereporte.docx
     - assets/estructura_base.json

@@ -96,14 +96,20 @@ class EvaluacionCacheService {
     final Map<String, List<double>> acumulador = {};
     tabla.forEach((_, submap) {
       submap.values.expand((rows) => rows).forEach((item) {
-        final sistema = item['sistema'] as String? ?? '';
-        final raw = item['valor'];
-        final valor = raw is num
-            ? raw.toDouble()
-            : double.tryParse(raw.toString()) ?? 0.0;
+        // Corregido: Leer la lista de sistemas de la clave 'sistemas' (plural)
+        // y luego iterar sobre cada sistema en esa lista.
+        final List<dynamic> sistemasDelItemRaw = item['sistemas'] as List<dynamic>? ?? [];
+        final List<String> sistemasDelItem = sistemasDelItemRaw.map((s) => s.toString()).toList();
 
-        if (sistema.isNotEmpty) {
-          acumulador.putIfAbsent(sistema, () => []).add(valor);
+        final rawValor = item['valor']; // 'valor' es la clave para la calificación/puntaje
+        final valorNumerico = rawValor is num
+            ? rawValor.toDouble()
+            : double.tryParse(rawValor.toString()) ?? 0.0;
+
+        for (final nombreSistema in sistemasDelItem) {
+          if (nombreSistema.isNotEmpty) {
+            acumulador.putIfAbsent(nombreSistema, () => []).add(valorNumerico);
+          }
         }
       });
     });

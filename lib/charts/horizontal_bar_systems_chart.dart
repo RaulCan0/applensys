@@ -61,7 +61,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
           ),
           child: Text(
             'Sistema: ${systemData.sistema}\n$seriesName: ${value.toStringAsFixed(2)}',
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         );
       }
@@ -79,7 +79,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
             primaryYAxis: NumericAxis(
               minimum: minY,
               maximum: maxY,
-              interval: 0.5, // Ajusta el intervalo si es necesario para promedios (ej. 0.5 o 1)
+              interval: 1, // Ajusta el intervalo si es necesario para promedios (ej. 0.5 o 1)
             ),
             series: <CartesianSeries<_SystemData, String>>[
               BarSeries<_SystemData, String>(

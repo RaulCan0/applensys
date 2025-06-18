@@ -21,6 +21,11 @@ class EmpresasScreen extends StatefulWidget {
   State<EmpresasScreen> createState() => _EmpresasScreenState();
 }
 
+// NOTA SOBRE RealtimeSubscribeException:
+// Si encuentras "RealtimeSubscribeException: Realtime was unable to connect to the project database",
+// verifica la configuración de REPLICACIÓN en tu panel de Supabase (Database > Replication).
+// Las tablas deben estar añadidas a la publicación para que Realtime funcione.
+
 class _EmpresasScreenState extends State<EmpresasScreen> {
   final List<Empresa> empresas = [];
   bool isLoading = true;
@@ -165,18 +170,18 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                             context,
                             label: 'Evaluación de ${empresaCreada.nombre}',
                           // al navegar a DimensionesScreen…
-onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => DimensionesScreen(
-        empresa: empresaCreada,
-        evaluacionId: '', // …
-      ),
-    ),
-  );
-},
-
+                            onTap: () {
+                              final String nuevaEvaluacionId = const Uuid().v4(); // Generar ID único para nueva evaluación
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DimensionesScreen(
+                                    empresa: empresaCreada,
+                                    evaluacionId: nuevaEvaluacionId, // Usar el nuevo ID
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         const SizedBox(height: 20),
                         _buildButton(

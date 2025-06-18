@@ -35,7 +35,7 @@ class GroupedBarChart extends StatelessWidget {
   'Comprender',
   'Diseño',
   'Atribución',
-  'A prueba de error',
+  'A Prueba de Errores',
   'Propiedad',
   'Conectar',
   'Ininterrumpido',
