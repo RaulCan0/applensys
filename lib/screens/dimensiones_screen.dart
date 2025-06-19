@@ -172,9 +172,14 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
                     title: 'Resultados',
                     onTap: () {
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ShingoResultSheet()),
-                      );
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ShingoResultSheet(
+                              title: 'Resultados',
+                              initialData: ShingoResultData(), // Replace with appropriate default or required data
+                            ),
+                          ),
+                        );
                     },
                   );
                 } // index == 4
@@ -188,8 +193,7 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
         context,
         MaterialPageRoute(
           builder: (_) => TablaScoreGlobal(empresa: widget.empresa, detalles: [], evaluaciones: [],),
-        ),  
-
+        ),
       );
     },
   );
@@ -318,3 +322,4 @@ class _DimensionesScreenState extends State<DimensionesScreen> with RouteAware {
     );
   }
 }
+

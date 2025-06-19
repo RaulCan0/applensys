@@ -161,6 +161,16 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  if (correoUsuario == 'sistemas@lensys.com.mx')
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.science),
+                      label: const Text('Modo pruebas: Usar/Cargar empresa'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _mostrarDialogoEmpresaPruebas,
+                    ),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -348,6 +358,46 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _mostrarDialogoEmpresaPruebas() {
+    // Implementa el diálogo para seleccionar o cargar una empresa de pruebas
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Seleccionar empresa de pruebas'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Aquí puedes listar las empresas de pruebas disponibles
+                // Por ejemplo, usando ListTile para cada empresa
+                ListTile(
+                  title: const Text('Empresa Prueba 1'),
+                  onTap: () {
+                    // Lógica para usar la empresa de prueba 1
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  title: const Text('Empresa Prueba 2'),
+                  onTap: () {
+                    // Lógica para usar la empresa de prueba 2
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

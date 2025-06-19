@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-/// Gráfico de dona (PieChart) con título arriba, leyenda intermedia y porcentajes dentro.
+/// Gráfico de pastel (PieChart) con título arriba, leyenda intermedia y porcentajes dentro.
 class DonutChart extends StatelessWidget {
   /// Datos: clave → valor (promedio).
   final Map<String, double> data;
@@ -10,14 +10,14 @@ class DonutChart extends StatelessWidget {
   /// Si es detalle, aumenta tamaños.
   final bool isDetail;
   /// Título que aparece encima de leyenda y gráfico.
-  final String title;
+
 
   const DonutChart({
     super.key,
     required this.data,
     required this.dataMap,
     this.isDetail = false,
-    required this.title,
+
   });
 
   @override
@@ -39,9 +39,8 @@ class DonutChart extends StatelessWidget {
     final keys = data.keys.toList();
 
     // Tamaños ajustables
-    final double chartSize = isDetail ? 250 : 200;
-    final double radius = isDetail ? 80 : 60;
-    final double centerSpace = isDetail ? 50 : 40;
+    final double chartSize = isDetail ? 500 : 400;
+    final double radius = isDetail ? 160 : 120;
 
     // Construcción de secciones con porcentaje interno
     final sections = <PieChartSectionData>[];
@@ -56,9 +55,9 @@ class DonutChart extends StatelessWidget {
           showTitle: true,
           title: '${percent.toStringAsFixed(1)}%',
           titleStyle: TextStyle(
-            fontSize: isDetail ? 16 : 14,
+            fontSize: isDetail ? 18 : 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: const Color.fromARGB(255, 0, 0, 0),
           ),
         ),
       );
@@ -69,20 +68,8 @@ class DonutChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Título centrado
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: isDetail ? 22 : 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        // Leyenda: solo los 3 colores y etiquetas bajo título
         Wrap(
           alignment: WrapAlignment.center,
-          spacing: 16,
           runSpacing: 8,
           children: keys.map((key) {
             final percent = total > 0 ? (data[key]! / total * 100).toStringAsFixed(1) : '0.0';
@@ -101,16 +88,16 @@ class DonutChart extends StatelessWidget {
                 Text(
                   '$key ($percent%)',
                   style: TextStyle(
-                    fontSize: isDetail ? 14 : 12,
-                    color: Colors.white,
+                    fontSize: isDetail ? 18 : 16,
+                    color: const Color.fromARGB(255, 5, 4, 4),
                   ),
                 ),
               ],
             );
           }).toList(),
         ),
-        const SizedBox(height: 12),
-        // Gráfico centrado y más grande
+        const SizedBox(height:20),
+        // Gráfico de pastel centrado
         Center(
           child: SizedBox(
             width: chartSize,
@@ -118,7 +105,7 @@ class DonutChart extends StatelessWidget {
             child: PieChart(
               PieChartData(
                 sections: sections,
-                centerSpaceRadius: centerSpace,
+                centerSpaceRadius: 0, // <--- Pastel sólido, no dona
                 sectionsSpace: 4,
               ),
             ),

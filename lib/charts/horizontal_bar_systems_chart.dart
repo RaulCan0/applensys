@@ -3,7 +3,6 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 
 class HorizontalBarSystemsChart extends StatelessWidget {
   final Map<String, Map<String, double>> data;
-  final String title;
   final double minY;
   final double maxY;
   final List<String> sistemasOrdenados;
@@ -11,7 +10,6 @@ class HorizontalBarSystemsChart extends StatelessWidget {
   const HorizontalBarSystemsChart({
     super.key,
     required this.data,
-    required this.title,
     required this.minY,
     required this.maxY,
     required this.sistemasOrdenados,
@@ -33,79 +31,46 @@ class HorizontalBarSystemsChart extends StatelessWidget {
       return const Center(child: Text('No hay datos'));
     }
 
-    // Configuración del Tooltip
-    final TooltipBehavior tooltipBehavior = TooltipBehavior(
-      enable: true,
-       // Se activa al tocar
-      // El builder permite personalizar el contenido del tooltip
-      builder: (dynamic data, dynamic point, dynamic series, int pointIndex, int seriesIndex) {
-        final _SystemData systemData = data as _SystemData;
-        final String seriesName = series.name ?? 'Nivel'; // Nombre de la serie (Ejecutivo, Gerente, Miembro)
-        double value = 0.0;
-
-        // Determinar el valor basado en la serie que se tocó
-        if (seriesName == 'Ejecutivo') {
-          value = systemData.e;
-        } else if (seriesName == 'Gerente') {
-          value = systemData.g;
-        } else if (seriesName == 'Miembro') {
-          value = systemData.m;
-        }
-        
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            'Sistema: ${systemData.sistema}\n$seriesName: ${value.toStringAsFixed(2)}',
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        );
-      }
-    );
-
     return ScrollConfiguration(
       behavior: const ScrollBehavior().copyWith(scrollbars: true),
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: SizedBox(
-          height: chartData.length * 40.0, 
+          height: 600, // Usa una altura fija adecuada para tu gráfico
           child: SfCartesianChart(
-            primaryXAxis: CategoryAxis(
-            ),
+            primaryXAxis: CategoryAxis(),
             primaryYAxis: NumericAxis(
               minimum: minY,
               maximum: maxY,
-              interval: 1, // Ajusta el intervalo si es necesario para promedios (ej. 0.5 o 1)
+              interval: 1,
             ),
             series: <CartesianSeries<_SystemData, String>>[
               BarSeries<_SystemData, String>(
                 name: 'Ejecutivo',
-                color: Colors.orange, // Ejecutivo → naranja
+                color: Colors.orange,
                 dataSource: chartData,
                 xValueMapper: (d, _) => d.sistema,
                 yValueMapper: (d, _) => d.e,
+                width: 1, // <--- Haz la barra más gruesa (ajusta entre 0.7 y 1.0 según tu gusto)
               ),
               BarSeries<_SystemData, String>(
                 name: 'Gerente',
-                color: Colors.green, // Gerente → verde
+                color: Colors.green,
                 dataSource: chartData,
                 xValueMapper: (d, _) => d.sistema,
-                yValueMapper: (d, _) => d.g, // Corregido: debería ser d.g para Gerente
+                yValueMapper: (d, _) => d.g,
+                width: 1, // <--- Igual aquí
               ),
               BarSeries<_SystemData, String>(
                 name: 'Miembro',
-                color: Colors.blue, // Miembro → azul
+                color: Colors.blue,
                 dataSource: chartData,
                 xValueMapper: (d, _) => d.sistema,
                 yValueMapper: (d, _) => d.m,
+                width: 1, // <--- Igual aquí
               ),
             ],
             legend: Legend(isVisible: true),
-            tooltipBehavior: tooltipBehavior, // <-- Añadir esta línea
           ),
         ),
       ),

@@ -60,24 +60,10 @@ class ScatterBubbleChart extends StatelessWidget {
     const minY = 1.0;
     const maxY = 10.0;
     const offset = 0.2;
-    final dotRadius = isDetail ? 12.0 : 8.0;
+    final dotRadius = isDetail ? 30.0 : 20.0;
 
     return Column(
       children: [
-        // Leyenda de colores
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem(Colors.blue, 'Miembro de equipo'),
-              const SizedBox(width: 16),
-              _buildLegendItem(Colors.green, 'Gerente'),
-              const SizedBox(width: 16),
-              _buildLegendItem(Colors.orange, 'Ejecutivo'),
-            ],
-          ),
-        ),
         Expanded(
           child: ScatterChart(
             ScatterChartData(
@@ -100,7 +86,7 @@ class ScatterBubbleChart extends StatelessWidget {
                   sideTitles: SideTitles(
                     showTitles: true,
                     interval: 1,
-                    reservedSize: 120,
+                    reservedSize: 160,
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
                       if (idx >= 1 && idx <= principleName.length) {
@@ -108,7 +94,7 @@ class ScatterBubbleChart extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 4.0),
                           child: Text(
                             principleName[idx - 1],
-                            style: const TextStyle(fontSize: 11),
+                            style: const TextStyle(fontSize: 13, color: Colors.black),
                             textAlign: TextAlign.right,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -124,7 +110,7 @@ class ScatterBubbleChart extends StatelessWidget {
                     interval: 0.5,
                     getTitlesWidget: (value, meta) => Text(
                       value.toStringAsFixed(1),
-                      style: const TextStyle(fontSize: 10),
+                      style: const TextStyle(fontSize: 10, color: Colors.black, height: 1.5),
                     ),
                   ),
                 ),
@@ -168,22 +154,4 @@ class ScatterBubbleChart extends StatelessWidget {
     );
   }
 
-  /// Widget auxiliar para la leyenda de colores
-  Widget _buildLegendItem(Color color, String label) {
-    return Row(
-      children: [
-        Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.black12),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
-    );
-  }
 }

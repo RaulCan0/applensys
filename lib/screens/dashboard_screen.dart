@@ -1,6 +1,8 @@
 // ignore_for_file: use_build_context_synchronously, curly_braces_in_flow_control_structures
 
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:applensys/services/domain/reporte_word_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/widgets/chat_screen.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
@@ -50,28 +52,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // DEBES ACTUALIZAR ESTA LISTA CON TUS SISTEMAS REALES Y EN EL ORDEN DESEADO
  
  final List<String> _sistemasOrdenados = [
-  'Medición',
-  'Involucramiento',
-  'Reconocimiento',
-  'Desarrollo de Personas',
-  'Seguridad',
   'Ambiental',
-  'EHS',
   'Compromiso',
+  'Comunicación',
+  'Despliegue de Estrategia',
+  'Desarrollo de Personas',
+  'EHS',
+  'Gestión Visual',
+  'Involucramiento',
+  'Medición',
+  'Planificación y Programación',
+  'Recompensas',
+  'Reconocimiento',
+  'Seguridad',
   'Sistemas de Mejora',
   'Solución de Problemas',
-  'Gestión Visual',
-  'Comunicación',
-  'Desarrollo de Personas',
-  'Despliegue de Estrategia',
-  'Gestión Visual',
-  'Medición',
-  'Mejora y Alineamiento Estratégico',
-  'Mejora y Gestión Visual',
-  'Planificación',
-  'Programación y de Mejora',
-  'Voz de Cliente',
-  'Visitas al Gemba',
+  'Voz del Cliente',
 ];
 
   @override
@@ -104,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               }
             }
           }
-        }
+       
         _dimensionesRaw = flattened;
       }
       // Si rawTables ya era List<Map<String, dynamic>>
@@ -389,68 +385,71 @@ List<ScatterData> _buildScatterData() {
   }
 
   Map<String, Map<String, double>> _buildHorizontalBarsData() {
-    // Inicializar conteos
-    final Map<String, Map<String, int>> conteosPorSistemaNivel = {};
-    final Map<String, int> totalPorNivel = {'E': 0, 'G': 0, 'M': 0};
+  // Inicializa estructura para sumar valores y contar respuestas por sistema y nivel
+  final Map<String, Map<String, double>> sumaPorSistemaNivel = {};
+  final Map<String, Map<String, int>> conteoPorSistemaNivel = {};
 
-    for (final sistemaNombre in _sistemasOrdenados) {
-      conteosPorSistemaNivel[sistemaNombre] = {'E': 0, 'G': 0, 'M': 0};
+  for (final sistema in _sistemasOrdenados) {
+    sumaPorSistemaNivel[sistema] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+    conteoPorSistemaNivel[sistema] = {'E': 0, 'G': 0, 'M': 0};
+  }
+
+  for (final row in _dimensionesRaw) {
+    String? nivelKey;
+    if (row.containsKey('cargo_raw') && row['cargo_raw'] != null) {
+      final cargoRaw = row['cargo_raw'].toString().toLowerCase().trim();
+      if (cargoRaw.contains('ejecutivo')) nivelKey = 'E';
+      else if (cargoRaw.contains('gerente')) nivelKey = 'G';
+      else if (cargoRaw.contains('miembro')) nivelKey = 'M';
+    } else if (row.containsKey('nivel') && row['nivel'] != null) {
+      final nivel = row['nivel'].toString().toUpperCase();
+      if (['E', 'G', 'M'].contains(nivel)) nivelKey = nivel;
+    }
+    if (nivelKey == null) continue;
+
+    // Manejo robusto de sistemas: puede ser null, String o List
+    final sistemasRaw = row['sistemas'];
+    List<String> listaSistemasEnFila = [];
+    if (sistemasRaw is String && sistemasRaw.trim().isNotEmpty) {
+      listaSistemasEnFila = [sistemasRaw.trim()];
+    } else if (sistemasRaw is List) {
+      listaSistemasEnFila = sistemasRaw
+          .where((s) => s != null && s.toString().trim().isNotEmpty)
+          .map((s) => s.toString().trim())
+          .toList();
     }
 
-    for (final row in _dimensionesRaw) {
-      String? nivelKey;
-      if (row.containsKey('cargo_raw') && row['cargo_raw'] != null) {
-        final cargoRaw = row['cargo_raw'].toString().toLowerCase().trim();
-        if (cargoRaw.contains('ejecutivo')) nivelKey = 'E';
-        else if (cargoRaw.contains('gerente')) nivelKey = 'G';
-        else if (cargoRaw.contains('miembro')) nivelKey = 'M';
-      } else if (row.containsKey('nivel') && row['nivel'] != null) {
-        final nivel = row['nivel'].toString().toUpperCase();
-        if (['E', 'G', 'M'].contains(nivel)) nivelKey = nivel;
-      }
-      if (nivelKey == null) continue;
+    final valor = (row['valor'] as num?)?.toDouble() ?? 0.0;
 
-      totalPorNivel[nivelKey] = (totalPorNivel[nivelKey] ?? 0) + 1;
-
-      // Manejo robusto de sistemas: puede ser null, String o List
-      final sistemasRaw = row['sistemas'];
-      List<String> listaSistemasEnFila = [];
-      if (sistemasRaw is String && sistemasRaw.trim().isNotEmpty) {
-        listaSistemasEnFila = [sistemasRaw.trim()];
-      } else if (sistemasRaw is List) {
-        listaSistemasEnFila = sistemasRaw
-            .where((s) => s != null && s.toString().trim().isNotEmpty)
-            .map((s) => s.toString().trim())
-            .toList();
-      }
-
-      for (final sistemaNombre in listaSistemasEnFila) {
-        final sistemaNormalizado = sistemaNombre.toLowerCase();
-        final sistemaKey = _sistemasOrdenados.firstWhere(
-          (s) => s.toLowerCase() == sistemaNormalizado,
-          orElse: () => '',
-        );
-        if (sistemaKey.isNotEmpty) {
-          conteosPorSistemaNivel[sistemaKey]![nivelKey] =
-              (conteosPorSistemaNivel[sistemaKey]![nivelKey] ?? 0) + 1;
-        }
+    for (final sistemaNombre in listaSistemasEnFila) {
+      final sistemaNormalizado = sistemaNombre.toLowerCase();
+      final sistemaKey = _sistemasOrdenados.firstWhere(
+        (s) => s.toLowerCase() == sistemaNormalizado,
+        orElse: () => '',
+      );
+      if (sistemaKey.isNotEmpty) {
+        sumaPorSistemaNivel[sistemaKey]![nivelKey] =
+            (sumaPorSistemaNivel[sistemaKey]![nivelKey] ?? 0.0) + valor;
+        conteoPorSistemaNivel[sistemaKey]![nivelKey] =
+            (conteoPorSistemaNivel[sistemaKey]![nivelKey] ?? 0) + 1;
       }
     }
+  }
 
-    // Calcular proporción de uso
-    final Map<String, Map<String, double>> proporcionData = {};
-    for (final sistemaNombre in _sistemasOrdenados) {
-      proporcionData[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
-      for (final nivelKey in ['E', 'G', 'M']) {
-        final total = totalPorNivel[nivelKey] ?? 1; // evitar división por cero
-        final conteo = conteosPorSistemaNivel[sistemaNombre]![nivelKey] ?? 0;
-        proporcionData[sistemaNombre]![nivelKey] = total > 0 ? conteo / total : 0.0;
-      }
+  // Calcula promedios
+  final Map<String, Map<String, double>> promedioData = {};
+  for (final sistema in _sistemasOrdenados) {
+    promedioData[sistema] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+    for (final nivelKey in ['E', 'G', 'M']) {
+      final suma = sumaPorSistemaNivel[sistema]![nivelKey] ?? 0.0;
+      final conteo = conteoPorSistemaNivel[sistema]![nivelKey] ?? 0;
+      promedioData[sistema]![nivelKey] = conteo > 0 ? (suma / conteo) : 0.0;
     }
-    return proporcionData;
+  }
+  return promedioData;
 }
 
-// Añade esta función auxiliar en la misma clase
+// Añde esta función auxiliar en la misma clase
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -469,10 +468,7 @@ List<ScatterData> _buildScatterData() {
       key: _scaffoldKey,
 
       // Drawer izquierdo para chat (80% del ancho)
-      drawer: SizedBox(
-        width: screenSize.width * 0.8,
-        child: const ChatWidgetDrawer(),
-      ),
+      drawer: const ChatWidgetDrawer(),
 
       // EndDrawer derecho normal (sin envolver en SizedBox)
       endDrawer: const DrawerLensys(),
@@ -508,18 +504,17 @@ List<ScatterData> _buildScatterData() {
                    _buildChartContainer(
                       child: DonutChart(
                         data: _buildDonutData(),
-                        title: 'Promedio por Dimensión',
                         dataMap: {
                           'IMPULSORES CULTURALES': Colors.redAccent,
                           'MEJORA CONTINUA': Colors.yellow,
                           'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
                         },
                         isDetail: false,
-                      ), color: const Color.fromARGB(255, 204, 214, 214), title: 'Promedio por Dimensión',
+                      ), color: const Color.fromARGB(255, 171, 172, 173), title: 'Promedio por Dimensión',
                     ),
               
                   _buildChartContainer(
-                    color: const Color.fromARGB(255, 223, 236, 240),
+                    color: const Color.fromARGB(255, 160, 163, 163),
                     child: ScatterBubbleChart(
                       data: _buildScatterData(),
                       isDetail: false, 
@@ -529,14 +524,13 @@ List<ScatterData> _buildScatterData() {
 
                   _buildChartContainer(
                     color: const Color.fromARGB(255, 231, 220, 187),
-                    title: 'Distribución por Comportamiento y Nivel',
+                     title: 'Distribución por Comportamiento y Nivel',
                     child: GroupedBarChart(
                       data: _buildGroupedBarData(),
-                      title: 'Distribución por Comportamiento y Nivel',
                       minY: 0,
                       maxY: 5,
                       isDetail: false,
-                    ),
+                    ), 
                   ),
 
                
@@ -545,7 +539,6 @@ List<ScatterData> _buildScatterData() {
                     title: 'Promedios por Sistema y Nivel', // Título actualizado
                     child: HorizontalBarSystemsChart(
                       data: horizontalData, 
-                      title: 'Promedios por Sistema y Nivel', // Título actualizado
                       minY: 0, 
                       maxY: 5, // Adecuado para promedios en escala 0-5
                       sistemasOrdenados: _sistemasOrdenados, 
@@ -569,8 +562,11 @@ List<ScatterData> _buildScatterData() {
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   tooltip: 'Chat Interno',
                 ),
-
-                // El IconButton para generar reportes ha sido eliminado.
+                IconButton(
+  icon: const Icon(Icons.description, color: Colors.white),
+  onPressed: _generarReporteWord, // <-- Llama a tu función
+  tooltip: 'Generar Reporte Word',
+), // El IconButton para generar reportes ha sido eliminado.
               ],
             ),
           ),
@@ -617,7 +613,7 @@ List<ScatterData> _buildScatterData() {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: SizedBox(
-              height: 450,
+              height: 500,
               child: child,
             ),
           ),
@@ -625,4 +621,39 @@ List<ScatterData> _buildScatterData() {
       ),
     );
   }
+
+  Future<void> _generarReporteWord() async {
+  setState(() => _isLoading = true);
+
+  try {
+    // Simula la portada y los gráficos como imágenes (debes capturar tus widgets reales)
+    final Uint8List portadaBytes = Uint8List(0); // Aquí pon la imagen real de portada
+    final List<Uint8List> graficosDashboard = []; // Aquí pon las imágenes de tus gráficos
+
+    // Ejemplo de datos de comportamientos (ajusta según tu modelo real)
+    final List<Map<String, dynamic>> datosComportamientos = [];
+
+    // Llama a tu servicio
+    final file = await ReporteWordUtils.generarWord(
+      empresa: widget.empresa.nombre,
+      ubicacion: 'Ubicación X',
+      portadaBytes: portadaBytes,
+      graficosDashboard: List<Uint8List>.from(graficosDashboard), // <-- mutable
+      datosComportamientos: List<Map<String, dynamic>>.from(datosComportamientos), // <-- mutable
+    );
+
+    // Abre el archivo (usa open_file o similar)
+    // await OpenFile.open(file.path);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Reporte generado: ${file.path}')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al generar reporte: $e')),
+    );
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}
 }

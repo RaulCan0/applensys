@@ -4,7 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 class GroupedBarChart extends StatelessWidget {
   final Map<String, List<double>> data;
-  final String title;
+
   final double minY;
   final double maxY;
   final bool isDetail;
@@ -12,7 +12,7 @@ class GroupedBarChart extends StatelessWidget {
   const GroupedBarChart({
     super.key,
     required this.data,
-    required this.title,
+ 
     required this.minY,
     required this.maxY,
     this.isDetail = false,
@@ -54,16 +54,7 @@ class GroupedBarChart extends StatelessWidget {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+        const SizedBox(height: 8),
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -120,7 +111,7 @@ class GroupedBarChart extends StatelessWidget {
                                 meta: meta,
                                 space: 6,
                                 child: SizedBox(
-                                  width: 70,
+                                  width: 60,
                                   child: Text(
                                     labels[index],
                                     style: const TextStyle(fontSize: 12),
@@ -136,7 +127,7 @@ class GroupedBarChart extends StatelessWidget {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            interval: 1,
+                            interval: 0.5,
                             reservedSize: 28,
                             getTitlesWidget: (value, meta) {
                               if (value % 1 == 0 && value >= minY && value <= maxY) {
