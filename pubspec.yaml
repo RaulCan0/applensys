@@ -54,8 +54,8 @@ dependencies:
   permission_handler: ^12.0.0+1
   syncfusion_flutter_xlsio: ^29.2.8
   syncfusion_flutter_pdf: ^29.2.10
-  pdf: ^3.11.3
-  printing: ^5.14.2
+  pdf: ^3.10.8
+  printing: ^5.12.0
   screenshot: ^3.0.0
   docx_template: ^0.4.0
   open_file_plus: ^3.4.1+1
@@ -75,5 +75,5 @@ flutter:
     - assets/logo.webp
     - assets/logoblanco.webp
     - assets/portada.webp
-    - assets/plantilla_prereporte.docx
     - assets/estructura_base.json
+    - assets/report.json

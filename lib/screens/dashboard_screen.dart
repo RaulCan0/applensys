@@ -1,8 +1,10 @@
 // ignore_for_file: use_build_context_synchronously, curly_braces_in_flow_control_structures
 
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:applensys/services/helpers/reporte_utils_final.dart';
+import 'package:applensys/services/pdf_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/widgets/chat_screen.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
@@ -18,6 +20,7 @@ import 'package:applensys/charts/grouped_bar_chart.dart';
 import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
 // import 'package:open_file/open_file.dart'; // Comentado o eliminado si no se usa en otro lugar
 import 'package:applensys/custom/table_names.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // import 'package:applensys/models/level_averages.dart'; // Comentado o eliminado
@@ -449,71 +452,6 @@ List<ScatterData> _buildScatterData() {
   return promedioData;
 }
 
-  Future<void> _generarReporteWord() async {
-  setState(() => _isLoading = true);
-
-  try {
-    // Prepara los datos de comportamientos en el formato que espera ReporteUtils
-    final List<Map<String, dynamic>> datosComportamientos = [];
-    for (final dim in _dimensiones) {
-      for (final pri in dim.principios) {
-        for (final comp in pri.comportamientos) {
-          // Por cada nivel, agrega una fila
-          datosComportamientos.add({
-            'dimension': dim.id,
-            'principio': pri.nombre,
-            'comportamiento': comp.nombre,
-            'cargo': 'Ejecutivos',
-            'calificacion': comp.promedioEjecutivo,
-            'sistemas_asociados': [],
-            'observacion': '',
-          });
-          datosComportamientos.add({
-            'dimension': dim.id,
-            'principio': pri.nombre,
-            'comportamiento': comp.nombre,
-            'cargo': 'Gerentes',
-            'calificacion': comp.promedioGerente,
-            'sistemas_asociados': [],
-            'observacion': '',
-          });
-          datosComportamientos.add({
-            'dimension': dim.id,
-            'principio': pri.nombre,
-            'comportamiento': comp.nombre,
-            'cargo': 'Miembro',
-            'calificacion': comp.promedioMiembro,
-            'sistemas_asociados': [],
-            'observacion': '',
-          });
-        }
-      }
-    }
-
-    // Prepara los benchmarks (t1, t2, t3) desde tus datos crudos
-    final t1 = _dimensionesRaw.where((row) => row['dimension_id'] == '1').toList();
-    final t2 = _dimensionesRaw.where((row) => row['dimension_id'] == '2').toList();
-    final t3 = _dimensionesRaw.where((row) => row['dimension_id'] == '3').toList();
-
-    // Genera el reporte Word (HTML)
-    final filePath = await ReporteUtils.exportReporteWordUnificado(
-      datosComportamientos,
-      t1,
-      t2,
-      t3,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Reporte generado: $filePath')),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al generar reporte: $e')),
-    );
-  } finally {
-    setState(() => _isLoading = false);
-  }
-}
 // Añde esta función auxiliar en la misma clase
   @override
   Widget build(BuildContext context) {
@@ -628,9 +566,9 @@ List<ScatterData> _buildScatterData() {
                   tooltip: 'Chat Interno',
                 ),
                 IconButton(
-  icon: const Icon(Icons.description, color: Colors.white),
-  onPressed: _generarReporteWord, // <-- Llama a tu función
-  tooltip: 'Generar Reporte Word',
+  icon: const Icon(Icons.picture_as_pdf),
+  onPressed: _exportarReportePDF,
+  tooltip: 'Exportar PDF',
 ), // El IconButton para generar reportes ha sido eliminado.
               ],
             ),
@@ -687,4 +625,33 @@ List<ScatterData> _buildScatterData() {
     );
   }
 
-}
+
+  Future<void> _exportarReportePDF() async {
+  setState(() => _isLoading = true);
+  try {
+    final grouped = _buildGroupedBarData();
+    final pdfBytes = await PdfReportGenerator.promptAndGenerate(
+      context,
+      _dimensionesRaw,
+      grouped,
+    );
+    if (pdfBytes != null) {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/reporte_operacional.pdf');
+      await file.writeAsBytes(pdfBytes, flush: true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF generado en: ${file.path}')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reporte cancelado o datos incompletos')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al generar PDF: $e')),
+    );
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}}
