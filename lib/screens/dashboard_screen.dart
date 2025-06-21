@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:applensys/services/domain/reporte_word_utils.dart';
+import 'package:applensys/services/helpers/reporte_utils_final.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/widgets/chat_screen.dart';
 import 'package:applensys/widgets/drawer_lensys.dart';
@@ -100,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               }
             }
           }
-       
+        }
         _dimensionesRaw = flattened;
       }
       // Si rawTables ya era List<Map<String, dynamic>>
@@ -449,6 +449,71 @@ List<ScatterData> _buildScatterData() {
   return promedioData;
 }
 
+  Future<void> _generarReporteWord() async {
+  setState(() => _isLoading = true);
+
+  try {
+    // Prepara los datos de comportamientos en el formato que espera ReporteUtils
+    final List<Map<String, dynamic>> datosComportamientos = [];
+    for (final dim in _dimensiones) {
+      for (final pri in dim.principios) {
+        for (final comp in pri.comportamientos) {
+          // Por cada nivel, agrega una fila
+          datosComportamientos.add({
+            'dimension': dim.id,
+            'principio': pri.nombre,
+            'comportamiento': comp.nombre,
+            'cargo': 'Ejecutivos',
+            'calificacion': comp.promedioEjecutivo,
+            'sistemas_asociados': [],
+            'observacion': '',
+          });
+          datosComportamientos.add({
+            'dimension': dim.id,
+            'principio': pri.nombre,
+            'comportamiento': comp.nombre,
+            'cargo': 'Gerentes',
+            'calificacion': comp.promedioGerente,
+            'sistemas_asociados': [],
+            'observacion': '',
+          });
+          datosComportamientos.add({
+            'dimension': dim.id,
+            'principio': pri.nombre,
+            'comportamiento': comp.nombre,
+            'cargo': 'Miembro',
+            'calificacion': comp.promedioMiembro,
+            'sistemas_asociados': [],
+            'observacion': '',
+          });
+        }
+      }
+    }
+
+    // Prepara los benchmarks (t1, t2, t3) desde tus datos crudos
+    final t1 = _dimensionesRaw.where((row) => row['dimension_id'] == '1').toList();
+    final t2 = _dimensionesRaw.where((row) => row['dimension_id'] == '2').toList();
+    final t3 = _dimensionesRaw.where((row) => row['dimension_id'] == '3').toList();
+
+    // Genera el reporte Word (HTML)
+    final filePath = await ReporteUtils.exportReporteWordUnificado(
+      datosComportamientos,
+      t1,
+      t2,
+      t3,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Reporte generado: $filePath')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al generar reporte: $e')),
+    );
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}
 // Añde esta función auxiliar en la misma clase
   @override
   Widget build(BuildContext context) {
@@ -622,38 +687,4 @@ List<ScatterData> _buildScatterData() {
     );
   }
 
-  Future<void> _generarReporteWord() async {
-  setState(() => _isLoading = true);
-
-  try {
-    // Simula la portada y los gráficos como imágenes (debes capturar tus widgets reales)
-    final Uint8List portadaBytes = Uint8List(0); // Aquí pon la imagen real de portada
-    final List<Uint8List> graficosDashboard = []; // Aquí pon las imágenes de tus gráficos
-
-    // Ejemplo de datos de comportamientos (ajusta según tu modelo real)
-    final List<Map<String, dynamic>> datosComportamientos = [];
-
-    // Llama a tu servicio
-    final file = await ReporteWordUtils.generarWord(
-      empresa: widget.empresa.nombre,
-      ubicacion: 'Ubicación X',
-      portadaBytes: portadaBytes,
-      graficosDashboard: List<Uint8List>.from(graficosDashboard), // <-- mutable
-      datosComportamientos: List<Map<String, dynamic>>.from(datosComportamientos), // <-- mutable
-    );
-
-    // Abre el archivo (usa open_file o similar)
-    // await OpenFile.open(file.path);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Reporte generado: ${file.path}')),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al generar reporte: $e')),
-    );
-  } finally {
-    setState(() => _isLoading = false);
-  }
-}
 }

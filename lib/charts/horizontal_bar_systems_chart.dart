@@ -10,6 +10,7 @@ class HorizontalBarSystemsChart extends StatelessWidget {
   const HorizontalBarSystemsChart({
     super.key,
     required this.data,
+    
     required this.minY,
     required this.maxY,
     required this.sistemasOrdenados,

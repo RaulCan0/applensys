@@ -253,7 +253,8 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
             height: 16,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(6),
+              // Quitar el borderRadius
+              // borderRadius: BorderRadius.circular(6),
             ),
           ),
           Container(
@@ -261,7 +262,8 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
             height: 16,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(6),
+              // Quitar el borderRadius
+              // borderRadius: BorderRadius.circular(6),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -282,6 +284,7 @@ class _DetallesEvaluacionScreenState extends State<DetallesEvaluacionScreen>
           toY: y,
           width: 40,
           color: color,
+          borderRadius: BorderRadius.all(Radius.circular(2)), // <-- Sin radio en las barras del gráfico
         ),
       ],
     );
