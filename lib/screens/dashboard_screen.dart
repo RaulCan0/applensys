@@ -63,7 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   'Solución de Problemas',
   'Gestión Visual',
   'Comunicación',
-  'Desarrollo de personal',
+  'Desarrollo de personas',
   'Despliegue de estrategia',
   'Gestion visual',
   'Medicion',

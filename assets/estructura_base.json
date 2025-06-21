@@ -52,7 +52,7 @@
         {
           "nombre": "Asegurar la Calidad en la Fuente",
           "comportamientos": [
-            "A prueba de error",
+            "A Prueba de Errores",
             "Propiedad",
             "Conectar"
           ]

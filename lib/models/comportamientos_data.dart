@@ -15,7 +15,7 @@ final List<String> comportamientosClaves = [
   'Comprender',
   'Diseño',
   'Atribución',
-  'A prueba de error',
+  'A Prueba de Errores',
   'Propiedad',
   'Conectar',
   'Ininterrumpido',

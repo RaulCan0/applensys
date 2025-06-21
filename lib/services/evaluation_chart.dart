@@ -25,7 +25,7 @@ const List<String> comportamientosFijos = [
   'Comprender',
   'Diseño',
   'Atribución',
-  'A prueba de error',
+  'A Prueba de Errores',
   'Propiedad',
   'Conectar',
   'Ininterrumpido',

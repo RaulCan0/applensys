@@ -32,7 +32,7 @@ const Map<String, String> sistemasRecomendadosPorComportamiento = {
   "Comprender": "Solución de Problemas, Gestión Visual",
   "Diseño": "Sistemas de Mejora, Gestión Visual",
   "Atribución": "Sistemas de Mejora, Solución de Problemas",
-  "A prueba de error": "Sistemas de Mejora, Solución de Problemas",
+  "A Prueba de Errores": "Sistemas de Mejora, Solución de Problemas",
   "Propiedad": "Sistemas de Mejora, Solución de Problemas",
   "Conectar": "Sistemas de Mejora",
   "Ininterrumpido": "Planificación y Programación, Sistemas de Mejora",
