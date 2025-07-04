@@ -131,7 +131,6 @@ class DrawerLensys extends ConsumerWidget {
                   MaterialPageRoute(
                     builder: (_) => DetallesEvaluacionScreen(
                       dimensionesPromedios: const {},
-                      promedios: const {},
                       empresa: Empresa(
                         id: '',
                         nombre: '',

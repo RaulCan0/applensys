@@ -1,12 +1,10 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:applensys/providers/theme_provider.dart';
 import 'package:applensys/services/domain/supabase_service.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:applensys/services/helpers/notification_service.dart';
-
 
 class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
@@ -55,7 +53,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
         _fotoUrl = data['foto_url'];
       }
     } catch (e) {
-      _showError('Error al cargar perfil: $e');
+      _showError('Error al cargar perfil: \$e');
     } finally {
       setState(() => _loading = false);
     }
@@ -77,18 +75,18 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
           setState(() => _loading = false);
           return;
         }
-        await _supabaseService.actualizarContrasena(newPassword: _newPasswordController.text.trim());
+        await _supabaseService.actualizarContrasena(
+          newPassword: _newPasswordController.text.trim(),
+        );
         _newPasswordController.clear();
         _confirmPasswordController.clear();
-        _showMessage('Perfil y contraseña actualizados correctamente.');
-      } else {
-        _showMessage('Perfil actualizado correctamente.');
       }
 
+      _showMessage('Perfil actualizado correctamente.');
       if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
-      _showError('Error al actualizar: $e');
+      _showError('Error al actualizar: \$e');
     } finally {
       setState(() => _loading = false);
     }
@@ -110,15 +108,15 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
       path = file.path;
     }
     try {
-      final fileInBucket = await _supabaseService.subirFotoPerfil(path);
+      final uploaded = await _supabaseService.subirFotoPerfil(path);
       final url = _supabaseService.getPublicUrl(
         bucket: 'profile_photos',
-        path: fileInBucket,
+        path: uploaded,
       );
       setState(() => _fotoUrl = url);
       _showMessage('Foto actualizada');
     } catch (e) {
-      _showError('Error al subir foto: $e');
+      _showError('Error al subir foto: \$e');
     }
   }
 
@@ -142,10 +140,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Perfil',
-          style: TextStyle(fontSize: 16),
-        ),
+        title: const Text('Perfil'),
         centerTitle: true,
       ),
       body: _loading
@@ -164,8 +159,12 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                       children: [
                         CircleAvatar(
                           radius: 60,
-                          backgroundImage: _fotoUrl != null ? NetworkImage(_fotoUrl!) : null,
-                          child: _fotoUrl == null ? const Icon(Icons.person, size: 60) : null,
+                          backgroundImage: _fotoUrl != null
+                              ? NetworkImage(_fotoUrl!)
+                              : null,
+                          child: _fotoUrl == null
+                              ? const Icon(Icons.person, size: 60)
+                              : null,
                         ),
                         GestureDetector(
                           onTap: _seleccionarFoto,
@@ -199,15 +198,19 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     keyboardType: TextInputType.phone,
                   ),
                   SizedBox(height: screenSize.height * 0.03),
-                  const Text('Cambiar Contraseña (opcional)', style: TextStyle(fontSize: 16)),
+                  const Text('Cambiar Contraseña (opcional)',
+                      style: TextStyle(fontSize: 16)),
                   SizedBox(height: screenSize.height * 0.02),
                   TextField(
                     controller: _newPasswordController,
                     decoration: InputDecoration(
                       labelText: 'Nueva Contraseña',
                       suffixIcon: IconButton(
-                        icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                        icon: Icon(_obscureNewPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () => setState(
+                            () => _obscureNewPassword = !_obscureNewPassword),
                       ),
                     ),
                     obscureText: _obscureNewPassword,
@@ -218,8 +221,11 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     decoration: InputDecoration(
                       labelText: 'Confirmar Contraseña',
                       suffixIcon: IconButton(
-                        icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                        icon: Icon(_obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () => setState(
+                            () => _obscureConfirmPassword = !_obscureConfirmPassword),
                       ),
                     ),
                     obscureText: _obscureConfirmPassword,
@@ -229,14 +235,22 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                   SizedBox(height: screenSize.height * 0.02),
                   SegmentedButton<ThemeMode>(
                     segments: const [
-                      ButtonSegment(value: ThemeMode.system, label: Text('Auto'), icon: Icon(Icons.settings)),
-                      ButtonSegment(value: ThemeMode.light, label: Text('Claro'), icon: Icon(Icons.light_mode)),
-                      ButtonSegment(value: ThemeMode.dark, label: Text('Oscuro'), icon: Icon(Icons.dark_mode)),
+                      ButtonSegment(
+                          value: ThemeMode.system,
+                          label: Text('Auto'),
+                          icon: Icon(Icons.settings)),
+                      ButtonSegment(
+                          value: ThemeMode.light,
+                          label: Text('Claro'),
+                          icon: Icon(Icons.light_mode)),
+                      ButtonSegment(
+                          value: ThemeMode.dark,
+                          label: Text('Oscuro'),
+                          icon: Icon(Icons.dark_mode)),
                     ],
                     selected: {current},
                     onSelectionChanged: (modes) {
-                      final selected = modes.first;
-                      themeNotifier.setTheme(selected);
+                      themeNotifier.setTheme(modes.first);
                     },
                   ),
                   SizedBox(height: screenSize.height * 0.03),
@@ -245,32 +259,11 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF003056),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Actualizar Perfil', style: TextStyle(fontSize: 16, color: Colors.white)),
-                  ),
-                  SizedBox(height: screenSize.height * 0.02),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.notifications),
-                    label: const Text('Probar Notificación'),
-                    onPressed: () async {
-                     await NotificationService.init(); // Inicializa
-
-await NotificationService.showInstantNotification(
-  id: 1,
-  title: "Evaluación completada",
-  body: "Has terminado de evaluar a Juan Pérez",
-  payload: "evaluacion_completa_juan",
-);
-
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
+                    child: const Text('Actualizar Perfil',
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ],
               ),

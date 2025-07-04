@@ -1,7 +1,6 @@
 // ignore_for_file: use_build_context_synchronously, curly_braces_in_flow_control_structures
 
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:applensys/services/helpers/reporte_utils_final.dart';
 import 'package:flutter/material.dart';
 import 'package:applensys/widgets/chat_screen.dart';
@@ -16,11 +15,11 @@ import 'package:applensys/charts/donut_chart.dart';
 import 'package:applensys/charts/scatter_bubble_chart.dart';
 import 'package:applensys/charts/grouped_bar_chart.dart';
 import 'package:applensys/charts/horizontal_bar_systems_chart.dart';
-// import 'package:open_file/open_file.dart'; // Comentado o eliminado si no se usa en otro lugar
+import 'package:open_file/open_file.dart';
 import 'package:applensys/custom/table_names.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// import 'package:applensys/models/level_averages.dart'; // Comentado o eliminado
+import 'package:applensys/models/level_averages.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String evaluacionId;
@@ -52,22 +51,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // DEBES ACTUALIZAR ESTA LISTA CON TUS SISTEMAS REALES Y EN EL ORDEN DESEADO
  
  final List<String> _sistemasOrdenados = [
-  'Ambiental',
-  'Compromiso',
-  'Comunicación',
-  'Despliegue de Estrategia',
-  'Desarrollo de Personas',
-  'EHS',
-  'Gestión Visual',
-  'Involucramiento',
   'Medición',
-  'Planificación y Programación',
-  'Recompensas',
+  'Involucramiento',
   'Reconocimiento',
+  'Desarrollo de Personas',
   'Seguridad',
+  'Ambiental',
+  'EHS',
+  'Compromiso',
   'Sistemas de Mejora',
   'Solución de Problemas',
-  'Voz del Cliente',
+  'Gestión Visual',
+  'Comunicación',
+  'Desarrollo de personas',
+  'Despliegue de estrategia',
+  'Gestion visual',
+  'Medicion',
+  'Mejora y alineamiento estratégico',
+  'Mejora y gestion visual',
+  'Planificacion',
+  'Programacion y de mejora',
+  'Voz de cliente',
+  'Visitas al Gemba',
 ];
 
   @override
@@ -385,136 +390,133 @@ List<ScatterData> _buildScatterData() {
   }
 
   Map<String, Map<String, double>> _buildHorizontalBarsData() {
-  // Inicializa estructura para sumar valores y contar respuestas por sistema y nivel
-  final Map<String, Map<String, double>> sumaPorSistemaNivel = {};
-  final Map<String, Map<String, int>> conteoPorSistemaNivel = {};
+    // Mapas para acumular sumas y conteos
+    final Map<String, Map<String, double>> sumasPorSistemaNivel = {};
+    final Map<String, Map<String, int>> conteosPorSistemaNivel = {};
 
-  for (final sistema in _sistemasOrdenados) {
-    sumaPorSistemaNivel[sistema] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
-    conteoPorSistemaNivel[sistema] = {'E': 0, 'G': 0, 'M': 0};
-  }
-
-  for (final row in _dimensionesRaw) {
-    String? nivelKey;
-    if (row.containsKey('cargo_raw') && row['cargo_raw'] != null) {
-      final cargoRaw = row['cargo_raw'].toString().toLowerCase().trim();
-      if (cargoRaw.contains('ejecutivo')) nivelKey = 'E';
-      else if (cargoRaw.contains('gerente')) nivelKey = 'G';
-      else if (cargoRaw.contains('miembro')) nivelKey = 'M';
-    } else if (row.containsKey('nivel') && row['nivel'] != null) {
-      final nivel = row['nivel'].toString().toUpperCase();
-      if (['E', 'G', 'M'].contains(nivel)) nivelKey = nivel;
-    }
-    if (nivelKey == null) continue;
-
-    // Manejo robusto de sistemas: puede ser null, String o List
-    final sistemasRaw = row['sistemas'];
-    List<String> listaSistemasEnFila = [];
-    if (sistemasRaw is String && sistemasRaw.trim().isNotEmpty) {
-      listaSistemasEnFila = [sistemasRaw.trim()];
-    } else if (sistemasRaw is List) {
-      listaSistemasEnFila = sistemasRaw
-          .where((s) => s != null && s.toString().trim().isNotEmpty)
-          .map((s) => s.toString().trim())
-          .toList();
+    // Inicializar mapas para todos los sistemas ordenados y niveles
+    for (final sistemaNombre in _sistemasOrdenados) {
+      sumasPorSistemaNivel[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+      conteosPorSistemaNivel[sistemaNombre] = {'E': 0, 'G': 0, 'M': 0};
     }
 
-    final valor = (row['valor'] as num?)?.toDouble() ?? 0.0;
-
-    for (final sistemaNombre in listaSistemasEnFila) {
-      final sistemaNormalizado = sistemaNombre.toLowerCase();
-      final sistemaKey = _sistemasOrdenados.firstWhere(
-        (s) => s.toLowerCase() == sistemaNormalizado,
-        orElse: () => '',
-      );
-      if (sistemaKey.isNotEmpty) {
-        sumaPorSistemaNivel[sistemaKey]![nivelKey] =
-            (sumaPorSistemaNivel[sistemaKey]![nivelKey] ?? 0.0) + valor;
-        conteoPorSistemaNivel[sistemaKey]![nivelKey] =
-            (conteoPorSistemaNivel[sistemaKey]![nivelKey] ?? 0) + 1;
+    for (final row in _dimensionesRaw) {
+      String? nivelKey;
+      if (row.containsKey('cargo_raw') && row['cargo_raw'] != null) {
+        final cargoRaw = row['cargo_raw'].toString().toLowerCase().trim();
+        if (cargoRaw.contains('ejecutivo')) {
+          nivelKey = 'E';
+        } else if (cargoRaw.contains('gerente')) {
+          nivelKey = 'G';
+        } else if (cargoRaw.contains('miembro')) {
+          nivelKey = 'M';
+        }
+      } else if (row.containsKey('nivel') && row['nivel'] != null) {
+        final nivel = row['nivel'].toString().toUpperCase();
+        if (['E', 'G', 'M'].contains(nivel)) {
+          nivelKey = nivel;
+        }
       }
-    }
-  }
 
-  // Calcula promedios
-  final Map<String, Map<String, double>> promedioData = {};
-  for (final sistema in _sistemasOrdenados) {
-    promedioData[sistema] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
-    for (final nivelKey in ['E', 'G', 'M']) {
-      final suma = sumaPorSistemaNivel[sistema]![nivelKey] ?? 0.0;
-      final conteo = conteoPorSistemaNivel[sistema]![nivelKey] ?? 0;
-      promedioData[sistema]![nivelKey] = conteo > 0 ? (suma / conteo) : 0.0;
-    }
-  }
-  return promedioData;
-}
+      if (nivelKey == null) {
+        // Si no se puede determinar el nivel, saltar esta fila
+        continue;
+      }
 
-  Future<void> _generarReporteWord() async {
-  setState(() => _isLoading = true);
+      // Obtener el valor de la calificación para este row
+      final double valorCalificacion = (row['valor'] as num?)?.toDouble() ?? 0.0;
 
-  try {
-    // Prepara los datos de comportamientos en el formato que espera ReporteUtils
-    final List<Map<String, dynamic>> datosComportamientos = [];
-    for (final dim in _dimensiones) {
-      for (final pri in dim.principios) {
-        for (final comp in pri.comportamientos) {
-          // Por cada nivel, agrega una fila
-          datosComportamientos.add({
-            'dimension': dim.id,
-            'principio': pri.nombre,
-            'comportamiento': comp.nombre,
-            'cargo': 'Ejecutivos',
-            'calificacion': comp.promedioEjecutivo,
-            'sistemas_asociados': [],
-            'observacion': '',
-          });
-          datosComportamientos.add({
-            'dimension': dim.id,
-            'principio': pri.nombre,
-            'comportamiento': comp.nombre,
-            'cargo': 'Gerentes',
-            'calificacion': comp.promedioGerente,
-            'sistemas_asociados': [],
-            'observacion': '',
-          });
-          datosComportamientos.add({
-            'dimension': dim.id,
-            'principio': pri.nombre,
-            'comportamiento': comp.nombre,
-            'cargo': 'Miembro',
-            'calificacion': comp.promedioMiembro,
-            'sistemas_asociados': [],
-            'observacion': '',
-          });
+      final listaSistemasEnFila = (row['sistemas'] as List<dynamic>?)
+              ?.map((s) => s.toString().trim())
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          <String>[];
+
+      for (final sistemaNombre in listaSistemasEnFila) {
+        // Asegura que el sistema procesado esté en nuestra lista ordenada
+        // y por lo tanto en los mapas de sumas y conteos.
+        if (sumasPorSistemaNivel.containsKey(sistemaNombre) && conteosPorSistemaNivel.containsKey(sistemaNombre)) {
+          // Acumular suma
+          sumasPorSistemaNivel[sistemaNombre]![nivelKey] =
+              (sumasPorSistemaNivel[sistemaNombre]![nivelKey] ?? 0.0) + valorCalificacion;
+          // Incrementar conteo
+          conteosPorSistemaNivel[sistemaNombre]![nivelKey] =
+              (conteosPorSistemaNivel[sistemaNombre]![nivelKey] ?? 0) + 1;
         }
       }
     }
 
-    // Prepara los benchmarks (t1, t2, t3) desde tus datos crudos
-    final t1 = _dimensionesRaw.where((row) => row['dimension_id'] == '1').toList();
-    final t2 = _dimensionesRaw.where((row) => row['dimension_id'] == '2').toList();
-    final t3 = _dimensionesRaw.where((row) => row['dimension_id'] == '3').toList();
-
-    // Genera el reporte Word (HTML)
-    final filePath = await ReporteUtils.exportReporteWordUnificado(
-      datosComportamientos,
-      t1,
-      t2,
-      t3,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Reporte generado: $filePath')),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al generar reporte: $e')),
-    );
-  } finally {
-    setState(() => _isLoading = false);
+    // Calcular promedios
+    final Map<String, Map<String, double>> promediosData = {};
+    for (final sistemaNombre in _sistemasOrdenados) {
+      promediosData[sistemaNombre] = {'E': 0.0, 'G': 0.0, 'M': 0.0};
+      for (final nivelKey in ['E', 'G', 'M']) {
+        final double suma = sumasPorSistemaNivel[sistemaNombre]![nivelKey]!;
+        final int conteo = conteosPorSistemaNivel[sistemaNombre]![nivelKey]!;
+        if (conteo > 0) {
+          promediosData[sistemaNombre]![nivelKey] = suma / conteo;
+        } else {
+          promediosData[sistemaNombre]![nivelKey] = 0.0;
+        }
+      }
+    }
+    // debugPrint('Datos de PROMEDIOS para HorizontalBarSystemsChart: $promediosData');
+    return promediosData;
   }
-}
-// Añde esta función auxiliar en la misma clase
+
+  /// Callback al presionar “Generar Excel/Word”
+  Future<void> _onGenerarDocumentos() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generando archivos Excel y Word...')),
+    );
+    try {
+      final List<LevelAverages> behaviorAverages = [];
+      int id = 1;
+      for (final dim in _dimensiones) {
+        for (final pri in dim.principios) {
+          for (final comp in pri.comportamientos) {
+            behaviorAverages.add(LevelAverages(
+              id: id++,
+              nombre: comp.nombre,
+              ejecutivo: comp.promedioEjecutivo,
+              gerente: comp.promedioGerente,
+              miembro: comp.promedioMiembro,
+              dimensionId: int.tryParse(dim.id),
+              nivel: '',
+            ));
+          }
+        }
+      }
+      final sistemasData = _buildHorizontalBarsData();
+      final List<LevelAverages> systemAverages = [];
+      sistemasData.forEach((sistema, niveles) {
+        systemAverages.add(LevelAverages(
+          id: id++,
+          nombre: sistema,
+          ejecutivo: (niveles['E'] ?? 0).toDouble(),
+          gerente: (niveles['G'] ?? 0).toDouble(),
+          miembro: (niveles['M'] ?? 0).toDouble(),
+          dimensionId: null,
+          nivel: '',
+        ));
+      });
+     
+      final t1 = await _loadJsonAsset('assets/t1.json');
+      final t2 = await _loadJsonAsset('assets/t2.json');
+      final t3 = await _loadJsonAsset('assets/t3.json');
+     
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al generar archivos: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _loadJsonAsset(String path) async {
+    final data = await DefaultAssetBundle.of(context).loadString(path);
+    return List<Map<String, dynamic>>.from(jsonDecode(data));
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -533,7 +535,10 @@ List<ScatterData> _buildScatterData() {
       key: _scaffoldKey,
 
       // Drawer izquierdo para chat (80% del ancho)
-      drawer: const ChatWidgetDrawer(),
+      drawer: SizedBox(
+        width: screenSize.width * 0.8,
+        child: const ChatWidgetDrawer(),
+      ),
 
       // EndDrawer derecho normal (sin envolver en SizedBox)
       endDrawer: const DrawerLensys(),
@@ -548,11 +553,7 @@ List<ScatterData> _buildScatterData() {
         ),
         title: Text(
           'Dashboard - ${widget.empresa.nombre}',
-          style: const TextStyle(
-            color: Colors.white, 
-            fontSize: 20,
-            fontFamily: 'Arial', // Aplicar la fuente Arial aquí
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -575,27 +576,25 @@ List<ScatterData> _buildScatterData() {
                           'ALINEAMIENTO EMPRESARIAL': Colors.lightBlueAccent,
                         },
                         isDetail: false,
-                      ), color: const Color.fromARGB(255, 171, 172, 173), title: 'Promedio por Dimensión',
+                      ), color: const Color.fromARGB(255, 204, 214, 214), title: 'Promedio por Dimensión',
                     ),
               
                   _buildChartContainer(
-                    color: const Color.fromARGB(255, 160, 163, 163),
+                    color: const Color.fromARGB(255, 223, 236, 240),
                     child: ScatterBubbleChart(
                       data: _buildScatterData(),
-                      isDetail: false, 
-                    ),
-                    title: 'Promedio por Principio', // <-- corregido aquí
+                    ), title: 'promedio por Principio', 
                   ),
 
                   _buildChartContainer(
                     color: const Color.fromARGB(255, 231, 220, 187),
-                     title: 'Distribución por Comportamiento y Nivel',
+                    title: 'Distribución por Comportamiento y Nivel',
                     child: GroupedBarChart(
                       data: _buildGroupedBarData(),
                       minY: 0,
                       maxY: 5,
                       isDetail: false,
-                    ), 
+                    ),
                   ),
 
                
@@ -627,11 +626,87 @@ List<ScatterData> _buildScatterData() {
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   tooltip: 'Chat Interno',
                 ),
+
+                // Generar Excel/Word
                 IconButton(
-  icon: const Icon(Icons.description, color: Colors.white),
-  onPressed: _generarReporteWord, // <-- Llama a tu función
-  tooltip: 'Generar Reporte Word',
-), // El IconButton para generar reportes ha sido eliminado.
+                  icon: const Icon(Icons.file_download, color: Colors.white),
+                  onPressed: _onGenerarDocumentos,
+                  tooltip: 'Generar prereporte Excel/Word',
+                ),
+                const SizedBox(height: 16),
+
+                // Generar y abrir Excel
+                IconButton(
+                  icon: const Icon(Icons.table_chart, color: Colors.green),
+                  onPressed: () async {
+                    try {
+                      final List<LevelAverages> behaviorAverages = [];
+                      int id = 1;
+                      for (final dim in _dimensiones) {
+                        for (final pri in dim.principios) {
+                          for (final comp in pri.comportamientos) {
+                            behaviorAverages.add(LevelAverages(
+                              id: id++,
+                              nombre: comp.nombre,
+                              ejecutivo: comp.promedioEjecutivo,
+                              gerente: comp.promedioGerente,
+                              miembro: comp.promedioMiembro,
+                              dimensionId: int.tryParse(dim.id),
+                              nivel: '',
+                            ));
+                          }
+                        }
+                      }
+                      final sistemasData = _buildHorizontalBarsData();
+                      final List<LevelAverages> systemAverages = [];
+                      sistemasData.forEach((sistema, niveles) {
+                        systemAverages.add(LevelAverages(
+                          id: id++,
+                          nombre: sistema,
+                          ejecutivo: (niveles['E'] ?? 0).toDouble(),
+                          gerente: (niveles['G'] ?? 0).toDouble(),
+                          miembro: (niveles['M'] ?? 0).toDouble(),
+                          dimensionId: null,
+                          nivel: '',
+                        ));
+                      });
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error al generar Excel: ${e.toString()}')),
+                      );
+                    }
+                  },
+                  tooltip: 'Abrir Excel',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.description, color: Colors.blue),
+                  onPressed: () async {
+                    try {
+                      final t1 = await _loadJsonAsset('assets/t1.json');
+                      final t2 = await _loadJsonAsset('assets/t2.json');
+                      final t3 = await _loadJsonAsset('assets/t3.json');
+                      final String wordPath =
+                          await ReporteUtils.exportReporteWordUnificado(
+                        _dimensionesRaw,
+                        t1,
+                        t2,
+                        t3,
+                      );
+                      if (wordPath.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No se pudo generar Word.')),
+                        );
+                        return;
+                      }
+                      await OpenFile.open(wordPath);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error al abrir Word: ${e.toString()}')),
+                      );
+                    }
+                  },
+                  tooltip: 'Abrir Word',
+                ),
               ],
             ),
           ),
@@ -646,45 +721,37 @@ List<ScatterData> _buildScatterData() {
     required String title,
     required Widget child,
   }) {
+   
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          // Encabezado interno (subtítulo) con fondo blanco y título
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            // Encabezado interno (subtítulo) con fondo blanco
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              
             ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Center(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Color(0xFF003056),
-                ),
+
+            // Espacio para el gráfico (alto fijo de 240px)
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: SizedBox(
+                height: 420,
+                child: child,
               ),
             ),
-          ),
-          // Espacio para el gráfico (alto fijo de 420px)
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: SizedBox(
-              height: 500,
-              child: child,
-            ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );    
   }
-
 }

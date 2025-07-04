@@ -6,6 +6,7 @@ import 'package:applensys/providers/theme_provider.dart';
 import 'package:applensys/screens/auth/recoveru_screee.dart';
 import 'package:applensys/screens/empresas_screen.dart';
 import 'package:applensys/custom/service_locator.dart';
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -25,17 +26,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showAlert(String title, String message) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white,
-        title: Text(title, style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
-        content: Text(message, style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+        backgroundColor: Colors.white,
+        title: Text(title, style: TextStyle(color: Colors.black)),
+        content: Text(message, style: TextStyle(color: Colors.black)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Aceptar', style: TextStyle(color: isDarkMode ? Colors.tealAccent[100] : Theme.of(context).primaryColor)),
+            child: Text('Aceptar', style: TextStyle(color: const Color(0xFF003056))),
           ),
         ],
       ),
@@ -84,26 +84,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDarkMode ?Color(0xFF003056): const Color(0xFF003056);
-    final scaffoldBackgroundColor = isDarkMode ? Color(0xFF003056) : primaryColor;
-    final containerBackgroundColor = isDarkMode ? Colors.grey[850]! : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF003056);
-    final hintTextColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
-    final iconColor = isDarkMode ? Colors.white70 : Colors.grey[600];
-    final logoAsset = isDarkMode ? 'assets/logoblanco.webp' : 'assets/logo.webp';
-    final buttonTextColor = isDarkMode ? const Color.fromARGB(255, 255, 255, 255) : Colors.white;
-    final buttonBackgroundColor = isDarkMode ? Color(0xFF003056) : const Color.fromARGB(255, 255, 255, 255);
-    final forgotPasswordColor = isDarkMode ? Color.fromARGB(255, 255, 255, 255): const Color.fromARGB(255, 255, 255, 255);
-
-
     return Scaffold(
-      backgroundColor: scaffoldBackgroundColor, // Adaptado
+      backgroundColor: const Color(0xFF003056), // Fondo azul fijo
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : Colors.white), // Adaptado
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pushReplacementNamed(context, '/loaderScreen'),
         ),
       ),
@@ -113,12 +100,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: containerBackgroundColor, // Adaptado
+              color: Colors.white, // Contenedor blanco fijo
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  // ignore: deprecated_member_use
-                  color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1), // Adaptado
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -128,36 +113,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset(logoAsset, height: 100),
+                Image.asset('assets/logo.webp', height: 100),
                 const SizedBox(height: 20),
                 Text(
                   'Bienvenido de nuevo',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: textColor,
+                    color: const Color(0xFF003056),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: TextStyle(color: textColor),
+                  style: TextStyle(color: const Color(0xFF003056)),
                   decoration: InputDecoration(
                     labelText: 'Correo electrónico',
-                    labelStyle: TextStyle(color: textColor),
-                    prefixIcon: Icon(Icons.person, color: textColor),
+                    labelStyle: TextStyle(color: const Color(0xFF003056)),
+                    prefixIcon: Icon(Icons.person, color: const Color(0xFF003056)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: textColor),
+                      borderSide: BorderSide(color: const Color(0xFF003056)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: textColor),
+                      borderSide: BorderSide(color: const Color(0xFF003056)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: textColor),
+                      borderSide: BorderSide(color: const Color(0xFF003056)),
                     ),
                   ),
                 ),
@@ -165,27 +150,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: TextStyle(color: textColor),
+                  style: TextStyle(color: const Color(0xFF003056)),
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
-                    labelStyle: TextStyle(color: textColor),
-                    prefixIcon: Icon(Icons.lock, color: textColor),
+                    labelStyle: TextStyle(color: const Color(0xFF003056)),
+                    prefixIcon: Icon(Icons.lock, color: const Color(0xFF003056)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: textColor),
+                      borderSide: BorderSide(color: const Color(0xFF003056)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: textColor),
+                      borderSide: BorderSide(color: const Color(0xFF003056)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: textColor),
+                      borderSide: BorderSide(color: const Color(0xFF003056)),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        color: textColor,
+                        color: const Color(0xFF003056),
                       ),
                       onPressed: () {
                         setState(() {
@@ -199,7 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: () => Navigator.pushNamed(context, '/recovery'),
                   child: Text(
                     '¿Olvidaste tu contraseña?',
-                    style: TextStyle(color: textColor),
+                    style: TextStyle(color: const Color(0xFF003056)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -208,7 +193,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF003056), // Fondo azul constante
+                      backgroundColor: const Color(0xFF003056),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -218,7 +203,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Iniciar Sesión',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white, // Texto blanco constante
+                            color: Colors.white,
+                          ),
+                          ),
+                        ),
+                  ),
+                
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
                           ),
                           ),
                         ),

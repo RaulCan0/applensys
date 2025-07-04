@@ -64,57 +64,49 @@ class DonutChart extends StatelessWidget {
     }
 
     return Column(
-      // Ya no hará overflow porque cederá espacio interno
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Leyenda ocupa el menor espacio posible
-        Flexible(
-          flex: 1,
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            runSpacing: 8,
-            children: keys.map((key) {
-              final pct = total > 0
-                  ? (data[key]! / total * 100).toStringAsFixed(1)
-                  : '0.0';
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: isDetail ? 18 : 14,
-                    height: isDetail ? 18 : 14,
-                    decoration: BoxDecoration(
-                      color: dataMap[key],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+        // Título centrado
+        Wrap(
+          alignment: WrapAlignment.center,
+          runSpacing: 8,
+          children: keys.map((key) {
+            final percent = total > 0 ? (data[key]! / total * 100).toStringAsFixed(1) : '0.0';
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: isDetail ? 18 : 14,
+                  height: isDetail ? 18 : 14,
+                  decoration: BoxDecoration(
+                    color: dataMap[key],
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$key ($pct%)',
-                    style: TextStyle(
-                      fontSize: isDetail ? 18 : 16,
-                      color: const Color.fromARGB(255, 5, 4, 4),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 20),
-        // Gráfico ocupa el resto de espacio disponible
-        Flexible(
-          flex: 3,
-          child: Center(
-            child: SizedBox(
-              width: chartSize,
-              height: chartSize,
-              child: PieChart(
-                PieChartData(
-                  sections: sections,
-                  centerSpaceRadius: 0,
-                  sectionsSpace: 4,
                 ),
+                const SizedBox(width: 6),
+                Text(
+                  '$key ($percent%)',
+                  style: TextStyle(
+                    fontSize: isDetail ? 18 : 16,
+                    color: const Color.fromARGB(255, 5, 4, 4),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+        const SizedBox(height:20),
+        // Gráfico de pastel centrado
+        Center(
+          child: SizedBox(
+            width: chartSize,
+            height: chartSize,
+            child: PieChart(
+              PieChartData(
+                sections: sections,
+                centerSpaceRadius: 0, // <--- Pastel sólido, no dona
+                sectionsSpace: 4,
               ),
             ),
           ),

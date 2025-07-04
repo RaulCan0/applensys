@@ -77,7 +77,10 @@ class TablasDimensionScreen extends StatefulWidget {
     dataChanged.value = !dataChanged.value;
   }
 
-  
+  static Future<void> limpiarDatos() async {
+    tablaDatos.clear();
+    dataChanged.value = false;
+  }
 
   @override
   State<TablasDimensionScreen> createState() => _TablasDimensionScreenState();
@@ -364,6 +367,6 @@ class SistemasPromedio {
     if (_sistemasPorNivel.isEmpty) return 0.0;
     final totalSistemas = _sistemasPorNivel.values.fold<int>(0, (sum, set) => sum + set.length);
     final nivelesConSistemas = _sistemasPorNivel.values.where((set) => set.isNotEmpty).length;
-    return nivelesConSistemas == 0 ? 0.0 : totalSistemas / _sistemasPorNivel.length;
+    return nivelesConSistemas == 0 ? 0.0 : totalSistemas / nivelesConSistemas;
   }
 }
